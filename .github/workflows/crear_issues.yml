@@ -1,0 +1,88 @@
+name: Generador Automático de Issues
+
+on:
+  workflow_dispatch: # Permite la ejecución manual desde la pestaña Actions
+
+permissions:
+  issues: write # Permite al token de GitHub crear issues
+
+jobs:
+  crear-issues-desde-backlog:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: "henriquezgerardoa-coder/GPIV_Atlantic_Sprint-Tech" # CAMBIA ESTO: ejemplo "usuario/proyecto"
+      BACKLOG_PATH: "setup/lista_backlog.md"
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Procesar Tablas y Crear Issues
+        run: |
+          echo "Iniciando proceso de creación de issues..."
+
+          # Función para limpiar espacios y dar formato a las etiquetas
+          format_label() {
+            echo "$1" | xargs | tr '[:upper:]' '[:lower:]' | tr ' ' '-'
+          }
+
+          # Función para procesar cada tabla
+          # $1 = nombre de la tabla para el log, $2 = tipo (requerimiento/historia)
+          process_table() {
+            local table_type=$1
+            
+            # Buscamos la tabla ignorando el header y la línea de separación |---|
+            # Extraemos las filas que empiezan con | y tienen contenido
+            grep "^| [R|HU]" "$BACKLOG_PATH" | while read -r line; do
+              
+              # Extraer columnas usando '|' como delimitador
+              ID=$(echo "$line" | cut -d'|' -f2 | xargs)
+              TITULO_RAW=$(echo "$line" | cut -d'|' -f3 | xargs)
+              DESC=$(echo "$line" | cut -d'|' -f4 | xargs)
+              
+              # Lógica específica por tipo de tabla
+              if [[ "$table_type" == "requerimiento" && "$ID" == R* ]]; then
+                TIPO=$(echo "$line" | cut -d'|' -f5 | xargs)
+                PRIO=$(echo "$line" | cut -d'|' -f6 | xargs)
+                MODULO=$(echo "$line" | cut -d'|' -f7 | xargs)
+                
+                BODY="### Descripción\n$DESC"
+                
+              elif [[ "$table_type" == "historia" && "$ID" == HU* ]]; then
+                VINCULADOS=$(echo "$line" | cut -d'|' -f5 | xargs)
+                TIPO=$(echo "$line" | cut -d'|' -f6 | xargs)
+                PRIO=$(echo "$line" | cut -d'|' -f7 | xargs)
+                MODULO=$(echo "$line" | cut -d'|' -f8 | xargs)
+                CRITERIOS=$(echo "$line" | cut -d'|' -f9 | xargs | sed 's/<br>/\n/g')
+                
+                BODY="### Descripción\n$DESC\n\n### Requerimientos Vinculados\n$VINCULADOS\n\n### Criterios de Aceptación\n$CRITERIOS"
+              else
+                continue # Salta si no coincide con el prefijo esperado
+              fi
+
+              # Formatear Etiquetas
+              LABEL_PRIO="prioridad-$(format_label "$PRIO")"
+              LABEL_TIPO=$(format_label "$TIPO")
+              LABEL_MODULO=$(format_label "$MODULO")
+
+              # Crear la Issue usando GitHub CLI
+              echo "Creando issue: [$ID] $TITULO_RAW..."
+              gh issue create \
+                --repo "$REPO" \
+                --title "[$ID] $TITULO_RAW" \
+                --body - <<EOF
+          $BODY
+          EOF \
+                --label "$LABEL_TIPO,$LABEL_MODULO,$LABEL_PRIO"
+              
+              # Pequeña pausa para evitar límites de tasa de la API
+              sleep 1
+            done
+          }
+
+          # Ejecutar proceso para ambas secciones del archivo
+          process_table "requerimiento"
+          process_table "historia"
+
+          echo "¡Proceso finalizado con éxito!"
