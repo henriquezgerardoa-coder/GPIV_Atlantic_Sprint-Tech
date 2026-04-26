@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      REPO: "henriquezgerardoa-coder/GPIV_Atlantic_Sprint-Tech" # CAMBIA ESTO: ejemplo "usuario/proyecto"
-      BACKLOG_PATH: "setup/lista_backlog.md"
+      REPO: "henriquezgerardoa-coder/GPIV_Atlantic_Sprint-Tech" # Repositorio destino
+      BACKLOG_PATH: "setup/lista_backlog.md" # Ruta al archivo de backlog
 
     steps:
       - name: Checkout del código
@@ -28,60 +28,69 @@ jobs:
           }
 
           # Función para procesar cada tabla
-          # $1 = nombre de la tabla para el log, $2 = tipo (requerimiento/historia)
+          # $1 = tipo de tabla ("requerimiento" o "historia")
           process_table() {
             local table_type=$1
             
-            # Buscamos la tabla ignorando el header y la línea de separación |---|
-            # Extraemos las filas que empiezan con | y tienen contenido
+            # Buscamos las filas que empiezan con | y tienen contenido (R o HU)
             grep "^| [R|HU]" "$BACKLOG_PATH" | while read -r line; do
               
-              # Extraer columnas usando '|' como delimitador
+              # Extraer columnas comunes usando '|' como delimitador y xargs para limpiar espacios
               ID=$(echo "$line" | cut -d'|' -f2 | xargs)
               TITULO_RAW=$(echo "$line" | cut -d'|' -f3 | xargs)
               DESC=$(echo "$line" | cut -d'|' -f4 | xargs)
               
+              # Variables para la issue
+              local ISSUE_BODY=""
+              local TIPO=""
+              local PRIO=""
+              local MODULO=""
+
               # Lógica específica por tipo de tabla
               if [[ "$table_type" == "requerimiento" && "$ID" == R* ]]; then
                 TIPO=$(echo "$line" | cut -d'|' -f5 | xargs)
                 PRIO=$(echo "$line" | cut -d'|' -f6 | xargs)
                 MODULO=$(echo "$line" | cut -d'|' -f7 | xargs)
                 
-                BODY="### Descripción\n$DESC"
+                # Construir el cuerpo directamente
+                ISSUE_BODY="### Descripción\n$DESC"
                 
               elif [[ "$table_type" == "historia" && "$ID" == HU* ]]; then
                 VINCULADOS=$(echo "$line" | cut -d'|' -f5 | xargs)
                 TIPO=$(echo "$line" | cut -d'|' -f6 | xargs)
                 PRIO=$(echo "$line" | cut -d'|' -f7 | xargs)
                 MODULO=$(echo "$line" | cut -d'|' -f8 | xargs)
+                # Manejo de <br> en Criterios de Aceptación
                 CRITERIOS=$(echo "$line" | cut -d'|' -f9 | xargs | sed 's/<br>/\n/g')
-                
-                BODY="### Descripción\n$DESC\n\n### Requerimientos Vinculados\n$VINCULADOS\n\n### Criterios de Aceptación\n$CRITERIOS"
+              
+                # Construir el cuerpo directamente
+                ISSUE_BODY="### Descripción\n$DESC\n\n### Requerimientos Vinculados\n$VINCULADOS\n\n### Criterios de Aceptación\n$CRITERIOS"
               else
-                continue # Salta si no coincide con el prefijo esperado
+                continue # Salta si no coincide con el prefijo esperado (R o HU)
               fi
 
-              # Formatear Etiquetas
+              # Formatear Etiquetas (todo minúsculas y sin espacios)
               LABEL_PRIO="prioridad-$(format_label "$PRIO")"
               LABEL_TIPO=$(format_label "$TIPO")
               LABEL_MODULO=$(format_label "$MODULO")
 
               # Crear la Issue usando GitHub CLI
               echo "Creando issue: [$ID] $TITULO_RAW..."
-              gh issue create \
+              
+              # SOLUCIÓN DEFINITIVA: Usar printf para pasar el cuerpo como variable de entorno
+              # Esto evita problemas de sangría con <<EOF
+              printf "$ISSUE_BODY" | gh issue create \
                 --repo "$REPO" \
                 --title "[$ID] $TITULO_RAW" \
-                --body - <<EOF
-          $BODY
-          EOF \
-                --label "$LABEL_TIPO,$LABEL_MODULO,$LABEL_PRIO"
+                --label "$LABEL_TIPO,$LABEL_MODULO,$LABEL_PRIO" \
+                --body-file -
               
               # Pequeña pausa para evitar límites de tasa de la API
               sleep 1
             done
           }
 
-          # Ejecutar proceso para ambas secciones del archivo
+          # Ejecutar proceso para ambas tablas
           process_table "requerimiento"
           process_table "historia"
 
