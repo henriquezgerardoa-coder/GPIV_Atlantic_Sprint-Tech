@@ -1,0 +1,17 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Maven
+**/target/
+
+# Logs y temporales
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
