@@ -117,6 +117,54 @@ body.pagina-ingreso {
     background: linear-gradient(135deg, #0d6efd 0%, #0047b5 100%);
 }
 
+.tarjeta-registro {
+    backdrop-filter: blur(2px);
+}
+
+.icono-registro {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(13, 110, 253, 0.12);
+    color: #0d6efd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
+
+.tarjeta-registro .input-group-text {
+    min-width: 42px;
+    justify-content: center;
+}
+
+.lista-requisitos {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.requisito-clave {
+    color: #6c757d;
+    transition: color 0.15s ease;
+}
+
+.requisito-clave::marker {
+    color: #adb5bd;
+}
+
+.requisito-clave.cumplido {
+    color: #198754;
+    font-weight: 500;
+}
+
+.requisito-clave.cumplido::marker {
+    color: #198754;
+}
+
+#barraFortaleza {
+    transition: width 0.2s ease, background-color 0.2s ease;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .barra-lateral {
