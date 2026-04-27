@@ -37,7 +37,7 @@ public class Usuario {
     @Column(nullable = false)
     private boolean activo;
     @Column(name = "email_verificado")
-    private boolean emailVerificado;
+    private Boolean emailVerificado;
     @Column(name = "token_verificacion_email", length = 120)
     private String tokenVerificacionEmail;
     @Column(name = "token_verificacion_expira_en")
@@ -100,7 +100,7 @@ public class Usuario {
         return activo;
     }
     public boolean isEmailVerificado() {
-        return emailVerificado;
+        return Boolean.TRUE.equals(emailVerificado);
     }
     public String getTokenVerificacionEmail() {
         return tokenVerificacionEmail;
@@ -132,7 +132,7 @@ public class Usuario {
             && tokenVerificacionExpiraEn.isAfter(ahora);
     }
     public void marcarEmailVerificado(LocalDateTime fechaVerificacion) {
-        this.emailVerificado = true;
+        this.emailVerificado = Boolean.TRUE;
         this.fechaVerificacionEmail = fechaVerificacion;
         this.tokenVerificacionEmail = null;
         this.tokenVerificacionExpiraEn = null;

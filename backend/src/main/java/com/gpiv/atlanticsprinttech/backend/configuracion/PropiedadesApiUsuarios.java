@@ -24,6 +24,7 @@ public class PropiedadesApiUsuarios {
         private Credencial admin = new Credencial();
         private Credencial operador = new Credencial();
         private Credencial visor = new Credencial();
+        private boolean actualizarClavesSiExiste = false;
         public Credencial getAdmin() {
             return admin;
         }
@@ -41,6 +42,12 @@ public class PropiedadesApiUsuarios {
         }
         public void setVisor(Credencial visor) {
             this.visor = visor;
+        }
+        public boolean isActualizarClavesSiExiste() {
+            return actualizarClavesSiExiste;
+        }
+        public void setActualizarClavesSiExiste(boolean actualizarClavesSiExiste) {
+            this.actualizarClavesSiExiste = actualizarClavesSiExiste;
         }
     }
     public static class RolesLegado {

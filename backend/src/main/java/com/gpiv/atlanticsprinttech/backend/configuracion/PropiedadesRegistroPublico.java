@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app.registro")
 public class PropiedadesRegistroPublico {
-    private String urlBaseVerificacion = "http://localhost:8080/verificar.html";
+    private String urlBaseVerificacion = "http://localhost:8090/verificar.html";
     private String contactoSoporte = "soporte@gpiv.local";
     private Token token = new Token();
     private Mail mail = new Mail();

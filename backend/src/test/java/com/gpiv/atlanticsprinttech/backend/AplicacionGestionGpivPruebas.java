@@ -1,6 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend;
 
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesApiUsuarios;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -300,6 +301,41 @@ class AplicacionGestionGpivPruebas {
                 .with(httpBasic(correo, clave)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nombreUsuario").value(usuario.getNombreUsuario()));
+    }
+
+    @Test
+    void deberiaReenviarVerificacionMientrasLaCuentaSigaPendiente() throws Exception {
+        String correo = "registro2@gpiv.local";
+        String clave = "ClaveSegura123";
+
+        mockMvc.perform(post("/api/public/registro")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correoElectronico\":\"" + correo + "\",\"clave\":\"" + clave + "\",\"confirmacionClave\":\"" + clave + "\"}"))
+            .andExpect(status().isCreated());
+
+        Usuario usuarioPendiente = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correo)
+            .orElseThrow();
+        String tokenAnterior = usuarioPendiente.getTokenVerificacionEmail();
+
+        mockMvc.perform(post("/api/public/verificacion/reenviar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correoElectronico\":\"" + correo + "\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.mensaje").value("Te enviamos un nuevo correo de verificacion"));
+
+        Usuario usuarioActualizado = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correo)
+            .orElseThrow();
+        assertThat(usuarioActualizado.getTokenVerificacionEmail()).isNotBlank();
+        assertThat(usuarioActualizado.getTokenVerificacionEmail()).isNotEqualTo(tokenAnterior);
+
+        mockMvc.perform(get("/api/public/verificacion")
+                .param("token", usuarioActualizado.getTokenVerificacionEmail()))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/public/verificacion/reenviar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correoElectronico\":\"" + correo + "\"}"))
+            .andExpect(status().isBadRequest());
     }
 }
 

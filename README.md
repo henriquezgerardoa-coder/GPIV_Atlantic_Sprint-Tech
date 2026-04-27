@@ -138,10 +138,12 @@ export DB_PASSWORD='password123'
 export SEED_ADMIN_CLAVE='admin12345'
 export SEED_OPERADOR_CLAVE='operador123'
 export SEED_VISOR_CLAVE='visor12345'
+export SEED_ACTUALIZAR_CLAVES_SI_EXISTE='true'
 export USUARIOS_ROLES_LEGADO_DEPRECATION='true'
 export USUARIOS_ROLES_LEGADO_SUNSET='Thu, 31 Dec 2026 23:59:59 GMT'
 export USUARIOS_ROLES_LEGADO_LINK='</api/catalogos/roles>; rel="successor-version"'
-export REGISTRO_URL_BASE_VERIFICACION='http://localhost:8080/verificar.html'
+export SERVER_PORT='8090'
+export REGISTRO_URL_BASE_VERIFICACION='http://localhost:8090/verificar.html'
 export REGISTRO_CONTACTO_SOPORTE='soporte@gpiv.local'
 export REGISTRO_TOKEN_EXPIRACION_HORAS='24'
 export REGISTRO_MAIL_HABILITADO='false'
@@ -159,8 +161,27 @@ cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
 mvn -pl backend spring-boot:run
 ```
 
+Para forzar una sola instancia local en `8090` (detiene cualquier proceso previo en el mismo puerto):
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
+bash setup/backend_unica_8090.sh
+```
+
+### Migracion de datos legacy (`email_verificado`)
+
+Si tu base ya tenia usuarios antes de la verificacion por correo, ejecuta esta migracion una vez para normalizar `email_verificado`:
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
+DB_CONTAINER='gisto-db' DB_NAME='gpiv' DB_USER='admin' bash setup/migrar_email_verificado.sh
+```
+
+El SQL aplicado queda en `setup/sql/001_normalizar_email_verificado.sql`.
+
 Endpoint disponible:
 
+- Base local por defecto: `http://localhost:8090`
 - `GET /salud` -> `{"estado":"ok"}`
 - `GET /health` -> alias temporal compatible con la ruta anterior
 

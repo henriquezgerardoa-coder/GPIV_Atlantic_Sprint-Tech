@@ -3,10 +3,48 @@ if (sessionStorage.getItem('credencial')) {
     window.location.href = '/app.html';
 }
 
+const mensajeContexto = document.getElementById('mensajeContexto');
+const campoNombreUsuario = document.getElementById('nombreUsuario');
+
+function mostrarMensajeContexto(texto, tipo) {
+    if (!texto) {
+        mensajeContexto.className = 'alert d-none';
+        mensajeContexto.textContent = '';
+        return;
+    }
+    mensajeContexto.className = 'alert alert-' + tipo;
+    mensajeContexto.textContent = texto;
+    mensajeContexto.classList.remove('d-none');
+}
+
+function inicializarContextoIngreso() {
+    const parametros = new URLSearchParams(window.location.search);
+    const correo = parametros.get('correo');
+    const verificacion = parametros.get('verificacion');
+    const registro = parametros.get('registro');
+
+    if (correo && !campoNombreUsuario.value.trim()) {
+        campoNombreUsuario.value = correo;
+    }
+
+    if (verificacion === 'ok') {
+        mostrarMensajeContexto('Correo verificado con exito. Ya puedes iniciar sesion.', 'success');
+    } else if (registro === 'ok') {
+        mostrarMensajeContexto('Registro completado. Revisa tu correo para verificar la cuenta antes de ingresar.', 'info');
+    }
+
+    if ([correo, verificacion, registro].some(Boolean)) {
+        const nuevaRuta = window.location.pathname;
+        window.history.replaceState({}, document.title, nuevaRuta);
+    }
+}
+
+inicializarContextoIngreso();
+
 document.getElementById('formularioIngreso').addEventListener('submit', async (evento) => {
     evento.preventDefault();
 
-    const nombreUsuario   = document.getElementById('nombreUsuario').value.trim();
+    const nombreUsuario   = campoNombreUsuario.value.trim();
     const clave           = document.getElementById('claveAcceso').value;
     const btnIngresar     = document.getElementById('btnIngresar');
     const mensajeError    = document.getElementById('mensajeError');

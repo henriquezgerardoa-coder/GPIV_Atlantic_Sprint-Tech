@@ -23,7 +23,7 @@
                         <p class="text-muted mb-0 small">Registra tu correo para acceder al sistema.</p>
                     </div>
 
-                    <div id="mensajeRegistro" class="alert d-none" role="alert" aria-live="polite"></div>
+                    <div id="mensajeRegistro" class="alert d-none" role="alert" aria-live="polite" tabindex="-1"></div>
 
                     <div class="alert alert-light border small mb-4" role="note">
                         <div class="fw-semibold mb-2"><i class="bi bi-shield-check me-1"></i>Requisitos de seguridad</div>
@@ -84,15 +84,28 @@
 
                     <hr class="my-4">
 
+                    <div id="panelPostRegistro" class="alert alert-success d-none panel-post-registro" role="status" aria-live="polite">
+                        <div class="fw-semibold mb-2"><i class="bi bi-envelope-check me-1"></i>Revisa tu correo para activar la cuenta</div>
+                        <ol class="small mb-3 ps-3">
+                            <li>Busca el mensaje de verificacion en tu bandeja principal o spam.</li>
+                            <li>Abre el enlace recibido para activar tu acceso.</li>
+                            <li>Luego vuelve aqui para iniciar sesion.</li>
+                        </ol>
+                        <a id="enlaceIngresoRegistro" href="/index.html?registro=ok" class="btn btn-sm btn-outline-success">
+                            Ir a iniciar sesion
+                        </a>
+                    </div>
+
                     <h6 class="text-muted"><i class="bi bi-send-check me-1"></i>No recibiste el correo?</h6>
                     <form id="formularioReenvio" novalidate>
+                        <label for="correoReenvio" class="form-label fw-semibold">Correo para reenvio</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="bi bi-envelope-at"></i></span>
-                            <input type="email" class="form-control" id="correoReenvio" placeholder="correo@dominio.com" required>
+                            <input type="email" class="form-control" id="correoReenvio" placeholder="correo@dominio.com" required aria-describedby="errorCorreoReenvio ayudaCorreoReenvio">
                             <button class="btn btn-outline-secondary" type="submit" id="btnReenviar">Reenviar</button>
                         </div>
                         <div class="invalid-feedback d-none" id="errorCorreoReenvio">Ingresa un correo valido para reenviar.</div>
-                        <div class="form-text">Solo para cuentas ya registradas y pendientes de verificacion.</div>
+                        <div class="form-text" id="ayudaCorreoReenvio">Solo para cuentas ya registradas y pendientes de verificacion.</div>
                     </form>
 
                     <div class="text-center mt-4">
