@@ -13,9 +13,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudUsuario;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudEmpresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
+import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,9 @@ class AplicacionGestionGpivPruebas {
 
     @Autowired
     private PropiedadesApiUsuarios propiedadesApiUsuarios;
+
+    @Autowired
+    private RepositorioUsuario repositorioUsuario;
 
     @Test
     void deberiaResponderEstadoOkEnSalud() throws Exception {
@@ -268,6 +273,33 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(get("/api/usuarios")
                 .with(httpBasic("admin", "admin123456")))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void deberiaRegistrarVerificarYPermitirLoginConCorreo() throws Exception {
+        String correo = "registro1@gpiv.local";
+        String clave = "ClaveSegura123";
+
+        mockMvc.perform(post("/api/public/registro")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correoElectronico\":\"" + correo + "\",\"clave\":\"" + clave + "\",\"confirmacionClave\":\"" + clave + "\"}"))
+            .andExpect(status().isCreated());
+
+        Usuario usuario = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correo)
+            .orElseThrow();
+
+        mockMvc.perform(get("/api/yo")
+                .with(httpBasic(correo, clave)))
+            .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/public/verificacion")
+                .param("token", usuario.getTokenVerificacionEmail()))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/yo")
+                .with(httpBasic(correo, clave)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.nombreUsuario").value(usuario.getNombreUsuario()));
     }
 }
 

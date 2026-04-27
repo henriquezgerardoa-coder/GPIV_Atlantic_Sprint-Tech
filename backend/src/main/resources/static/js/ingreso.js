@@ -31,9 +31,14 @@ document.getElementById('formularioIngreso').addEventListener('submit', async (e
             sessionStorage.setItem('usuario', JSON.stringify(usuario));
             window.location.href = '/app.html';
         } else {
-            textoError.textContent = respuesta.status === 401
-                ? 'Usuario o contraseña incorrectos.'
-                : 'Error al iniciar sesión. Intente nuevamente.';
+            const detalle = await respuesta.json().catch(() => ({}));
+            if (respuesta.status === 401) {
+                textoError.textContent = 'Usuario/correo o contrasena incorrectos.';
+            } else if (respuesta.status === 429) {
+                textoError.textContent = detalle.mensaje || 'Demasiados intentos fallidos. Intente mas tarde.';
+            } else {
+                textoError.textContent = detalle.mensaje || 'Error al iniciar sesion. Intente nuevamente.';
+            }
             mensajeError.classList.remove('d-none');
         }
     } catch (_) {

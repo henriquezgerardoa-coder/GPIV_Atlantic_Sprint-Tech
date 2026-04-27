@@ -31,13 +31,13 @@
 
                     <form id="formularioIngreso" novalidate>
                         <div class="mb-3">
-                            <label for="nombreUsuario" class="form-label fw-semibold">Usuario</label>
+                            <label for="nombreUsuario" class="form-label fw-semibold">Correo o usuario</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">
                                     <i class="bi bi-person text-muted"></i>
                                 </span>
                                 <input type="text" class="form-control" id="nombreUsuario"
-                                       placeholder="Nombre de usuario" required autofocus autocomplete="username">
+                                       placeholder="correo@dominio.com" required autofocus autocomplete="username">
                             </div>
                         </div>
 
@@ -55,6 +55,10 @@
                         <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="btnIngresar">
                             <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar
                         </button>
+
+                        <div class="text-center mt-3">
+                            <a href="/registro.html" class="text-decoration-none">No tienes cuenta? Registrate</a>
+                        </div>
                     </form>
                 </div>
             </div>

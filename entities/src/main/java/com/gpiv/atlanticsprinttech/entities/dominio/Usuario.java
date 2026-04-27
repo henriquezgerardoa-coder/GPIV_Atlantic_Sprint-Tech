@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,10 +30,20 @@ public class Usuario {
     private String nombreUsuario;
     @Column(name = "nombre_completo", nullable = false, length = 120)
     private String nombreCompleto;
+    @Column(name = "correo_electronico", length = 160, unique = true)
+    private String correoElectronico;
     @Column(name = "clave_acceso_hash", nullable = false, length = 120)
     private String claveAccesoHash;
     @Column(nullable = false)
     private boolean activo;
+    @Column(name = "email_verificado")
+    private boolean emailVerificado;
+    @Column(name = "token_verificacion_email", length = 120)
+    private String tokenVerificacionEmail;
+    @Column(name = "token_verificacion_expira_en")
+    private LocalDateTime tokenVerificacionExpiraEn;
+    @Column(name = "fecha_verificacion_email")
+    private LocalDateTime fechaVerificacionEmail;
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "usuarios_roles", joinColumns = @JoinColumn(name = "usuario_id"))
@@ -40,16 +51,35 @@ public class Usuario {
     private Set<RolUsuario> roles = new HashSet<>();
     protected Usuario() {
     }
-    private Usuario(String nombreUsuario, String nombreCompleto, String claveAccesoHash, boolean activo, Set<RolUsuario> roles) {
+    private Usuario(
+        String nombreUsuario,
+        String nombreCompleto,
+        String correoElectronico,
+        String claveAccesoHash,
+        boolean activo,
+        boolean emailVerificado,
+        Set<RolUsuario> roles
+    ) {
         this.nombreUsuario = nombreUsuario;
         this.nombreCompleto = nombreCompleto;
+        this.correoElectronico = correoElectronico;
         this.claveAccesoHash = claveAccesoHash;
         this.activo = activo;
+        this.emailVerificado = emailVerificado;
         this.roles = new HashSet<>(roles);
     }
     public static Usuario crear(String nombreUsuario, String nombreCompleto, String claveAccesoHash, boolean activo,
                                 Set<RolUsuario> roles) {
-        return new Usuario(nombreUsuario, nombreCompleto, claveAccesoHash, activo, roles);
+        return new Usuario(nombreUsuario, nombreCompleto, null, claveAccesoHash, activo, true, roles);
+    }
+    public static Usuario crearPendienteVerificacion(
+        String nombreUsuario,
+        String nombreCompleto,
+        String correoElectronico,
+        String claveAccesoHash,
+        Set<RolUsuario> roles
+    ) {
+        return new Usuario(nombreUsuario, nombreCompleto, correoElectronico, claveAccesoHash, true, false, roles);
     }
     public Long getId() {
         return id;
@@ -60,11 +90,23 @@ public class Usuario {
     public String getNombreCompleto() {
         return nombreCompleto;
     }
+    public String getCorreoElectronico() {
+        return correoElectronico;
+    }
     public String getClaveAccesoHash() {
         return claveAccesoHash;
     }
     public boolean isActivo() {
         return activo;
+    }
+    public boolean isEmailVerificado() {
+        return emailVerificado;
+    }
+    public String getTokenVerificacionEmail() {
+        return tokenVerificacionEmail;
+    }
+    public LocalDateTime getTokenVerificacionExpiraEn() {
+        return tokenVerificacionExpiraEn;
     }
     public Set<RolUsuario> getRoles() {
         return Collections.unmodifiableSet(roles);
@@ -76,6 +118,24 @@ public class Usuario {
     }
     public void actualizarClaveAccesoHash(String claveAccesoHash) {
         this.claveAccesoHash = claveAccesoHash;
+    }
+    public void actualizarCorreoElectronico(String correoElectronico) {
+        this.correoElectronico = correoElectronico;
+    }
+    public void iniciarVerificacionEmail(String tokenVerificacionEmail, LocalDateTime tokenVerificacionExpiraEn) {
+        this.tokenVerificacionEmail = tokenVerificacionEmail;
+        this.tokenVerificacionExpiraEn = tokenVerificacionExpiraEn;
+    }
+    public boolean tokenVerificacionVigente(LocalDateTime ahora) {
+        return tokenVerificacionEmail != null
+            && tokenVerificacionExpiraEn != null
+            && tokenVerificacionExpiraEn.isAfter(ahora);
+    }
+    public void marcarEmailVerificado(LocalDateTime fechaVerificacion) {
+        this.emailVerificado = true;
+        this.fechaVerificacionEmail = fechaVerificacion;
+        this.tokenVerificacionEmail = null;
+        this.tokenVerificacionExpiraEn = null;
     }
 }
 

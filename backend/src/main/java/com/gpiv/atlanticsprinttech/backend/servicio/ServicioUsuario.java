@@ -13,4 +13,7 @@ public interface ServicioUsuario {
     void eliminar(Long id);
     void restablecerClave(Long id, String claveNueva);
     void cambiarClavePropia(String nombreUsuario, String claveActual, String claveNueva);
+    void registrarPublico(String correoElectronico, String clave, String confirmacionClave, String ipCliente);
+    void verificarCorreoElectronico(String tokenVerificacion);
+    void reenviarCorreoVerificacion(String correoElectronico, String ipCliente);
 }

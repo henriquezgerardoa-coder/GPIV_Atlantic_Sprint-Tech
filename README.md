@@ -60,6 +60,16 @@ Usuarios predeterminados (solo para entorno inicial/local):
 - `operador` / `operador123` (`OPERADOR`)
 - `visor` / `visor12345` (`VISOR`)
 
+Registro publico con verificacion por correo:
+
+- Pantalla de registro: `GET /registro.html`
+- Verificacion por token: `GET /verificar.html?token=...`
+- API registro: `POST /api/public/registro`
+- API verificar correo: `GET /api/public/verificacion?token=...`
+- API reenvio: `POST /api/public/verificacion/reenviar`
+
+El login acepta usuario o correo verificado.
+
 Estas credenciales se configuran mediante `app.api.usuarios.semilla.*` y se centralizan en `backend/src/main/java/com/gpiv/atlanticsprinttech/backend/configuracion/PropiedadesApiUsuarios.java`.
 
 Permisos por rol:
@@ -123,14 +133,23 @@ Variables opcionales para PostgreSQL (perfil `dev` por defecto):
 
 ```bash
 export DB_URL='jdbc:postgresql://localhost:5432/gpiv'
-export DB_USER='postgres'
-export DB_PASSWORD='postgres'
+export DB_USER='admin'
+export DB_PASSWORD='password123'
 export SEED_ADMIN_CLAVE='admin12345'
 export SEED_OPERADOR_CLAVE='operador123'
 export SEED_VISOR_CLAVE='visor12345'
 export USUARIOS_ROLES_LEGADO_DEPRECATION='true'
 export USUARIOS_ROLES_LEGADO_SUNSET='Thu, 31 Dec 2026 23:59:59 GMT'
 export USUARIOS_ROLES_LEGADO_LINK='</api/catalogos/roles>; rel="successor-version"'
+export REGISTRO_URL_BASE_VERIFICACION='http://localhost:8080/verificar.html'
+export REGISTRO_CONTACTO_SOPORTE='soporte@gpiv.local'
+export REGISTRO_TOKEN_EXPIRACION_HORAS='24'
+export REGISTRO_MAIL_HABILITADO='false'
+export REGISTRO_MAIL_REMITENTE='no-reply@gpiv.local'
+export REGISTRO_MAX_INTENTOS='5'
+export REGISTRO_MAX_REENVIOS='5'
+export INGRESO_MAX_INTENTOS='5'
+export SEGURIDAD_VENTANA_MINUTOS='15'
 ```
 
 El prefijo comun de configuracion es `app.api.usuarios.*` (`semilla.*` y `roles-legado.*`).
