@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,27 +27,27 @@ public class ControladorEmpresa {
         this.servicioEmpresa = servicioEmpresa;
     }
     @GetMapping
-    public List<RespuestaEmpresa> listar() {
-        return servicioEmpresa.listar().stream().map(this::crearRespuesta).toList();
+    public List<RespuestaEmpresa> listar(Authentication autenticacion) {
+        return servicioEmpresa.listar(autenticacion.getName()).stream().map(this::crearRespuesta).toList();
     }
     @GetMapping("/{id}")
-    public RespuestaEmpresa obtenerPorId(@PathVariable Long id) {
-        return crearRespuesta(servicioEmpresa.obtenerPorId(id));
+    public RespuestaEmpresa obtenerPorId(@PathVariable Long id, Authentication autenticacion) {
+        return crearRespuesta(servicioEmpresa.obtenerPorId(id, autenticacion.getName()));
     }
     @PostMapping
-    public ResponseEntity<RespuestaEmpresa> crear(@Valid @RequestBody SolicitudEmpresa solicitud) {
-        Empresa empresaCreada = servicioEmpresa.crear(crearEmpresa(solicitud));
+    public ResponseEntity<RespuestaEmpresa> crear(@Valid @RequestBody SolicitudEmpresa solicitud, Authentication autenticacion) {
+        Empresa empresaCreada = servicioEmpresa.crear(crearEmpresa(solicitud), autenticacion.getName());
         return ResponseEntity.created(URI.create("/api/empresas/" + empresaCreada.getId()))
             .body(crearRespuesta(empresaCreada));
     }
     @PutMapping("/{id}")
-    public RespuestaEmpresa actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudEmpresa solicitud) {
-        Empresa empresaActualizada = servicioEmpresa.actualizar(id, crearEmpresa(solicitud));
+    public RespuestaEmpresa actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudEmpresa solicitud, Authentication autenticacion) {
+        Empresa empresaActualizada = servicioEmpresa.actualizar(id, crearEmpresa(solicitud), autenticacion.getName());
         return crearRespuesta(empresaActualizada);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        servicioEmpresa.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication autenticacion) {
+        servicioEmpresa.eliminar(id, autenticacion.getName());
         return ResponseEntity.noContent().build();
     }
     private Empresa crearEmpresa(SolicitudEmpresa solicitud) {

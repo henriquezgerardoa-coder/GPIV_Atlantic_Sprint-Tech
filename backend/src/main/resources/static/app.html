@@ -79,6 +79,16 @@
                 <i class="bi bi-map"></i> Lotes
             </a>
         </li>
+        <li class="nav-item">
+            <a id="nav-radicaciones" class="nav-link enlace-nav" href="#" onclick="navegarA('radicaciones'); return false;">
+                <i class="bi bi-file-earmark-text"></i> Radicaciones
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavInformes">
+            <a id="nav-informes" class="nav-link enlace-nav" href="#" onclick="navegarA('informes'); return false;">
+                <i class="bi bi-bar-chart-line"></i> Informes
+            </a>
+        </li>
         <li class="nav-item" id="itemNavUsuarios">
             <a id="nav-usuarios" class="nav-link enlace-nav" href="#" onclick="navegarA('usuarios'); return false;">
                 <i class="bi bi-people"></i> Usuarios
@@ -111,6 +121,16 @@
             <li class="nav-item">
                 <a class="nav-link enlace-nav" href="#" onclick="navegarA('lotes'); return false;">
                     <i class="bi bi-map"></i> Lotes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('radicaciones'); return false;">
+                    <i class="bi bi-file-earmark-text"></i> Radicaciones
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavInformesMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('informes'); return false;">
+                    <i class="bi bi-bar-chart-line"></i> Informes
                 </a>
             </li>
             <li class="nav-item" id="itemNavUsuariosMovil">
@@ -208,8 +228,250 @@
                             <button class="btn btn-outline-info btn-sm" onclick="navegarA('lotes')">
                                 <i class="bi bi-map me-1"></i>Ver Lotes
                             </button>
+                            <button class="btn btn-outline-secondary btn-sm acceso-informes" onclick="navegarA('informes')">
+                                <i class="bi bi-bar-chart-line me-1"></i>Ver Informes
+                            </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: RADICACIONES ───────────────────── -->
+    <section id="seccion-radicaciones" class="seccion-contenido d-none">
+        <div class="encabezado-seccion">
+            <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-text text-primary me-2"></i>Radicaciones</h4>
+            <p class="text-muted small mb-0">Solicitud, seguimiento de estado y carga de documentación</p>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">A) Solicitar Radicación</h6>
+                        <div id="alertaRadicacionNueva" class="alert alert-danger d-none"></div>
+                        <form id="formRadicacionNueva" novalidate>
+                            <div class="mb-2">
+                                <label for="campoTipoSolicitudRad" class="form-label fw-semibold">Tipo de solicitud</label>
+                                <input id="campoTipoSolicitudRad" class="form-control" maxlength="80" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="campoDescripcionRad" class="form-label fw-semibold">Descripción</label>
+                                <textarea id="campoDescripcionRad" class="form-control" maxlength="1000" rows="4" required></textarea>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="ModuloRadicaciones.crear()">
+                                <i class="bi bi-send me-1"></i>Solicitar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">B) Estado de solicitudes</h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small">Estado</label>
+                                <select id="filtroEstadoRad" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    <option value="PENDIENTE">Pendiente</option>
+                                    <option value="EN_REVISION">En revisión</option>
+                                    <option value="APROBADA">Aprobada</option>
+                                    <option value="RECHAZADA">Rechazada</option>
+                                    <option value="REQUIERE_INFORMACION_ADICIONAL">Requiere información adicional</option>
+                                    <option value="CANCELADA">Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Desde</label>
+                                <input id="filtroDesdeRad" type="date" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Hasta</label>
+                                <input id="filtroHastaRad" type="date" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-outline-primary btn-sm w-100" onclick="ModuloRadicaciones.cargar()">Filtrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">N° Radicado</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Última actualización</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaRadicaciones">
+                            <tr><td colspan="6" class="text-center py-3 text-muted">Sin registros</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">C) Adjuntar documentación</h6>
+                <div id="alertaDocumentoRad" class="alert alert-danger d-none"></div>
+                <form id="formDocumentoRad" class="row g-2" novalidate>
+                    <div class="col-md-3">
+                        <label class="form-label small">Radicación</label>
+                        <select id="selectorRadicacionDocumento" class="form-select form-select-sm"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Tipo</label>
+                        <select id="selectorTipoDocumentoRad" class="form-select form-select-sm">
+                            <option value="OBLIGATORIO">Obligatorio</option>
+                            <option value="ADICIONAL">Adicional</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Descripción</label>
+                        <input id="campoDescripcionDocumentoRad" class="form-control form-control-sm" maxlength="250">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Archivo</label>
+                        <input id="campoArchivoDocumentoRad" type="file" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="col-md-1 d-grid">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="ModuloRadicaciones.subirDocumento()">Subir</button>
+                    </div>
+                </form>
+                <small class="text-muted d-block mt-2">Permitidos: PDF, DOC, DOCX, JPG, PNG. Máximo por archivo: 10MB.</small>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: INFORMES / ESTADÍSTICAS ──────────── -->
+    <section id="seccion-informes" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-bar-chart-line text-primary me-2"></i>Informes y Estadísticas</h4>
+                <p class="text-muted small mb-0">Resumen ejecutivo del estado del parque industrial (R-14)</p>
+            </div>
+            <button class="btn btn-outline-primary btn-sm" onclick="ModuloEstadisticas.cargar()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+        </div>
+
+        <!-- Tarjetas de resumen -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-primary bg-opacity-10 text-primary"><i class="bi bi-building"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoEmpresas">–</div>
+                            <div class="text-muted small">Empresas registradas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-info bg-opacity-10 text-info"><i class="bi bi-map"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoLotes">–</div>
+                            <div class="text-muted small">Lotes totales</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-danger bg-opacity-10 text-danger"><i class="bi bi-slash-circle"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoOcupados">–</div>
+                            <div class="text-muted small">Lotes ocupados</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoDisponibles">–</div>
+                            <div class="text-muted small">Lotes disponibles</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila radicaciones -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-secondary h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold" id="statInfoRadicaciones">–</div>
+                        <div class="text-muted small">Radicaciones totales</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-warning h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-warning" id="statInfoPendientes">–</div>
+                        <div class="text-muted small">Pendientes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-success h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-success" id="statInfoAprobadas">–</div>
+                        <div class="text-muted small">Aprobadas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-danger h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-danger" id="statInfoRechazadas">–</div>
+                        <div class="text-muted small">Rechazadas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla detallada por estado -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0 text-muted"><i class="bi bi-table me-2"></i>Detalle de radicaciones por estado</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Estado</th>
+                                <th>Cantidad</th>
+                                <th style="min-width:120px;">Distribución</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaEstadosRadicacion">
+                            <tr><td colspan="4" class="text-center py-3 text-muted">Sin datos</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -469,12 +731,18 @@
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolVisor" value="VISOR">
-                                <label class="form-check-label" for="rolVisor">
-                                    <span class="badge bg-secondary">VISOR</span>
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolEmpresa" value="EMPRESA">
+                                <label class="form-check-label" for="rolEmpresa">
+                                    <span class="badge bg-secondary">EMPRESA</span>
                                 </label>
                             </div>
                         </div>
+                    </div>
+                    <div class="mb-3" id="grupoEmpresaUsuario">
+                        <label for="selectorEmpresaUsuario" class="form-label fw-semibold">Empresa asociada (rol EMPRESA)</label>
+                        <select id="selectorEmpresaUsuario" class="form-select">
+                            <option value="">-- Seleccione empresa --</option>
+                        </select>
                     </div>
                     <div class="mb-1">
                         <div class="form-check form-switch">
@@ -592,6 +860,8 @@
 <script src="js/autenticacion.js"></script>
 <script src="js/modulos/empresas.js"></script>
 <script src="js/modulos/lotes.js"></script>
+<script src="js/modulos/radicaciones.js"></script>
+<script src="js/modulos/estadisticas.js"></script>
 <script src="js/modulos/usuarios.js"></script>
 <script src="js/aplicacion.js"></script>
 </body>

@@ -48,7 +48,7 @@ public class ControladorUsuario {
             .header("Deprecation", propiedadesApiUsuarios.getRolesLegado().getDeprecation())
             .header("Sunset", propiedadesApiUsuarios.getRolesLegado().getSunset())
             .header("Link", propiedadesApiUsuarios.getRolesLegado().getLink())
-            .body(Arrays.asList(RolUsuario.values()));
+            .body(Arrays.stream(RolUsuario.values()).toList());
     }
     @GetMapping("/{id}")
     public RespuestaUsuario obtenerPorId(@PathVariable Long id) {
@@ -61,14 +61,21 @@ public class ControladorUsuario {
             solicitud.nombreCompleto(),
             solicitud.clave(),
             solicitud.activo(),
-            solicitud.roles()
+            solicitud.roles(),
+            solicitud.empresaId()
         );
         return ResponseEntity.created(URI.create("/api/usuarios/" + usuarioCreado.getId()))
             .body(crearRespuesta(usuarioCreado));
     }
     @PutMapping("/{id}")
     public RespuestaUsuario actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudActualizacionUsuario solicitud) {
-        Usuario usuarioActualizado = servicioUsuario.actualizar(id, solicitud.nombreCompleto(), solicitud.activo(), solicitud.roles());
+        Usuario usuarioActualizado = servicioUsuario.actualizar(
+            id,
+            solicitud.nombreCompleto(),
+            solicitud.activo(),
+            solicitud.roles(),
+            solicitud.empresaId()
+        );
         return crearRespuesta(usuarioActualizado);
     }
     @PatchMapping("/{id}/clave")
@@ -92,7 +99,9 @@ public class ControladorUsuario {
             usuario.getNombreUsuario(),
             usuario.getNombreCompleto(),
             usuario.isActivo(),
-            usuario.getRoles()
+            usuario.getRoles(),
+            usuario.getEmpresaId(),
+            null
         );
     }
 }

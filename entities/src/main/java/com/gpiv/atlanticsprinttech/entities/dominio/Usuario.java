@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
@@ -37,13 +38,16 @@ public class Usuario {
     @Column(nullable = false)
     private boolean activo;
     @Column(name = "email_verificado")
-    private boolean emailVerificado;
+    private Boolean emailVerificado;
     @Column(name = "token_verificacion_email", length = 120)
     private String tokenVerificacionEmail;
     @Column(name = "token_verificacion_expira_en")
     private LocalDateTime tokenVerificacionExpiraEn;
     @Column(name = "fecha_verificacion_email")
     private LocalDateTime fechaVerificacionEmail;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "usuarios_roles", joinColumns = @JoinColumn(name = "usuario_id"))
@@ -100,7 +104,7 @@ public class Usuario {
         return activo;
     }
     public boolean isEmailVerificado() {
-        return emailVerificado;
+        return Boolean.TRUE.equals(emailVerificado);
     }
     public String getTokenVerificacionEmail() {
         return tokenVerificacionEmail;
@@ -111,16 +115,26 @@ public class Usuario {
     public Set<RolUsuario> getRoles() {
         return Collections.unmodifiableSet(roles);
     }
-    public void actualizarDatos(String nombreCompleto, boolean activo, Set<RolUsuario> roles) {
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+    public Long getEmpresaId() {
+        return empresa == null ? null : empresa.getId();
+    }
+    public void actualizarDatos(String nombreCompleto, boolean activo, Set<RolUsuario> roles, Empresa empresa) {
         this.nombreCompleto = nombreCompleto;
         this.activo = activo;
         this.roles = new HashSet<>(roles);
+        this.empresa = empresa;
     }
     public void actualizarClaveAccesoHash(String claveAccesoHash) {
         this.claveAccesoHash = claveAccesoHash;
     }
     public void actualizarCorreoElectronico(String correoElectronico) {
         this.correoElectronico = correoElectronico;
+    }
+    public void actualizarEmpresa(Empresa empresa) {
+        this.empresa = empresa;
     }
     public void iniciarVerificacionEmail(String tokenVerificacionEmail, LocalDateTime tokenVerificacionExpiraEn) {
         this.tokenVerificacionEmail = tokenVerificacionEmail;
@@ -132,7 +146,7 @@ public class Usuario {
             && tokenVerificacionExpiraEn.isAfter(ahora);
     }
     public void marcarEmailVerificado(LocalDateTime fechaVerificacion) {
-        this.emailVerificado = true;
+        this.emailVerificado = Boolean.TRUE;
         this.fechaVerificacionEmail = fechaVerificacion;
         this.tokenVerificacionEmail = null;
         this.tokenVerificacionExpiraEn = null;

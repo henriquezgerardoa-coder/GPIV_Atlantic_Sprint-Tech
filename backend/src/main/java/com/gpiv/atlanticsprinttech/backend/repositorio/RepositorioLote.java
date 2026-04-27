@@ -20,5 +20,14 @@ public interface RepositorioLote extends JpaRepository<Lote, Long> {
 
     @Query("SELECT l FROM Lote l JOIN FETCH l.empresa")
     List<Lote> findAllConEmpresa();
+
+    @Query("SELECT l FROM Lote l JOIN FETCH l.empresa WHERE l.empresa.id = :empresaId")
+    List<Lote> findAllByEmpresaIdConEmpresa(@Param("empresaId") Long empresaId);
+
+    @Query("SELECT l FROM Lote l JOIN FETCH l.empresa WHERE l.id = :id AND l.empresa.id = :empresaId")
+    Optional<Lote> findByIdAndEmpresaIdConEmpresa(@Param("id") Long id, @Param("empresaId") Long empresaId);
+
+    /** Cuenta lotes ocupados — para estadisticas (R-14). */
+    long countByOcupado(boolean ocupado);
 }
 

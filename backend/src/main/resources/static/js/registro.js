@@ -14,6 +14,8 @@ const reqMayuscula = document.getElementById('req-mayuscula');
 const reqNumero = document.getElementById('req-numero');
 const textoFortaleza = document.getElementById('textoFortaleza');
 const barraFortaleza = document.getElementById('barraFortaleza');
+const panelPostRegistro = document.getElementById('panelPostRegistro');
+const enlaceIngresoRegistro = document.getElementById('enlaceIngresoRegistro');
 
 const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const regexClave = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
@@ -22,22 +24,58 @@ function mostrarMensaje(texto, tipo) {
     mensajeRegistro.className = 'alert alert-' + tipo;
     mensajeRegistro.textContent = texto;
     mensajeRegistro.classList.remove('d-none');
+    mensajeRegistro.focus();
 }
 
 function limpiarMensaje() {
     mensajeRegistro.classList.add('d-none');
 }
 
+function mostrarPanelPostRegistro(correoElectronico) {
+    panelPostRegistro.classList.remove('d-none');
+    enlaceIngresoRegistro.href = '/index.html?registro=ok&correo=' + encodeURIComponent(correoElectronico);
+}
+
+function ocultarPanelPostRegistro() {
+    panelPostRegistro.classList.add('d-none');
+}
+
+function obtenerMensajeServidor(cuerpo) {
+    if (!cuerpo || typeof cuerpo !== 'object') {
+        return '';
+    }
+    if (typeof cuerpo.mensaje === 'string' && cuerpo.mensaje.trim()) {
+        return cuerpo.mensaje;
+    }
+    if (typeof cuerpo.message === 'string' && cuerpo.message.trim()) {
+        return cuerpo.message;
+    }
+    if (typeof cuerpo.detail === 'string' && cuerpo.detail.trim()) {
+        return cuerpo.detail;
+    }
+    if (Array.isArray(cuerpo.errors) && cuerpo.errors.length > 0) {
+        return cuerpo.errors[0];
+    }
+    if (typeof cuerpo.error === 'string' && cuerpo.error.trim()) {
+        return cuerpo.error;
+    }
+    return '';
+}
+
 async function manejarRespuesta(respuesta) {
     const cuerpo = await respuesta.json().catch(() => ({}));
-    if (cuerpo.mensaje) {
-        return cuerpo.mensaje;
+    const mensajeServidor = obtenerMensajeServidor(cuerpo);
+    if (mensajeServidor) {
+        return mensajeServidor;
     }
     if (respuesta.status === 409) {
         return 'Ese correo ya se encuentra registrado.';
     }
     if (respuesta.status === 429) {
         return 'Demasiados intentos. Intenta nuevamente en unos minutos.';
+    }
+    if (respuesta.status === 400) {
+        return 'Revisa los datos ingresados y vuelve a intentarlo.';
     }
     return 'No se pudo completar la operacion';
 }
@@ -137,6 +175,15 @@ campoCorreoReenvio.addEventListener('input', () => {
 botonToggleClave.addEventListener('click', () => alternarVisibilidad(campoClave, botonToggleClave));
 botonToggleConfirmacion.addEventListener('click', () => alternarVisibilidad(campoConfirmacion, botonToggleConfirmacion));
 
+(() => {
+    const parametros = new URLSearchParams(window.location.search);
+    const correo = parametros.get('correo');
+    if (correo && regexCorreo.test(correo)) {
+        campoCorreo.value = correo;
+        campoCorreoReenvio.value = correo;
+    }
+})();
+
 actualizarFortalezaClave('');
 
 formularioRegistro.addEventListener('submit', async (evento) => {
@@ -152,6 +199,7 @@ formularioRegistro.addEventListener('submit', async (evento) => {
     const confirmacionValida = validarConfirmacion();
 
     if (!correoValido || !claveValida || !confirmacionValida) {
+        ocultarPanelPostRegistro();
         mostrarMensaje('Revisa los campos marcados para continuar.', 'warning');
         return;
     }
@@ -174,11 +222,15 @@ formularioRegistro.addEventListener('submit', async (evento) => {
                 campo.classList.remove('is-valid', 'is-invalid');
             });
             campoCorreoReenvio.value = correoElectronico;
+            actualizarFortalezaClave('');
+            mostrarPanelPostRegistro(correoElectronico);
             mostrarMensaje(mensaje, 'success');
             return;
         }
+        ocultarPanelPostRegistro();
         mostrarMensaje(mensaje, 'danger');
     } catch (_) {
+        ocultarPanelPostRegistro();
         mostrarMensaje('No se pudo conectar con el servidor.', 'danger');
     } finally {
         btnRegistrar.disabled = false;
@@ -211,6 +263,9 @@ formularioReenvio.addEventListener('submit', async (evento) => {
             body: JSON.stringify({ correoElectronico })
         });
         const mensaje = await manejarRespuesta(respuesta);
+        if (respuesta.ok) {
+            mostrarPanelPostRegistro(correoElectronico);
+        }
         mostrarMensaje(mensaje, respuesta.ok ? 'success' : 'warning');
     } catch (_) {
         mostrarMensaje('No se pudo reenviar el correo en este momento.', 'danger');

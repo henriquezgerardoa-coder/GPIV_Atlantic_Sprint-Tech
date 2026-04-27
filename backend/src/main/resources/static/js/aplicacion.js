@@ -42,10 +42,12 @@ function navegarA(seccion) {
     offcanvas?.hide();
 
     switch (seccion) {
-        case 'panel':    cargarPanel();            break;
-        case 'empresas': ModuloEmpresas.cargar();  break;
-        case 'lotes':    ModuloLotes.cargar();     break;
-        case 'usuarios': ModuloUsuarios.cargar();  break;
+        case 'panel':      cargarPanel();                break;
+        case 'empresas':   ModuloEmpresas.cargar();      break;
+        case 'lotes':      ModuloLotes.cargar();         break;
+        case 'radicaciones': ModuloRadicaciones.cargar(); break;
+        case 'informes':   ModuloEstadisticas.cargar();  break;
+        case 'usuarios':   ModuloUsuarios.cargar();      break;
     }
 }
 
@@ -66,9 +68,7 @@ async function cargarPanel() {
     } catch (err) {
         console.error('Error al cargar el panel:', err);
     }
-}
-
-/* ═══════════════════════════════════════════════════
+}/* ═══════════════════════════════════════════════════
    Inicialización al cargar la página
 ═══════════════════════════════════════════════════ */
 
@@ -84,6 +84,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ocultar la sección Usuarios si no es administrador
     if (!Autenticacion.esAdministrador()) {
         document.getElementById('itemNavUsuarios')?.classList.add('d-none');
+        document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
+    }
+
+    // Ocultar Informes para el rol EMPRESA (R-14: solo ADMINISTRADOR y OPERADOR)
+    if (Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'OPERADOR'])) {
+        document.getElementById('itemNavInformes')?.classList.add('d-none');
+        document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
+        document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));
+    }
+
+    if (Autenticacion.tieneAcceso(['EMPRESA'])) {
+        document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
+        document.getElementById('btnNuevoLote')?.classList.add('d-none');
     }
 
     // Botón cerrar sesión
@@ -132,6 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     // Cargar sección inicial
-    navegarA('panel');
+    if (Autenticacion.tieneAcceso(['EMPRESA'])) {
+        navegarA('radicaciones');
+    } else {
+        navegarA('panel');
+    }
 });
 

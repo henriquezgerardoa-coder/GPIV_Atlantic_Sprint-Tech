@@ -4,9 +4,9 @@ import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import java.util.List;
 
 public interface ServicioEmpresa {
-	List<Empresa> listar();
-	Empresa obtenerPorId(Long id);
-	Empresa crear(Empresa empresa);
-	Empresa actualizar(Long id, Empresa empresa);
-	void eliminar(Long id);
+	List<Empresa> listar(String identificadorIngreso);
+	Empresa obtenerPorId(Long id, String identificadorIngreso);
+	Empresa crear(Empresa empresa, String identificadorIngreso);
+	Empresa actualizar(Long id, Empresa empresa, String identificadorIngreso);
+	void eliminar(Long id, String identificadorIngreso);
 }

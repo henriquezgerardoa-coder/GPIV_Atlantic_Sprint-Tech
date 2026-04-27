@@ -1,0 +1,18 @@
+package com.gpiv.atlanticsprinttech.commons.comunicacion.dto;
+
+import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+public record RespuestaRadicacion(
+    Long id,
+    String numeroRadicado,
+    Long empresaId,
+    String nombreEmpresa,
+    String tipoSolicitud,
+    String descripcion,
+    EstadoRadicacion estado,
+    LocalDate fechaRadicacion,
+    LocalDateTime fechaUltimaActualizacion
+) {
+}

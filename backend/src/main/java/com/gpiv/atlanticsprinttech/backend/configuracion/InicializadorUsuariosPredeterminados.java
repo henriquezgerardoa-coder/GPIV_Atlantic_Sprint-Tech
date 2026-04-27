@@ -3,12 +3,17 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.util.EnumSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@Order(1)
 public class InicializadorUsuariosPredeterminados implements CommandLineRunner {
+    private static final Logger logger = LoggerFactory.getLogger(InicializadorUsuariosPredeterminados.class);
     private final RepositorioUsuario repositorioUsuario;
     private final PasswordEncoder codificadorClave;
     private final PropiedadesApiUsuarios propiedadesApiUsuarios;
@@ -37,14 +42,22 @@ public class InicializadorUsuariosPredeterminados implements CommandLineRunner {
             EnumSet.of(RolUsuario.OPERADOR)
         );
         crearSiNoExiste(
-            "visor",
-            "Visor GPIV",
-            propiedadesApiUsuarios.getSemilla().getVisor().getClave(),
-            EnumSet.of(RolUsuario.VISOR)
+            "empresa",
+            "Empresa GPIV",
+            propiedadesApiUsuarios.getSemilla().getEmpresa().getClave(),
+            EnumSet.of(RolUsuario.EMPRESA)
         );
     }
+
     private void crearSiNoExiste(String nombreUsuario, String nombreCompleto, String clavePlano, EnumSet<RolUsuario> roles) {
-        if (repositorioUsuario.existsByNombreUsuario(nombreUsuario)) {
+        Usuario usuarioExistente = repositorioUsuario.findByNombreUsuario(nombreUsuario).orElse(null);
+        if (usuarioExistente != null) {
+            if (propiedadesApiUsuarios.getSemilla().isActualizarClavesSiExiste()) {
+                usuarioExistente.actualizarDatos(nombreCompleto, true, roles, usuarioExistente.getEmpresa());
+                usuarioExistente.actualizarClaveAccesoHash(codificadorClave.encode(clavePlano));
+                repositorioUsuario.save(usuarioExistente);
+                logger.info("Usuario semilla '{}' actualizado (clave/estado/roles)", nombreUsuario);
+            }
             return;
         }
         Usuario usuario = Usuario.crear(
@@ -55,5 +68,6 @@ public class InicializadorUsuariosPredeterminados implements CommandLineRunner {
             roles
         );
         repositorioUsuario.save(usuario);
+        logger.info("Usuario semilla '{}' creado", nombreUsuario);
     }
 }

@@ -1,19 +1,34 @@
 const ModuloUsuarios = (() => {
     let usuarios    = [];
+    let empresas    = [];
     let modoEdicion = false;
     let idEdicion   = null;
 
     const COLOR_ROL = {
         ADMINISTRADOR: 'bg-danger',
         OPERADOR:      'bg-warning text-dark',
-        VISOR:         'bg-secondary'
+        EMPRESA:       'bg-secondary'
     };
 
     async function cargar() {
-        const respuesta = await ApiCliente.obtener('/api/usuarios');
-        if (!respuesta?.ok) { mostrarAlerta('Error al cargar usuarios.', 'danger'); return; }
-        usuarios = await respuesta.json();
+        const [respUsuarios, respEmpresas] = await Promise.all([
+            ApiCliente.obtener('/api/usuarios'),
+            ApiCliente.obtener('/api/empresas')
+        ]);
+        if (!respUsuarios?.ok) { mostrarAlerta('Error al cargar usuarios.', 'danger'); return; }
+        usuarios = await respUsuarios.json();
+        empresas = respEmpresas?.ok ? await respEmpresas.json() : [];
+        poblarSelectorEmpresas();
         renderizarTabla();
+    }
+
+    function poblarSelectorEmpresas() {
+        const selector = document.getElementById('selectorEmpresaUsuario');
+        if (!selector) return;
+        const valorActual = selector.value;
+        selector.innerHTML = '<option value="">-- Seleccione empresa --</option>' +
+            empresas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+        selector.value = valorActual;
     }
 
     function renderizarTabla() {
@@ -66,6 +81,7 @@ const ModuloUsuarios = (() => {
         document.getElementById('campoNombreUsuario').disabled      = false;
         document.getElementById('grupoClaveUsuario').classList.remove('d-none');
         document.querySelectorAll('.check-rol-usuario').forEach(cb => { cb.checked = false; });
+        document.getElementById('selectorEmpresaUsuario').value = '';
         ocultarAlertaModal('alertaModalUsuario');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalUsuario')).show();
     }
@@ -84,6 +100,7 @@ const ModuloUsuarios = (() => {
         document.querySelectorAll('.check-rol-usuario').forEach(cb => {
             cb.checked = [...usuario.roles].includes(cb.value);
         });
+        document.getElementById('selectorEmpresaUsuario').value = usuario.empresaId || '';
         ocultarAlertaModal('alertaModalUsuario');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalUsuario')).show();
     }
@@ -91,9 +108,14 @@ const ModuloUsuarios = (() => {
     async function guardar() {
         const rolesSeleccionados = [...document.querySelectorAll('.check-rol-usuario:checked')]
             .map(cb => cb.value);
+        const empresaId = document.getElementById('selectorEmpresaUsuario').value;
 
         if (rolesSeleccionados.length === 0) {
             mostrarAlertaModal('alertaModalUsuario', 'Debe seleccionar al menos un rol.');
+            return;
+        }
+        if (rolesSeleccionados.includes('EMPRESA') && !empresaId) {
+            mostrarAlertaModal('alertaModalUsuario', 'Debe seleccionar una empresa para el rol EMPRESA.');
             return;
         }
 
@@ -102,7 +124,8 @@ const ModuloUsuarios = (() => {
             const datos = {
                 nombreCompleto: document.getElementById('campoNombreCompleto').value.trim(),
                 activo:         document.getElementById('campoActivoUsuario').checked,
-                roles:          rolesSeleccionados
+                roles:          rolesSeleccionados,
+                empresaId:      empresaId ? parseInt(empresaId) : null
             };
             if (!datos.nombreCompleto) {
                 mostrarAlertaModal('alertaModalUsuario', 'El nombre completo es obligatorio.');
@@ -115,7 +138,8 @@ const ModuloUsuarios = (() => {
                 nombreCompleto: document.getElementById('campoNombreCompleto').value.trim(),
                 clave:          document.getElementById('campoClaveUsuario').value,
                 activo:         document.getElementById('campoActivoUsuario').checked,
-                roles:          rolesSeleccionados
+                roles:          rolesSeleccionados,
+                empresaId:      empresaId ? parseInt(empresaId) : null
             };
             if (!datos.nombreUsuario || !datos.nombreCompleto || !datos.clave) {
                 mostrarAlertaModal('alertaModalUsuario', 'Todos los campos son obligatorios.');
