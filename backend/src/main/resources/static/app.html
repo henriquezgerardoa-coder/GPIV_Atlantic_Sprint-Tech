@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPIV – Panel de Gestión</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     NAVBAR SUPERIOR
+══════════════════════════════════════════════════ -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm" style="height:56px;">
+    <div class="container-fluid">
+        <!-- Botón menú móvil -->
+        <button class="navbar-toggler me-2 border-0" type="button"
+                data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Logo y título -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="#">
+            <i class="bi bi-building-gear fs-5"></i>
+            <span>GPIV</span>
+            <span class="d-none d-md-inline text-white-50 fw-normal small">Gestión Parque Industrial</span>
+        </a>
+
+        <!-- Info de usuario + acciones -->
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <div class="d-none d-sm-flex flex-column align-items-end me-2" style="line-height:1.2;">
+                <span class="text-white fw-semibold small" id="nombreUsuarioNavbar">–</span>
+                <span class="text-white-50" style="font-size:.7rem;" id="rolesUsuarioNavbar">–</span>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-light btn-sm rounded-circle p-1" style="width:34px;height:34px;"
+                        data-bs-toggle="dropdown" title="Opciones de usuario">
+                    <i class="bi bi-person-fill fs-5"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li>
+                        <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalMiClave">
+                            <i class="bi bi-lock me-2"></i>Cambiar mi contraseña
+                        </button>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <button class="dropdown-item text-danger" id="btnCerrarSesion">
+                            <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     BARRA LATERAL (escritorio: fija | móvil: offcanvas)
+══════════════════════════════════════════════════ -->
+
+<!-- Versión fija para pantallas grandes -->
+<nav class="barra-lateral d-none d-lg-flex flex-column pt-2">
+    <ul class="nav flex-column w-100">
+        <li class="nav-item">
+            <a id="nav-panel" class="nav-link enlace-nav" href="#" onclick="navegarA('panel'); return false;">
+                <i class="bi bi-grid-1x2-fill"></i> Panel
+            </a>
+        </li>
+        <li class="nav-item">
+            <a id="nav-empresas" class="nav-link enlace-nav" href="#" onclick="navegarA('empresas'); return false;">
+                <i class="bi bi-building"></i> Empresas
+            </a>
+        </li>
+        <li class="nav-item">
+            <a id="nav-lotes" class="nav-link enlace-nav" href="#" onclick="navegarA('lotes'); return false;">
+                <i class="bi bi-map"></i> Lotes
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavUsuarios">
+            <a id="nav-usuarios" class="nav-link enlace-nav" href="#" onclick="navegarA('usuarios'); return false;">
+                <i class="bi bi-people"></i> Usuarios
+            </a>
+        </li>
+    </ul>
+    <div class="mt-auto p-3 text-muted small border-top">
+        <i class="bi bi-info-circle me-1"></i> v0.1.0
+    </div>
+</nav>
+
+<!-- Versión offcanvas para móviles -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSidebar" style="width:240px;">
+    <div class="offcanvas-header bg-primary text-white">
+        <h6 class="offcanvas-title"><i class="bi bi-building-gear me-2"></i>GPIV</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <ul class="nav flex-column pt-2">
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('panel'); return false;">
+                    <i class="bi bi-grid-1x2-fill"></i> Panel
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('empresas'); return false;">
+                    <i class="bi bi-building"></i> Empresas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('lotes'); return false;">
+                    <i class="bi bi-map"></i> Lotes
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavUsuariosMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('usuarios'); return false;">
+                    <i class="bi bi-people"></i> Usuarios
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     CONTENIDO PRINCIPAL
+══════════════════════════════════════════════════ -->
+<main class="contenido-principal" style="margin-top:56px;">
+
+    <!-- Alertas flotantes -->
+    <div id="contenedorAlertas"></div>
+
+    <!-- ── SECCIÓN: PANEL ─────────────────────────── -->
+    <section id="seccion-panel" class="seccion-contenido">
+        <div class="encabezado-seccion">
+            <h4 class="fw-bold mb-1"><i class="bi bi-grid-1x2-fill text-primary me-2"></i>Panel de Resumen</h4>
+            <p class="text-muted small mb-0">Vista general del estado del parque industrial</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Empresas -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statEmpresas">–</div>
+                            <div class="text-muted small">Empresas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Lotes totales -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-map"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statLotes">–</div>
+                            <div class="text-muted small">Lotes totales</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Lotes ocupados -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-slash-circle"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statLotesOcupados">–</div>
+                            <div class="text-muted small">Lotes ocupados</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Lotes libres -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statLotesLibres">–</div>
+                            <div class="text-muted small">Lotes disponibles</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted mb-3"><i class="bi bi-lightning-charge me-2 text-warning"></i>Accesos rápidos</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="navegarA('empresas')">
+                                <i class="bi bi-building me-1"></i>Ver Empresas
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="navegarA('lotes')">
+                                <i class="bi bi-map me-1"></i>Ver Lotes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: EMPRESAS ──────────────────────── -->
+    <section id="seccion-empresas" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-building text-primary me-2"></i>Empresas</h4>
+                <p class="text-muted small mb-0">Gestión de empresas registradas en el parque</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModuloEmpresas.abrirCreacion()" id="btnNuevaEmpresa">
+                <i class="bi bi-plus-lg me-1"></i>Nueva Empresa
+            </button>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Nombre</th>
+                                <th>CUIT</th>
+                                <th>Correo electrónico</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaEmpresas">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: LOTES ─────────────────────────── -->
+    <section id="seccion-lotes" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-map text-primary me-2"></i>Lotes</h4>
+                <p class="text-muted small mb-0">Lotes del parque industrial y su estado de ocupación</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModuloLotes.abrirCreacion()" id="btnNuevoLote">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo Lote
+            </button>
+        </div>
+
+        <!-- Filtro por empresa -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <label for="filtroEmpresaLote" class="form-label mb-0 small fw-semibold text-muted">
+                        <i class="bi bi-funnel me-1"></i>Filtrar por empresa:
+                    </label>
+                    <select id="filtroEmpresaLote" class="form-select form-select-sm w-auto"
+                            onchange="ModuloLotes.filtrar(this.value)">
+                        <option value="">Todas las empresas</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Código</th>
+                                <th>Empresa</th>
+                                <th>Superficie</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaLotes">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: USUARIOS ─────────────────────── -->
+    <section id="seccion-usuarios" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Usuarios</h4>
+                <p class="text-muted small mb-0">Administración de cuentas y permisos</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModuloUsuarios.abrirCreacion()">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo Usuario
+            </button>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Usuario</th>
+                                <th>Nombre completo</th>
+                                <th>Roles</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaUsuarios">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════
+     MODALES
+══════════════════════════════════════════════════ -->
+
+<!-- Modal: Crear / Editar Empresa -->
+<div class="modal fade" id="modalEmpresa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModalEmpresa">Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalEmpresa" class="alert alert-danger alerta-modal d-none"></div>
+                <form id="formularioEmpresa" novalidate>
+                    <div class="mb-3">
+                        <label for="campoNombreEmpresa" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreEmpresa" placeholder="Razón social" maxlength="120" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoCuitEmpresa" class="form-label fw-semibold">CUIT <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoCuitEmpresa" placeholder="XX-XXXXXXXX-X" maxlength="20" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoCorreoEmpresa" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="campoCorreoEmpresa" placeholder="empresa@ejemplo.com" maxlength="120" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.guardar()">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Crear / Editar Lote -->
+<div class="modal fade" id="modalLote" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModalLote">Lote</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalLote" class="alert alert-danger alerta-modal d-none"></div>
+                <form id="formularioLote" novalidate>
+                    <div class="mb-3">
+                        <label for="campoCodigoLote" class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoCodigoLote" placeholder="Ej: L-001" maxlength="40" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="selectorEmpresaLote" class="form-label fw-semibold">Empresa <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectorEmpresaLote" required>
+                            <option value="">-- Seleccione empresa --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoSuperficieLote" class="form-label fw-semibold">Superficie (m²) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="campoSuperficieLote" placeholder="Ej: 500.00" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="campoOcupadoLote">
+                            <label class="form-check-label fw-semibold" for="campoOcupadoLote">Lote ocupado</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloLotes.guardar()">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Crear / Editar Usuario -->
+<div class="modal fade" id="modalUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModalUsuario">Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalUsuario" class="alert alert-danger alerta-modal d-none"></div>
+                <form id="formularioUsuario" novalidate>
+                    <div class="mb-3">
+                        <label for="campoNombreUsuario" class="form-label fw-semibold">Nombre de usuario <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreUsuario" placeholder="Ej: jperez" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoNombreCompleto" class="form-label fw-semibold">Nombre completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreCompleto" placeholder="Ej: Juan Pérez" required>
+                    </div>
+                    <div class="mb-3" id="grupoClaveUsuario">
+                        <label for="campoClaveUsuario" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="campoClaveUsuario" placeholder="Mínimo 8 caracteres">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Roles <span class="text-danger">*</span></label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolAdmin" value="ADMINISTRADOR">
+                                <label class="form-check-label" for="rolAdmin">
+                                    <span class="badge bg-danger">ADMINISTRADOR</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolOperador" value="OPERADOR">
+                                <label class="form-check-label" for="rolOperador">
+                                    <span class="badge bg-warning text-dark">OPERADOR</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolVisor" value="VISOR">
+                                <label class="form-check-label" for="rolVisor">
+                                    <span class="badge bg-secondary">VISOR</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="campoActivoUsuario" checked>
+                            <label class="form-check-label fw-semibold" for="campoActivoUsuario">Usuario activo</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloUsuarios.guardar()">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Restablecer contraseña de usuario -->
+<div class="modal fade" id="modalRestablecerClave" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-key me-2 text-warning"></i>Restablecer Contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    Nueva contraseña para: <strong id="nombreUsuarioRestablecerClave"></strong>
+                    <input type="hidden" id="idUsuarioRestablecerClave">
+                </p>
+                <div id="alertaModalRestablecerClave" class="alert alert-danger alerta-modal d-none"></div>
+                <form id="formularioRestablecerClave" novalidate>
+                    <div class="mb-3">
+                        <label for="campoClavaNuevaRest" class="form-label fw-semibold">Nueva contraseña</label>
+                        <input type="password" class="form-control" id="campoClavaNuevaRest" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoClaveConfirmRest" class="form-label fw-semibold">Confirmar contraseña</label>
+                        <input type="password" class="form-control" id="campoClaveConfirmRest" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="ModuloUsuarios.restablecerClave()">
+                    <i class="bi bi-key me-1"></i>Restablecer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cambiar mi contraseña -->
+<div class="modal fade" id="modalMiClave" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-lock me-2 text-primary"></i>Cambiar mi Contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalMiClave" class="alert alert-danger alerta-modal d-none"></div>
+                <form id="formMiClave" novalidate>
+                    <div class="mb-3">
+                        <label for="campoMiClaveActual" class="form-label fw-semibold">Contraseña actual</label>
+                        <input type="password" class="form-control" id="campoMiClaveActual" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoMiClaveNueva" class="form-label fw-semibold">Nueva contraseña</label>
+                        <input type="password" class="form-control" id="campoMiClaveNueva" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoMiClaveConfirm" class="form-label fw-semibold">Confirmar nueva contraseña</label>
+                        <input type="password" class="form-control" id="campoMiClaveConfirm" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-floppy me-1"></i>Actualizar contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmación de eliminación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" id="mensajeConfirmacionEliminar"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
+                    <i class="bi bi-trash me-1"></i>Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/apiCliente.js"></script>
+<script src="js/autenticacion.js"></script>
+<script src="js/modulos/empresas.js"></script>
+<script src="js/modulos/lotes.js"></script>
+<script src="js/modulos/usuarios.js"></script>
+<script src="js/aplicacion.js"></script>
+</body>
+</html>
+
