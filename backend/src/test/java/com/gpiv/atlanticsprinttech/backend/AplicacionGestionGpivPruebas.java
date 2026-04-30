@@ -1,7 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend;
 
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesApiUsuarios;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -101,8 +100,7 @@ class AplicacionGestionGpivPruebas {
             "Juan Lopez",
             "clave12345",
             true,
-            Set.of(RolUsuario.OPERADOR),
-            null
+            Set.of(RolUsuario.VISOR)
         );
 
         String respuestaCreacion = mockMvc.perform(post("/api/usuarios")
@@ -165,8 +163,7 @@ class AplicacionGestionGpivPruebas {
             "Usuario X",
             "clave12345",
             true,
-            Set.of(RolUsuario.OPERADOR),
-            null
+            Set.of(RolUsuario.VISOR)
         );
 
         mockMvc.perform(post("/api/usuarios")
@@ -177,11 +174,11 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
-    void deberiaDenegarCrearEmpresaConRolEmpresa() throws Exception {
+    void deberiaDenegarCrearEmpresaConRolVisor() throws Exception {
         SolicitudEmpresa nuevaEmpresa = new SolicitudEmpresa("Empresa Dos", "20-98765432-1", "dos@empresa.com");
 
         mockMvc.perform(post("/api/empresas")
-                .with(httpBasic("empresa", "visor12345"))
+                .with(httpBasic("visor", "visor12345"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(nuevaEmpresa)))
             .andExpect(status().isForbidden());
@@ -240,7 +237,7 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
-    void deberiaDenegarCrearLoteConRolEmpresa() throws Exception {
+    void deberiaDenegarCrearLoteConRolVisor() throws Exception {
         SolicitudEmpresa nuevaEmpresa = new SolicitudEmpresa("Empresa Tres", "20-33333333-3", "tres@empresa.com");
 
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
@@ -255,7 +252,7 @@ class AplicacionGestionGpivPruebas {
         Long idEmpresa = objectMapper.readTree(respuestaEmpresa).get("id").asLong();
 
         mockMvc.perform(post("/api/lotes")
-                .with(httpBasic("empresa", "visor12345"))
+                .with(httpBasic("visor", "visor12345"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"codigo\":\"L-VIS\",\"superficieMetrosCuadrados\":120.0,\"ocupado\":false,\"empresaId\":" + idEmpresa + "}"))
             .andExpect(status().isForbidden());
@@ -303,91 +300,6 @@ class AplicacionGestionGpivPruebas {
                 .with(httpBasic(correo, clave)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nombreUsuario").value(usuario.getNombreUsuario()));
-    }
-
-    @Test
-    void deberiaReenviarVerificacionMientrasLaCuentaSigaPendiente() throws Exception {
-        String correo = "registro2@gpiv.local";
-        String clave = "ClaveSegura123";
-
-        mockMvc.perform(post("/api/public/registro")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"correoElectronico\":\"" + correo + "\",\"clave\":\"" + clave + "\",\"confirmacionClave\":\"" + clave + "\"}"))
-            .andExpect(status().isCreated());
-
-        Usuario usuarioPendiente = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correo)
-            .orElseThrow();
-        String tokenAnterior = usuarioPendiente.getTokenVerificacionEmail();
-
-        mockMvc.perform(post("/api/public/verificacion/reenviar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"correoElectronico\":\"" + correo + "\"}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.mensaje").value("Te enviamos un nuevo correo de verificacion"));
-
-        Usuario usuarioActualizado = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correo)
-            .orElseThrow();
-        assertThat(usuarioActualizado.getTokenVerificacionEmail()).isNotBlank();
-        assertThat(usuarioActualizado.getTokenVerificacionEmail()).isNotEqualTo(tokenAnterior);
-
-        mockMvc.perform(get("/api/public/verificacion")
-                .param("token", usuarioActualizado.getTokenVerificacionEmail()))
-            .andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/public/verificacion/reenviar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"correoElectronico\":\"" + correo + "\"}"))
-            .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void deberiaAislarRadicacionesPorEmpresaEImpedirAccesoIdor() throws Exception {
-        String empresaUno = mockMvc.perform(post("/api/empresas")
-                .with(httpBasic("admin", "admin12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombre\":\"Empresa A\",\"cuit\":\"20-11111111-1\",\"correoElectronico\":\"a@empresa.com\"}"))
-            .andExpect(status().isCreated())
-            .andReturn().getResponse().getContentAsString();
-        Long idEmpresaUno = objectMapper.readTree(empresaUno).get("id").asLong();
-
-        String empresaDos = mockMvc.perform(post("/api/empresas")
-                .with(httpBasic("admin", "admin12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombre\":\"Empresa B\",\"cuit\":\"20-22222222-2\",\"correoElectronico\":\"b@empresa.com\"}"))
-            .andExpect(status().isCreated())
-            .andReturn().getResponse().getContentAsString();
-        Long idEmpresaDos = objectMapper.readTree(empresaDos).get("id").asLong();
-
-        mockMvc.perform(post("/api/usuarios")
-                .with(httpBasic("admin", "admin12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombreUsuario\":\"empresaA\",\"nombreCompleto\":\"Empresa A\",\"clave\":\"EmpresaA123\",\"activo\":true,\"roles\":[\"EMPRESA\"],\"empresaId\":" + idEmpresaUno + "}"))
-            .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/usuarios")
-                .with(httpBasic("admin", "admin12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombreUsuario\":\"empresaB\",\"nombreCompleto\":\"Empresa B\",\"clave\":\"EmpresaB123\",\"activo\":true,\"roles\":[\"EMPRESA\"],\"empresaId\":" + idEmpresaDos + "}"))
-            .andExpect(status().isCreated());
-
-        String radicacionCreada = mockMvc.perform(post("/api/radicaciones")
-                .with(httpBasic("empresaA", "EmpresaA123"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"tipoSolicitud\":\"Proyecto Productivo\",\"descripcion\":\"Alta de solicitud empresa A\"}"))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.empresaId").value(idEmpresaUno))
-            .andReturn().getResponse().getContentAsString();
-
-        Long idRadicacion = objectMapper.readTree(radicacionCreada).get("id").asLong();
-
-        mockMvc.perform(get("/api/radicaciones/{id}", idRadicacion)
-                .with(httpBasic("empresaB", "EmpresaB123")))
-            .andExpect(status().isNotFound());
-
-        mockMvc.perform(get("/api/radicaciones")
-                .with(httpBasic("empresaA", "EmpresaA123")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].empresaId").value(idEmpresaUno));
     }
 }
 

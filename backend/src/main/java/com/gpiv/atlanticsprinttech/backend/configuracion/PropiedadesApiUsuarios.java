@@ -23,8 +23,7 @@ public class PropiedadesApiUsuarios {
     public static class Semilla {
         private Credencial admin = new Credencial();
         private Credencial operador = new Credencial();
-        private Credencial empresa = new Credencial();
-        private boolean actualizarClavesSiExiste = false;
+        private Credencial visor = new Credencial();
         public Credencial getAdmin() {
             return admin;
         }
@@ -37,17 +36,11 @@ public class PropiedadesApiUsuarios {
         public void setOperador(Credencial operador) {
             this.operador = operador;
         }
-        public Credencial getEmpresa() {
-            return empresa;
+        public Credencial getVisor() {
+            return visor;
         }
-        public void setEmpresa(Credencial empresa) {
-            this.empresa = empresa;
-        }
-        public boolean isActualizarClavesSiExiste() {
-            return actualizarClavesSiExiste;
-        }
-        public void setActualizarClavesSiExiste(boolean actualizarClavesSiExiste) {
-            this.actualizarClavesSiExiste = actualizarClavesSiExiste;
+        public void setVisor(Credencial visor) {
+            this.visor = visor;
         }
     }
     public static class RolesLegado {
