@@ -321,6 +321,70 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
+    void empresaSoloDebeAccederALotesDeSuEmpresaAsignada() throws Exception {
+        String respuestaEmpresaA = mockMvc.perform(post("/api/empresas")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Empresa Lote A\",\"cuit\":\"20-71111111-1\",\"correoElectronico\":\"lotea@empresa.com\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long idEmpresaA = objectMapper.readTree(respuestaEmpresaA).get("id").asLong();
+
+        String respuestaEmpresaB = mockMvc.perform(post("/api/empresas")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Empresa Lote B\",\"cuit\":\"20-72222222-2\",\"correoElectronico\":\"loteb@empresa.com\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long idEmpresaB = objectMapper.readTree(respuestaEmpresaB).get("id").asLong();
+
+        String respuestaLoteA = mockMvc.perform(post("/api/lotes")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codigo\":\"LA-01\",\"superficieMetrosCuadrados\":1500.0,\"ocupado\":false,\"empresaId\":" + idEmpresaA + "}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long idLoteA = objectMapper.readTree(respuestaLoteA).get("id").asLong();
+
+        String respuestaLoteB = mockMvc.perform(post("/api/lotes")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"codigo\":\"LB-01\",\"superficieMetrosCuadrados\":1800.0,\"ocupado\":false,\"empresaId\":" + idEmpresaB + "}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long idLoteB = objectMapper.readTree(respuestaLoteB).get("id").asLong();
+
+        mockMvc.perform(post("/api/usuarios")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreUsuario\":\"empresa_lotes_asignada\",\"nombreCompleto\":\"Empresa Lotes Asignada\",\"clave\":\"EmpresaLote123\",\"activo\":true,\"roles\":[\"EMPRESA\"],\"empresaId\":" + idEmpresaA + "}"))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/lotes")
+                .with(httpBasic("empresa_lotes_asignada", "EmpresaLote123")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].id").value(idLoteA))
+            .andExpect(jsonPath("$[0].empresaId").value(idEmpresaA));
+
+        mockMvc.perform(get("/api/lotes/{id}", idLoteB)
+                .with(httpBasic("empresa_lotes_asignada", "EmpresaLote123")))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
     void deberiaPermitirCambiarClavePropia() throws Exception {
         mockMvc.perform(patch("/api/usuarios/mi-clave")
                 .with(httpBasic("admin", "admin12345"))
