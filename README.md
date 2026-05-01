@@ -80,8 +80,11 @@ Permisos por rol:
 - `POST/PUT/DELETE /api/lotes/**`: `ADMINISTRADOR`, `DIRECTIVO`
 - `GET/POST/PUT/PATCH/DELETE /api/usuarios/**`: solo `ADMINISTRADOR`
 - `GET /api/catalogos/roles`: cualquier usuario autenticado
-- `GET /api/usuarios/roles`: alias temporal legado (autenticado)
+- `GET /api/usuarios/roles`: alias temporal legado (solo `ADMINISTRADOR`)
 - `PATCH /api/usuarios/mi-clave`: cualquier usuario autenticado
+- `PATCH /api/yo/perfil`: cualquier usuario autenticado (datos personales)
+
+Regla de aislamiento para `EMPRESA`: solo puede consultar la empresa y los lotes de su empresa asignada.
 
 Cabeceras de deprecacion en `GET /api/usuarios/roles`:
 
@@ -102,6 +105,11 @@ Endpoints de usuarios:
 - `PATCH /api/usuarios/{id}/clave`
 - `PATCH /api/usuarios/mi-clave`
 - `DELETE /api/usuarios/{id}`
+
+Endpoint de perfil propio:
+
+- `GET /api/yo`
+- `PATCH /api/yo/perfil`
 
 Ejemplo de cuerpo para `POST /api/usuarios`:
 
@@ -201,6 +209,16 @@ Ejemplo de cuerpo para `POST`/`PUT` de lotes:
   "superficieMetrosCuadrados": 350.5,
   "ocupado": false,
   "empresaId": 1
+}
+```
+
+Ejemplo de cuerpo para `POST /api/radicaciones` (empresa):
+
+```json
+{
+  "tipoSolicitud": "Servicio de agua",
+  "descripcion": "Solicitud de conexion para nave 3",
+  "usoEstimativo": "350 m3/mes"
 }
 ```
 

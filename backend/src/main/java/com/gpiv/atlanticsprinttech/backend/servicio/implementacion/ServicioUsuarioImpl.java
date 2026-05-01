@@ -109,6 +109,25 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     }
 
     @Override
+    public Usuario actualizarPerfilPropio(String identificadorIngreso, String nombreCompleto, String correoElectronico) {
+        Usuario usuario = obtenerUsuarioPorIdentificador(identificadorIngreso);
+        String nombreNormalizado = nombreCompleto == null ? "" : nombreCompleto.trim();
+        if (nombreNormalizado.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre completo es obligatorio");
+        }
+
+        String correoNormalizado = normalizarCorreoOpcional(correoElectronico);
+        if (correoNormalizado != null
+            && !correoNormalizado.equalsIgnoreCase(usuario.getCorreoElectronico())
+            && repositorioUsuario.existsByCorreoElectronicoIgnoreCase(correoNormalizado)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo electronico ya esta registrado");
+        }
+
+        usuario.actualizarPerfilPersonal(nombreNormalizado, correoNormalizado);
+        return repositorioUsuario.save(usuario);
+    }
+
+    @Override
     public void registrarPublico(String correoElectronico, String clave, String confirmacionClave, String ipCliente) {
         Duration ventana = obtenerVentanaLimites();
         String claveIntento = "registro:" + ipCliente + ":" + normalizarCorreo(correoElectronico);
@@ -210,6 +229,21 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             return "";
         }
         return correoElectronico.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizarCorreoOpcional(String correoElectronico) {
+        if (correoElectronico == null) {
+            return null;
+        }
+        String normalizado = correoElectronico.trim().toLowerCase(Locale.ROOT);
+        return normalizado.isBlank() ? null : normalizado;
+    }
+
+    private Usuario obtenerUsuarioPorIdentificador(String identificadorIngreso) {
+        String normalizado = normalizarCorreo(identificadorIngreso);
+        return repositorioUsuario.findByNombreUsuario(identificadorIngreso)
+            .or(() -> repositorioUsuario.findByCorreoElectronicoIgnoreCase(normalizado))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
 
     private String generarNombreBase(String correoElectronico) {

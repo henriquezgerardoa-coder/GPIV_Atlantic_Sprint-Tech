@@ -13,7 +13,7 @@ public interface ServicioRadicacion {
 
     RadicacionSolicitud obtenerPorId(String identificadorIngreso, Long id);
 
-    RadicacionSolicitud crear(String identificadorIngreso, String tipoSolicitud, String descripcion);
+    RadicacionSolicitud crear(String identificadorIngreso, String tipoSolicitud, String descripcion, String usoEstimativo);
 
     RadicacionSolicitud cambiarEstado(String identificadorIngreso, Long id, EstadoRadicacion estado, String comentario);
 

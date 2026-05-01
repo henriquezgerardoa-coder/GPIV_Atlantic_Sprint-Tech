@@ -41,6 +41,11 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                     <li>
+                        <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalMiPerfil">
+                            <i class="bi bi-person-lines-fill me-2"></i>Actualizar mis datos
+                        </button>
+                    </li>
+                    <li>
                         <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalMiClave">
                             <i class="bi bi-lock me-2"></i>Cambiar mi contraseña
                         </button>
@@ -260,6 +265,10 @@
                                 <label for="campoDescripcionRad" class="form-label fw-semibold">Descripción</label>
                                 <textarea id="campoDescripcionRad" class="form-control" maxlength="1000" rows="4" required></textarea>
                             </div>
+                            <div class="mb-2">
+                                <label for="campoUsoEstimativoRad" class="form-label fw-semibold">Uso estimativo del servicio</label>
+                                <input id="campoUsoEstimativoRad" class="form-control" maxlength="120" placeholder="Ej: 350 m3/mes de agua">
+                            </div>
                             <button type="button" class="btn btn-primary" onclick="ModuloRadicaciones.crear()">
                                 <i class="bi bi-send me-1"></i>Solicitar
                             </button>
@@ -309,6 +318,7 @@
                             <tr>
                                 <th class="ps-3">N° Radicado</th>
                                 <th>Tipo</th>
+                                <th>Uso estimativo</th>
                                 <th>Estado</th>
                                 <th>Fecha</th>
                                 <th>Última actualización</th>
@@ -316,7 +326,7 @@
                             </tr>
                         </thead>
                         <tbody id="cuerpoTablaRadicaciones">
-                            <tr><td colspan="6" class="text-center py-3 text-muted">Sin registros</td></tr>
+                            <tr><td colspan="7" class="text-center py-3 text-muted">Sin registros</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -822,6 +832,34 @@
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-floppy me-1"></i>Actualizar contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Actualizar mis datos personales -->
+<div class="modal fade" id="modalMiPerfil" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Actualizar mis Datos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalMiPerfil" class="alert alert-danger alerta-modal d-none"></div>
+                <form id="formMiPerfil" novalidate>
+                    <div class="mb-3">
+                        <label for="campoMiNombreCompleto" class="form-label fw-semibold">Nombre completo</label>
+                        <input type="text" class="form-control" id="campoMiNombreCompleto" maxlength="120" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoMiCorreoElectronico" class="form-label fw-semibold">Correo electrónico</label>
+                        <input type="email" class="form-control" id="campoMiCorreoElectronico" maxlength="160">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-floppy me-1"></i>Actualizar datos
                     </button>
                 </form>
             </div>

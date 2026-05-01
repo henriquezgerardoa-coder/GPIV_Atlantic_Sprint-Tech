@@ -78,8 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const sesion = Autenticacion.obtenerSesion();
 
     // Mostrar información del usuario en la barra superior
-    document.getElementById('nombreUsuarioNavbar').textContent = sesion.nombreUsuario;
+    document.getElementById('nombreUsuarioNavbar').textContent = sesion.nombreCompleto || sesion.nombreUsuario;
     document.getElementById('rolesUsuarioNavbar').textContent  = sesion.roles.join(', ');
+
+    document.getElementById('campoMiNombreCompleto').value = sesion.nombreCompleto || '';
+    document.getElementById('campoMiCorreoElectronico').value = sesion.correoElectronico || '';
 
     // Ocultar la sección Usuarios si no es administrador
     if (!Autenticacion.esAdministrador()) {
@@ -121,6 +124,30 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(Autenticacion.cerrarSesion, 2500);
         } else {
             mostrarAlertaModal('alertaModalMiClave', 'La contraseña actual es incorrecta.');
+        }
+    });
+
+    // Cambiar mis datos personales
+    document.getElementById('formMiPerfil').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nombreCompleto = document.getElementById('campoMiNombreCompleto').value.trim();
+        const correoElectronico = document.getElementById('campoMiCorreoElectronico').value.trim();
+
+        if (!nombreCompleto) {
+            mostrarAlertaModal('alertaModalMiPerfil', 'El nombre completo es obligatorio.');
+            return;
+        }
+
+        const respuesta = await ApiCliente.parche('/api/yo/perfil', { nombreCompleto, correoElectronico });
+        if (respuesta?.ok) {
+            const sesionActualizada = { ...sesion, nombreCompleto, correoElectronico };
+            sessionStorage.setItem('usuario', JSON.stringify(sesionActualizada));
+            document.getElementById('nombreUsuarioNavbar').textContent = nombreCompleto;
+            bootstrap.Modal.getInstance(document.getElementById('modalMiPerfil'))?.hide();
+            mostrarAlerta('Datos personales actualizados.');
+        } else {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlertaModal('alertaModalMiPerfil', error?.mensaje || 'No se pudieron actualizar los datos.');
         }
     });
 

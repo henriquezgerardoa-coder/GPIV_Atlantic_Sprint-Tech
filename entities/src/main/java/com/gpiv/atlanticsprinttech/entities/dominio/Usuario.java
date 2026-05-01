@@ -133,6 +133,12 @@ public class Usuario {
     public void actualizarCorreoElectronico(String correoElectronico) {
         this.correoElectronico = correoElectronico;
     }
+
+    public void actualizarPerfilPersonal(String nombreCompleto, String correoElectronico) {
+        this.nombreCompleto = nombreCompleto;
+        this.correoElectronico = correoElectronico;
+    }
+
     public void actualizarEmpresa(Empresa empresa) {
         this.empresa = empresa;
     }

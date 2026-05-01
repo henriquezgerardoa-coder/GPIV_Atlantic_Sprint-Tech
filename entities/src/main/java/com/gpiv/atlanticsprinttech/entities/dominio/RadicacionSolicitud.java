@@ -40,6 +40,9 @@ public class RadicacionSolicitud {
 	@Column(name = "descripcion", nullable = false, length = 1000)
 	private String descripcion;
 
+	@Column(name = "uso_estimativo", length = 120)
+	private String usoEstimativo;
+
 	@Column(name = "fecha_radicacion", nullable = false)
 	private LocalDate fechaRadicacion;
 
@@ -53,17 +56,24 @@ public class RadicacionSolicitud {
 	protected RadicacionSolicitud() {
 	}
 
-	private RadicacionSolicitud(String numeroRadicado, Empresa empresa, String tipoSolicitud, String descripcion) {
+	private RadicacionSolicitud(String numeroRadicado, Empresa empresa, String tipoSolicitud, String descripcion, String usoEstimativo) {
 		this.numeroRadicado = numeroRadicado;
 		this.empresa = empresa;
 		this.tipoSolicitud = tipoSolicitud;
 		this.descripcion = descripcion;
+		this.usoEstimativo = usoEstimativo;
 		this.fechaRadicacion = LocalDate.now();
 		this.estado = EstadoRadicacion.PENDIENTE;
 	}
 
-	public static RadicacionSolicitud crear(String numeroRadicado, Empresa empresa, String tipoSolicitud, String descripcion) {
-		return new RadicacionSolicitud(numeroRadicado, empresa, tipoSolicitud, descripcion);
+	public static RadicacionSolicitud crear(
+		String numeroRadicado,
+		Empresa empresa,
+		String tipoSolicitud,
+		String descripcion,
+		String usoEstimativo
+	) {
+		return new RadicacionSolicitud(numeroRadicado, empresa, tipoSolicitud, descripcion, usoEstimativo);
 	}
 
 	@PrePersist
@@ -90,6 +100,10 @@ public class RadicacionSolicitud {
 
 	public String getDescripcion() {
 		return descripcion;
+	}
+
+	public String getUsoEstimativo() {
+		return usoEstimativo;
 	}
 
 	public LocalDate getFechaRadicacion() {

@@ -1,6 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend;
 
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesApiUsuarios;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -137,7 +138,7 @@ class AplicacionGestionGpivPruebas {
     @Test
     void deberiaListarRolesDisponiblesEnRutaLegada() throws Exception {
         mockMvc.perform(get("/api/usuarios/roles")
-                .with(httpBasic("directivo", "directivo123")))
+                .with(httpBasic("admin", "admin12345")))
             .andExpect(status().isOk())
             .andExpect(header().string("Deprecation", propiedadesApiUsuarios.getRolesLegado().getDeprecation()))
             .andExpect(header().string("Sunset", propiedadesApiUsuarios.getRolesLegado().getSunset()))
@@ -158,6 +159,13 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
+    void deberiaDenegarRolesLegadoParaDirectivo() throws Exception {
+        mockMvc.perform(get("/api/usuarios/roles")
+                .with(httpBasic("directivo", "directivo123")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void deberiaDenegarCrearUsuarioSiNoEsAdministrador() throws Exception {
         SolicitudUsuario solicitudUsuario = new SolicitudUsuario(
             "usuariox",
@@ -172,6 +180,13 @@ class AplicacionGestionGpivPruebas {
                 .with(httpBasic("directivo", "directivo123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(solicitudUsuario)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deberiaDenegarListadoUsuariosParaDirectivo() throws Exception {
+        mockMvc.perform(get("/api/usuarios")
+                .with(httpBasic("directivo", "directivo123")))
             .andExpect(status().isForbidden());
     }
 
@@ -265,6 +280,47 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
+    void empresaSoloDebeAccederASuEmpresaAsignada() throws Exception {
+        String respuestaEmpresaA = mockMvc.perform(post("/api/empresas")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Empresa A\",\"cuit\":\"20-11111111-1\",\"correoElectronico\":\"a@empresa.com\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long idEmpresaA = objectMapper.readTree(respuestaEmpresaA).get("id").asLong();
+
+        String respuestaEmpresaB = mockMvc.perform(post("/api/empresas")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombre\":\"Empresa B\",\"cuit\":\"20-22222222-2\",\"correoElectronico\":\"b@empresa.com\"}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long idEmpresaB = objectMapper.readTree(respuestaEmpresaB).get("id").asLong();
+
+        mockMvc.perform(post("/api/usuarios")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreUsuario\":\"empresa_asignada\",\"nombreCompleto\":\"Empresa Asignada\",\"clave\":\"Empresa123A\",\"activo\":true,\"roles\":[\"EMPRESA\"],\"empresaId\":" + idEmpresaA + "}"))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/empresas")
+                .with(httpBasic("empresa_asignada", "Empresa123A")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].id").value(idEmpresaA));
+
+        mockMvc.perform(get("/api/empresas/{id}", idEmpresaB)
+                .with(httpBasic("empresa_asignada", "Empresa123A")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void deberiaPermitirCambiarClavePropia() throws Exception {
         mockMvc.perform(patch("/api/usuarios/mi-clave")
                 .with(httpBasic("admin", "admin12345"))
@@ -275,6 +331,25 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(get("/api/usuarios")
                 .with(httpBasic("admin", "admin123456")))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void empresaDebePoderActualizarSusDatosPersonalesYVisualizarRadicaciones() throws Exception {
+        mockMvc.perform(get("/api/radicaciones")
+                .with(httpBasic("empresa", "empresa12345")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(patch("/api/yo/perfil")
+                .with(httpBasic("empresa", "empresa12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreCompleto\":\"Empresa Demo Actualizada\",\"correoElectronico\":\"empresa.demo@gpiv.local\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.mensaje").value("Datos personales actualizados"));
+
+        Usuario usuarioEmpresa = repositorioUsuario.findByNombreUsuario("empresa").orElseThrow();
+        assertEquals("Empresa Demo Actualizada", usuarioEmpresa.getNombreCompleto());
+        assertEquals("empresa.demo@gpiv.local", usuarioEmpresa.getCorreoElectronico());
     }
 
     @Test

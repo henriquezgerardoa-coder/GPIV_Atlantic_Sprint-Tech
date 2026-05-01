@@ -56,9 +56,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     @Override
     public List<RadicacionSolicitud> listar(String identificadorIngreso, EstadoRadicacion estado, LocalDate desde, LocalDate hasta) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        Long empresaId = servicioContextoUsuario.esRolEmpresa(usuario)
-            ? servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario)
-            : null;
+        Long empresaId = null;
+        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+            if (usuario.getEmpresaId() == null) {
+                return List.of();
+            }
+            empresaId = usuario.getEmpresaId();
+        }
         return repositorioRadicacionSolicitud.buscarFiltrado(empresaId, estado, desde, hasta);
     }
 
@@ -75,14 +79,24 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     }
 
     @Override
-    public RadicacionSolicitud crear(String identificadorIngreso, String tipoSolicitud, String descripcion) {
+    public RadicacionSolicitud crear(String identificadorIngreso, String tipoSolicitud, String descripcion, String usoEstimativo) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa asociada no existe"));
 
         String numero = generarNumeroRadicado();
-        RadicacionSolicitud nueva = RadicacionSolicitud.crear(numero, empresa, tipoSolicitud.trim(), descripcion.trim());
+        String usoEstimativoNormalizado = usoEstimativo == null ? null : usoEstimativo.trim();
+        if (usoEstimativoNormalizado != null && usoEstimativoNormalizado.isBlank()) {
+            usoEstimativoNormalizado = null;
+        }
+        RadicacionSolicitud nueva = RadicacionSolicitud.crear(
+            numero,
+            empresa,
+            tipoSolicitud.trim(),
+            descripcion.trim(),
+            usoEstimativoNormalizado
+        );
         RadicacionSolicitud guardada = repositorioRadicacionSolicitud.save(nueva);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(guardada, guardada.getEstado(), "Solicitud creada", identificadorIngreso));
         return guardada;

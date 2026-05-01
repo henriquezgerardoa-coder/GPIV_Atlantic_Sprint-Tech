@@ -9,6 +9,8 @@ public record SolicitudRadicacion(
     String tipoSolicitud,
     @NotBlank(message = "La descripcion es obligatoria")
     @Size(max = 1000, message = "La descripcion no puede superar 1000 caracteres")
-    String descripcion
+    String descripcion,
+    @Size(max = 120, message = "El uso estimativo no puede superar 120 caracteres")
+    String usoEstimativo
 ) {
 }

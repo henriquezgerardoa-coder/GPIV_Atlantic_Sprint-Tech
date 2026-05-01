@@ -62,7 +62,8 @@ public class ControladorRadicacion {
         RadicacionSolicitud creada = servicioRadicacion.crear(
             autenticacion.getName(),
             solicitud.tipoSolicitud(),
-            solicitud.descripcion()
+            solicitud.descripcion(),
+            solicitud.usoEstimativo()
         );
         return ResponseEntity.created(URI.create("/api/radicaciones/" + creada.getId())).body(crearRespuesta(creada));
     }
@@ -134,6 +135,7 @@ public class ControladorRadicacion {
             radicacion.getEmpresa().getNombre(),
             radicacion.getTipoSolicitud(),
             radicacion.getDescripcion(),
+            radicacion.getUsoEstimativo(),
             radicacion.getEstado(),
             radicacion.getFechaRadicacion(),
             radicacion.getFechaUltimaActualizacion()

@@ -27,7 +27,7 @@ const ModuloRadicaciones = (() => {
         if (!cuerpo) return;
 
         if (radicaciones.length === 0) {
-            cuerpo.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">Sin registros</td></tr>';
+            cuerpo.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">Sin registros</td></tr>';
             return;
         }
 
@@ -36,6 +36,7 @@ const ModuloRadicaciones = (() => {
             <tr>
                 <td class="ps-3 fw-semibold">${r.numeroRadicado}</td>
                 <td>${r.tipoSolicitud}</td>
+                <td>${r.usoEstimativo || '-'}</td>
                 <td><span class="badge bg-secondary">${formatearEstado(r.estado)}</span></td>
                 <td>${r.fechaRadicacion || '-'}</td>
                 <td>${(r.fechaUltimaActualizacion || '').replace('T', ' ').slice(0, 16)}</td>
@@ -55,12 +56,13 @@ const ModuloRadicaciones = (() => {
     async function crear() {
         const tipoSolicitud = document.getElementById('campoTipoSolicitudRad').value.trim();
         const descripcion = document.getElementById('campoDescripcionRad').value.trim();
+        const usoEstimativo = document.getElementById('campoUsoEstimativoRad').value.trim();
         if (!tipoSolicitud || !descripcion) {
             mostrarErrorDocumento('Complete tipo y descripción.');
             return;
         }
 
-        const respuesta = await ApiCliente.crear('/api/radicaciones', { tipoSolicitud, descripcion });
+        const respuesta = await ApiCliente.crear('/api/radicaciones', { tipoSolicitud, descripcion, usoEstimativo });
         if (!respuesta?.ok) {
             const error = await respuesta?.json().catch(() => ({}));
             mostrarErrorDocumento(error?.mensaje || 'No se pudo crear la radicación.');
