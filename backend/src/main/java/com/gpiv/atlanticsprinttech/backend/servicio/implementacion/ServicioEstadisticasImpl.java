@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Implementacion de estadisticas del parque industrial (R-14: lectura de informes para OPERADOR).
+ * Implementacion de estadisticas del parque industrial (R-14: lectura de informes para DIRECTIVO).
  */
 @Service
 @Transactional(readOnly = true)

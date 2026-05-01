@@ -4,7 +4,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadistica
 
 /**
  * Servicio de informes y estadisticas del parque industrial.
- * Accesible para ADMINISTRADOR y OPERADOR (R-14).
+ * Accesible para ADMINISTRADOR y DIRECTIVO (R-14).
  */
 public interface ServicioEstadisticas {
 

@@ -31,7 +31,7 @@ const ModuloRadicaciones = (() => {
             return;
         }
 
-        const puedeGestionar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'OPERADOR']);
+        const puedeGestionar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         cuerpo.innerHTML = radicaciones.map(r => `
             <tr>
                 <td class="ps-3 fw-semibold">${r.numeroRadicado}</td>

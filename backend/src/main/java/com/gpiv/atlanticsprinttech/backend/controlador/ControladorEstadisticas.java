@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Informes y estadisticas generales del parque industrial.
- * Accesible para ADMINISTRADOR y OPERADOR (R-14: lectura de informes para rol legislativo/operador).
+ * Accesible para ADMINISTRADOR y DIRECTIVO (R-14: lectura de informes para rol legislativo/directivo).
  * El rol EMPRESA NO tiene acceso a este recurso.
  */
 @RestController

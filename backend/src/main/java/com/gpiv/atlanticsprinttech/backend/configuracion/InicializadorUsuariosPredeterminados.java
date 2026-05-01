@@ -31,16 +31,16 @@ public class InicializadorUsuariosPredeterminados implements CommandLineRunner {
             EnumSet.of(RolUsuario.ADMINISTRADOR)
         );
         crearSiNoExiste(
-            "operador",
-            "Operador GPIV",
-            propiedadesApiUsuarios.getSemilla().getOperador().getClave(),
-            EnumSet.of(RolUsuario.OPERADOR)
+            "directivo",
+            "Directivo GPIV",
+            propiedadesApiUsuarios.getSemilla().getDirectivo().getClave(),
+            EnumSet.of(RolUsuario.DIRECTIVO)
         );
         crearSiNoExiste(
-            "visor",
-            "Visor GPIV",
-            propiedadesApiUsuarios.getSemilla().getVisor().getClave(),
-            EnumSet.of(RolUsuario.VISOR)
+            "empresa",
+            "Empresa GPIV",
+            propiedadesApiUsuarios.getSemilla().getEmpresa().getClave(),
+            EnumSet.of(RolUsuario.EMPRESA)
         );
     }
     private void crearSiNoExiste(String nombreUsuario, String nombreCompleto, String clavePlano, EnumSet<RolUsuario> roles) {

@@ -51,14 +51,14 @@ Dependencias entre paquetes:
 Roles disponibles:
 
 - `ADMINISTRADOR`
-- `OPERADOR`
-- `VISOR`
+- `DIRECTIVO`
+- `EMPRESA`
 
 Usuarios predeterminados (solo para entorno inicial/local):
 
 - `admin` / `admin12345` (`ADMINISTRADOR`)
-- `operador` / `operador123` (`OPERADOR`)
-- `visor` / `visor12345` (`VISOR`)
+- `directivo` / `directivo123` (`DIRECTIVO`)
+- `empresa` / `empresa12345` (`EMPRESA`)
 
 Registro publico con verificacion por correo:
 
@@ -74,10 +74,10 @@ Estas credenciales se configuran mediante `app.api.usuarios.semilla.*` y se cent
 
 Permisos por rol:
 
-- `GET /api/empresas/**`: `ADMINISTRADOR`, `OPERADOR`, `VISOR`
-- `POST/PUT/DELETE /api/empresas/**`: `ADMINISTRADOR`, `OPERADOR`
-- `GET /api/lotes/**`: `ADMINISTRADOR`, `OPERADOR`, `VISOR`
-- `POST/PUT/DELETE /api/lotes/**`: `ADMINISTRADOR`, `OPERADOR`
+- `GET /api/empresas/**`: `ADMINISTRADOR`, `DIRECTIVO`, `EMPRESA`
+- `POST/PUT/DELETE /api/empresas/**`: `ADMINISTRADOR`, `DIRECTIVO`
+- `GET /api/lotes/**`: `ADMINISTRADOR`, `DIRECTIVO`, `EMPRESA`
+- `POST/PUT/DELETE /api/lotes/**`: `ADMINISTRADOR`, `DIRECTIVO`
 - `GET/POST/PUT/PATCH/DELETE /api/usuarios/**`: solo `ADMINISTRADOR`
 - `GET /api/catalogos/roles`: cualquier usuario autenticado
 - `GET /api/usuarios/roles`: alias temporal legado (autenticado)
@@ -111,7 +111,7 @@ Ejemplo de cuerpo para `POST /api/usuarios`:
   "nombreCompleto": "Juan Lopez",
   "clave": "clave12345",
   "activo": true,
-  "roles": ["VISOR"]
+  "roles": ["EMPRESA"]
 }
 ```
 
@@ -135,13 +135,14 @@ Variables opcionales para PostgreSQL (perfil `dev` por defecto):
 export DB_URL='jdbc:postgresql://localhost:5432/gpiv'
 export DB_USER='admin'
 export DB_PASSWORD='password123'
+export SERVER_PORT='8090'
 export SEED_ADMIN_CLAVE='admin12345'
-export SEED_OPERADOR_CLAVE='operador123'
-export SEED_VISOR_CLAVE='visor12345'
+export SEED_DIRECTIVO_CLAVE='directivo123'
+export SEED_EMPRESA_CLAVE='empresa12345'
 export USUARIOS_ROLES_LEGADO_DEPRECATION='true'
 export USUARIOS_ROLES_LEGADO_SUNSET='Thu, 31 Dec 2026 23:59:59 GMT'
 export USUARIOS_ROLES_LEGADO_LINK='</api/catalogos/roles>; rel="successor-version"'
-export REGISTRO_URL_BASE_VERIFICACION='http://localhost:8080/verificar.html'
+export REGISTRO_URL_BASE_VERIFICACION='http://localhost:8090/verificar.html'
 export REGISTRO_CONTACTO_SOPORTE='soporte@gpiv.local'
 export REGISTRO_TOKEN_EXPIRACION_HORAS='24'
 export REGISTRO_MAIL_HABILITADO='false'
@@ -161,8 +162,20 @@ mvn -pl backend spring-boot:run
 
 Endpoint disponible:
 
+- Base local por defecto: `http://localhost:8090`
 - `GET /salud` -> `{"estado":"ok"}`
 - `GET /health` -> alias temporal compatible con la ruta anterior
+
+### Migracion de roles a `DIRECTIVO`
+
+Si tu base ya tiene usuarios con el rol anterior `OPERADOR`, ejecuta una vez:
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
+DB_CONTAINER='gisto-db' DB_NAME='gpiv' DB_USER='admin' bash setup/migrar_roles_directivo.sh
+```
+
+El SQL aplicado queda en `setup/sql/003_renombrar_roles_directivo.sql`.
 
 CRUD inicial de empresas:
 

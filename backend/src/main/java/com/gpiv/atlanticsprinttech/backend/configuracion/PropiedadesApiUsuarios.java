@@ -22,25 +22,25 @@ public class PropiedadesApiUsuarios {
     }
     public static class Semilla {
         private Credencial admin = new Credencial();
-        private Credencial operador = new Credencial();
-        private Credencial visor = new Credencial();
+        private Credencial directivo = new Credencial();
+        private Credencial empresa = new Credencial();
         public Credencial getAdmin() {
             return admin;
         }
         public void setAdmin(Credencial admin) {
             this.admin = admin;
         }
-        public Credencial getOperador() {
-            return operador;
+        public Credencial getDirectivo() {
+            return directivo;
         }
-        public void setOperador(Credencial operador) {
-            this.operador = operador;
+        public void setDirectivo(Credencial directivo) {
+            this.directivo = directivo;
         }
-        public Credencial getVisor() {
-            return visor;
+        public Credencial getEmpresa() {
+            return empresa;
         }
-        public void setVisor(Credencial visor) {
-            this.visor = visor;
+        public void setEmpresa(Credencial empresa) {
+            this.empresa = empresa;
         }
     }
     public static class RolesLegado {

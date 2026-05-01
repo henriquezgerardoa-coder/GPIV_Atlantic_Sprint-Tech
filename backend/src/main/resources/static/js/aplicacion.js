@@ -87,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
     }
 
-    // Ocultar Informes para el rol EMPRESA (R-14: solo ADMINISTRADOR y OPERADOR)
-    if (Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'OPERADOR'])) {
+    // Ocultar Informes para el rol EMPRESA (R-14: solo ADMINISTRADOR y DIRECTIVO)
+    if (Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO'])) {
         document.getElementById('itemNavInformes')?.classList.add('d-none');
         document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
         document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));

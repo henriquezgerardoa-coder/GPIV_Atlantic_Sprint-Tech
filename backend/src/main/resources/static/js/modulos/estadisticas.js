@@ -1,6 +1,6 @@
 /**
  * ModuloEstadisticas — Informes y estadisticas del parque industrial.
- * Visible para ADMINISTRADOR y OPERADOR (R-14: lectura de informes).
+ * Visible para ADMINISTRADOR y DIRECTIVO (R-14: lectura de informes).
  */
 const ModuloEstadisticas = (() => {
 

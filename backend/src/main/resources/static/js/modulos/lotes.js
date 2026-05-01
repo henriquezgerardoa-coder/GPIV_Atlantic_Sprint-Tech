@@ -44,7 +44,7 @@ const ModuloLotes = (() => {
             return;
         }
 
-        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'OPERADOR']);
+        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         cuerpo.innerHTML = filtrados.map(l => `
             <tr>
                 <td class="text-muted">${l.id}</td>

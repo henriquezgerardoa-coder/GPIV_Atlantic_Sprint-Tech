@@ -58,12 +58,16 @@ public class MigradorConstraintRoles implements CommandLineRunner {
 
                     UPDATE public.usuarios_roles
                     SET rol = 'EMPRESA'
-                    WHERE UPPER(rol) IN ('VISOR', 'VISOR_EMPRESA', 'EMPRESA_CONSULTORA', 'CLIENTE');
+                    WHERE UPPER(rol) IN ('EMPRESA_CONSULTORA', 'CLIENTE');
+
+                    UPDATE public.usuarios_roles
+                    SET rol = 'DIRECTIVO'
+                    WHERE UPPER(rol) = 'OPERADOR';
 
                     BEGIN
                         ALTER TABLE public.usuarios_roles
                         ADD CONSTRAINT usuarios_roles_rol_check
-                        CHECK (rol IN ('ADMINISTRADOR', 'OPERADOR', 'EMPRESA'));
+                        CHECK (rol IN ('ADMINISTRADOR', 'DIRECTIVO', 'EMPRESA'));
                     EXCEPTION
                         WHEN duplicate_object THEN NULL;
                     END;

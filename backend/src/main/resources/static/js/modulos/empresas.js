@@ -19,7 +19,7 @@ const ModuloEmpresas = (() => {
             return;
         }
 
-        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'OPERADOR']);
+        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         cuerpo.innerHTML = empresas.map(e => `
             <tr>
                 <td class="text-muted">${e.id}</td>

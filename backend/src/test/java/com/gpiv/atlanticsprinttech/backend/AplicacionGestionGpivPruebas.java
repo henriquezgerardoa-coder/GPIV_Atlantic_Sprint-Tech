@@ -100,7 +100,8 @@ class AplicacionGestionGpivPruebas {
             "Juan Lopez",
             "clave12345",
             true,
-            Set.of(RolUsuario.VISOR)
+            Set.of(RolUsuario.DIRECTIVO),
+            null
         );
 
         String respuestaCreacion = mockMvc.perform(post("/api/usuarios")
@@ -128,7 +129,7 @@ class AplicacionGestionGpivPruebas {
     @Test
     void deberiaListarRolesDisponibles() throws Exception {
         mockMvc.perform(get("/api/catalogos/roles")
-                .with(httpBasic("operador", "operador123")))
+                .with(httpBasic("directivo", "directivo123")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasItem("ADMINISTRADOR")));
     }
@@ -136,7 +137,7 @@ class AplicacionGestionGpivPruebas {
     @Test
     void deberiaListarRolesDisponiblesEnRutaLegada() throws Exception {
         mockMvc.perform(get("/api/usuarios/roles")
-                .with(httpBasic("operador", "operador123")))
+                .with(httpBasic("directivo", "directivo123")))
             .andExpect(status().isOk())
             .andExpect(header().string("Deprecation", propiedadesApiUsuarios.getRolesLegado().getDeprecation()))
             .andExpect(header().string("Sunset", propiedadesApiUsuarios.getRolesLegado().getSunset()))
@@ -163,22 +164,23 @@ class AplicacionGestionGpivPruebas {
             "Usuario X",
             "clave12345",
             true,
-            Set.of(RolUsuario.VISOR)
+            Set.of(RolUsuario.DIRECTIVO),
+            null
         );
 
         mockMvc.perform(post("/api/usuarios")
-                .with(httpBasic("operador", "operador123"))
+                .with(httpBasic("directivo", "directivo123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(solicitudUsuario)))
             .andExpect(status().isForbidden());
     }
 
     @Test
-    void deberiaDenegarCrearEmpresaConRolVisor() throws Exception {
+    void deberiaDenegarCrearEmpresaConRolEmpresa() throws Exception {
         SolicitudEmpresa nuevaEmpresa = new SolicitudEmpresa("Empresa Dos", "20-98765432-1", "dos@empresa.com");
 
         mockMvc.perform(post("/api/empresas")
-                .with(httpBasic("visor", "visor12345"))
+                .with(httpBasic("empresa", "empresa12345"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(nuevaEmpresa)))
             .andExpect(status().isForbidden());
@@ -212,7 +214,7 @@ class AplicacionGestionGpivPruebas {
         Long idLote = objectMapper.readTree(respuestaLote).get("id").asLong();
 
         mockMvc.perform(get("/api/lotes/{id}", idLote)
-                .with(httpBasic("operador", "operador123")))
+                .with(httpBasic("directivo", "directivo123")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.empresaId").value(idEmpresa));
 
@@ -237,7 +239,7 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
-    void deberiaDenegarCrearLoteConRolVisor() throws Exception {
+    void deberiaDenegarCrearLoteConRolEmpresa() throws Exception {
         SolicitudEmpresa nuevaEmpresa = new SolicitudEmpresa("Empresa Tres", "20-33333333-3", "tres@empresa.com");
 
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
@@ -252,9 +254,9 @@ class AplicacionGestionGpivPruebas {
         Long idEmpresa = objectMapper.readTree(respuestaEmpresa).get("id").asLong();
 
         mockMvc.perform(post("/api/lotes")
-                .with(httpBasic("visor", "visor12345"))
+                .with(httpBasic("empresa", "empresa12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"codigo\":\"L-VIS\",\"superficieMetrosCuadrados\":120.0,\"ocupado\":false,\"empresaId\":" + idEmpresa + "}"))
+                .content("{\"codigo\":\"L-EMP\",\"superficieMetrosCuadrados\":120.0,\"ocupado\":false,\"empresaId\":" + idEmpresa + "}"))
             .andExpect(status().isForbidden());
 
         mockMvc.perform(delete("/api/empresas/{id}", idEmpresa)

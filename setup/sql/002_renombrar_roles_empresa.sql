@@ -9,8 +9,6 @@ BEGIN
         UPDATE public.usuarios_roles
         SET rol = 'EMPRESA'
         WHERE UPPER(rol) IN (
-            'VISOR',
-            'VISOR_EMPRESA',
             'EMPRESA_CONSULTORA',
             'CLIENTE'
         );
