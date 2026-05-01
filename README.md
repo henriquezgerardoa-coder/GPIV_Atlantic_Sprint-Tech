@@ -86,6 +86,14 @@ Permisos por rol:
 
 Regla de aislamiento para `EMPRESA`: solo puede consultar la empresa y los lotes de su empresa asignada.
 
+### Control de acceso por etapas para `EMPRESA`
+
+Se documento el diseno funcional y tecnico de control por ciclo de vida (`REGISTRADA`, `AUTORIZADA`, `RADICADA`) en:
+
+- `setup/control_acceso_empresa_etapas.md`
+
+Este diseno define matriz de permisos por etapa, flags de base de datos propuestos, transiciones validas, flujo de aprobacion Admin/Directivo y comportamiento de errores (`401/403/404/409`).
+
 Cabeceras de deprecacion en `GET /api/usuarios/roles`:
 
 - `Deprecation: configurable por app.api.usuarios.roles-legado.deprecation / USUARIOS_ROLES_LEGADO_DEPRECATION`
@@ -163,10 +171,22 @@ export SEGURIDAD_VENTANA_MINUTOS='15'
 
 El prefijo comun de configuracion es `app.api.usuarios.*` (`semilla.*` y `roles-legado.*`).
 
+Comando recomendado (instancia unica en `8090`):
+
 ```bash
 cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
+bash setup/backend_unica_8090.sh
+```
+
+Alternativa manual (si no usas el script):
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
+mvn -q -DskipTests install
 mvn -pl backend spring-boot:run
 ```
+
+> Si arrancas solo con `-pl backend` y hay cambios recientes en `commons` o `entities`, puede fallar con `NoClassDefFoundError` por artefactos desactualizados.
 
 Endpoint disponible:
 
