@@ -2,6 +2,8 @@ package com.gpiv.atlanticsprinttech.backend.controlador;
 
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresa;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaOperacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudEmpresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import jakarta.validation.Valid;
@@ -59,5 +61,15 @@ public class ControladorEmpresa {
             empresa.getCuit(),
             empresa.getCorreoElectronico()
         );
+    }
+    @PostMapping("/{id}/solicitudes-cambio-rubro")
+    public ResponseEntity<RespuestaOperacion> solicitarCambioRubro(
+            @PathVariable Long id,
+            @Valid @RequestBody SolicitudCambioRubro solicitud
+            ) {
+        servicioEmpresa.solicitarAmpliacionOCambioRubro(id, solicitud.idNuevoRubro(), solicitud.justificacion());
+        return ResponseEntity.accepted().body(new RespuestaOperacion(
+                "Solicitud de cambio de rubro generada y pendiente de aprobación."
+        ));
     }
 }
