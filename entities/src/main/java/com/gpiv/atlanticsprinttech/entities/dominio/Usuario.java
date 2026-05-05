@@ -45,6 +45,8 @@ public class Usuario {
     private LocalDateTime tokenVerificacionExpiraEn;
     @Column(name = "fecha_verificacion_email")
     private LocalDateTime fechaVerificacionEmail;
+    @Column(name = "fecha_ultimo_acceso")
+    private LocalDateTime fechaUltimoAcceso;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
@@ -115,6 +117,10 @@ public class Usuario {
     public Set<RolUsuario> getRoles() {
         return Collections.unmodifiableSet(roles);
     }
+
+    public LocalDateTime getFechaUltimoAcceso() {
+        return fechaUltimoAcceso;
+    }
     public Empresa getEmpresa() {
         return empresa;
     }
@@ -156,6 +162,10 @@ public class Usuario {
         this.fechaVerificacionEmail = fechaVerificacion;
         this.tokenVerificacionEmail = null;
         this.tokenVerificacionExpiraEn = null;
+    }
+
+    public void registrarUltimoAcceso(LocalDateTime fechaUltimoAcceso) {
+        this.fechaUltimoAcceso = fechaUltimoAcceso;
     }
 }
 

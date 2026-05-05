@@ -1,6 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend.repositorio;
 
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +14,7 @@ public interface RepositorioUsuario extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByNombreUsuarioConEmpresa(@Param("nombreUsuario") String nombreUsuario);
     Optional<Usuario> findByCorreoElectronicoIgnoreCase(String correoElectronico);
     Optional<Usuario> findByTokenVerificacionEmail(String tokenVerificacionEmail);
+    List<Usuario> findByEmpresa_IdOrderByIdAsc(Long empresaId);
     boolean existsByNombreUsuario(String nombreUsuario);
     boolean existsByCorreoElectronicoIgnoreCase(String correoElectronico);
 }

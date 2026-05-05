@@ -3,6 +3,7 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioLote;
+import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
@@ -54,36 +55,49 @@ public class ServicioLoteImpl implements ServicioLote {
     }
 
     @Override
-    public Lote crear(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Long empresaId, String identificadorIngreso) {
+    public Lote crear(
+        String codigo,
+        Double superficieMetrosCuadrados,
+        boolean ocupado,
+        Long empresaId,
+        String estadoAsignacion,
+        String numeroExpedienteReferencia,
+        String identificadorIngreso
+    ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         Long empresaObjetivo = empresaId;
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             empresaObjetivo = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
         }
-        if (empresaObjetivo == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa es obligatoria");
-        }
-        Empresa empresa = obtenerEmpresa(empresaObjetivo);
+        Empresa empresa = obtenerEmpresaOpcional(empresaObjetivo);
         validarCodigoDisponible(empresaObjetivo, codigo, null);
         Lote lote = Lote.crear(codigo, superficieMetrosCuadrados, ocupado, empresa);
+        lote.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
         Lote guardado = repositorioLote.save(lote);
         return repositorioLote.findByIdConEmpresa(guardado.getId()).orElse(guardado);
     }
 
     @Override
-    public Lote actualizar(Long id, String codigo, Double superficieMetrosCuadrados, boolean ocupado, Long empresaId, String identificadorIngreso) {
+    public Lote actualizar(
+        Long id,
+        String codigo,
+        Double superficieMetrosCuadrados,
+        boolean ocupado,
+        Long empresaId,
+        String estadoAsignacion,
+        String numeroExpedienteReferencia,
+        String identificadorIngreso
+    ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         Lote loteActual = obtenerPorId(id, identificadorIngreso);
         Long empresaObjetivo = empresaId;
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             empresaObjetivo = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
         }
-        if (empresaObjetivo == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa es obligatoria");
-        }
-        Empresa empresa = obtenerEmpresa(empresaObjetivo);
+        Empresa empresa = obtenerEmpresaOpcional(empresaObjetivo);
         validarCodigoDisponible(empresaObjetivo, codigo, loteActual);
         loteActual.actualizarDatos(codigo, superficieMetrosCuadrados, ocupado, empresa);
+        loteActual.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
         Lote guardado = repositorioLote.save(loteActual);
         return repositorioLote.findByIdConEmpresa(guardado.getId()).orElse(guardado);
     }
@@ -99,7 +113,31 @@ public class ServicioLoteImpl implements ServicioLote {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa indicada no existe"));
     }
 
+    private Empresa obtenerEmpresaOpcional(Long empresaId) {
+        if (empresaId == null) {
+            return null;
+        }
+        return obtenerEmpresa(empresaId);
+    }
+
     private void validarCodigoDisponible(Long empresaId, String codigoNuevo, Lote loteActual) {
+        if (empresaId == null) {
+            if (loteActual == null) {
+                if (repositorioLote.existsByEmpresaIsNullAndCodigo(codigoNuevo)) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote sin asignar con ese codigo");
+                }
+                return;
+            }
+
+            Long empresaActualId = loteActual.getEmpresa() != null ? loteActual.getEmpresa().getId() : null;
+            boolean cambioEmpresa = empresaActualId != null;
+            boolean cambioCodigo = !loteActual.getCodigo().equals(codigoNuevo);
+            if ((cambioEmpresa || cambioCodigo) && repositorioLote.existsByEmpresaIsNullAndCodigo(codigoNuevo)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote sin asignar con ese codigo");
+            }
+            return;
+        }
+
         if (loteActual == null) {
             if (repositorioLote.existsByEmpresaIdAndCodigo(empresaId, codigoNuevo)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote con ese codigo para la empresa");
@@ -107,11 +145,33 @@ public class ServicioLoteImpl implements ServicioLote {
             return;
         }
 
-        boolean cambioEmpresa = !loteActual.getEmpresa().getId().equals(empresaId);
+        Long empresaActualId = loteActual.getEmpresa() != null ? loteActual.getEmpresa().getId() : null;
+        boolean cambioEmpresa = empresaActualId == null || !empresaActualId.equals(empresaId);
         boolean cambioCodigo = !loteActual.getCodigo().equals(codigoNuevo);
         if ((cambioEmpresa || cambioCodigo) && repositorioLote.existsByEmpresaIdAndCodigo(empresaId, codigoNuevo)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote con ese codigo para la empresa");
         }
+    }
+
+    private EstadoAsignacionLote resolverEstadoAsignacion(String estadoAsignacion) {
+        String valor = normalizarTexto(estadoAsignacion);
+        if (valor == null) {
+            return null;
+        }
+        String normalizadoEnum = valor.toUpperCase().replace('-', '_').replace(' ', '_');
+        try {
+            return EstadoAsignacionLote.valueOf(normalizadoEnum);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estado de asignacion invalido");
+        }
+    }
+
+    private String normalizarTexto(String valor) {
+        if (valor == null) {
+            return null;
+        }
+        String limpio = valor.trim();
+        return limpio.isEmpty() ? null : limpio;
     }
 }
 

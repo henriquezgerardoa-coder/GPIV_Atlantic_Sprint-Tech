@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (Autenticacion.tieneAcceso(['EMPRESA'])) {
+        ocultarAccesosEmpresaRestringidos();
         document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
         document.getElementById('btnNuevoLote')?.classList.add('d-none');
     }
@@ -173,9 +174,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cargar sección inicial
     if (Autenticacion.tieneAcceso(['EMPRESA'])) {
-        navegarA('radicaciones');
+        navegarA('empresas');
     } else {
         navegarA('panel');
     }
 });
+
+function ocultarAccesosEmpresaRestringidos() {
+    document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
+    document.getElementById('nav-lotes')?.closest('.nav-item')?.classList.add('d-none');
+    document.getElementById('itemNavUsuarios')?.classList.add('d-none');
+    document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
+    document.getElementById('itemNavInformes')?.classList.add('d-none');
+    document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
+
+    document.querySelectorAll("a.enlace-nav[onclick*='navegarA(\"panel\")'], a.enlace-nav[onclick*='navegarA(\"lotes\")'], a.enlace-nav[onclick*=\"navegarA('panel')\"], a.enlace-nav[onclick*=\"navegarA('lotes')\"]")
+        .forEach(el => el.closest('.nav-item')?.classList.add('d-none'));
+}
 

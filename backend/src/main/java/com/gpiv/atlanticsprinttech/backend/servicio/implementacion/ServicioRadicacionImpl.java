@@ -1,11 +1,14 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionDocumento;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamientoPedidoLotes;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
@@ -17,6 +20,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -32,25 +36,45 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private static final long MAX_TAMANO_TOTAL_SOLICITUD = 30L * 1024L * 1024L;
     private static final Set<String> EXTENSIONES_PERMITIDAS = Set.of("pdf", "doc", "docx", "jpg", "jpeg", "png");
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final Set<Integer> OPCIONES_TIEMPO_RADICACION = Set.of(6, 12, 24, 36);
+    private static final Set<Integer> OPCIONES_NECESIDAD_M2 = Set.of(1200, 1800, 2500, 3300, 5000, 6000);
+    private static final String TIPO_SOLICITUD_PEDIDO_LOTES = "PEDIDO_LOTES";
+    private static final Map<EstadoRadicacion, Set<EstadoRadicacion>> TRANSICIONES_VALIDAS = Map.of(
+        EstadoRadicacion.PENDIENTE, Set.of(EstadoRadicacion.EN_REVISION, EstadoRadicacion.RECHAZADA, EstadoRadicacion.CANCELADA),
+        EstadoRadicacion.EN_REVISION, Set.of(
+            EstadoRadicacion.APROBADA,
+            EstadoRadicacion.RECHAZADA,
+            EstadoRadicacion.REQUIERE_INFORMACION_ADICIONAL,
+            EstadoRadicacion.CANCELADA
+        ),
+        EstadoRadicacion.REQUIERE_INFORMACION_ADICIONAL, Set.of(EstadoRadicacion.EN_REVISION, EstadoRadicacion.RECHAZADA, EstadoRadicacion.CANCELADA),
+        EstadoRadicacion.APROBADA, Set.of(EstadoRadicacion.RADICADA),
+        EstadoRadicacion.RADICADA, Set.of(),
+        EstadoRadicacion.RECHAZADA, Set.of(),
+        EstadoRadicacion.CANCELADA, Set.of()
+    );
 
     private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
     private final RepositorioRadicacionHistorial repositorioRadicacionHistorial;
     private final RepositorioRadicacionDocumento repositorioRadicacionDocumento;
     private final RepositorioEmpresa repositorioEmpresa;
     private final ServicioContextoUsuario servicioContextoUsuario;
+    private final ObjectMapper objectMapper;
 
     public ServicioRadicacionImpl(
         RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
         RepositorioRadicacionHistorial repositorioRadicacionHistorial,
         RepositorioRadicacionDocumento repositorioRadicacionDocumento,
         RepositorioEmpresa repositorioEmpresa,
-        ServicioContextoUsuario servicioContextoUsuario
+        ServicioContextoUsuario servicioContextoUsuario,
+        ObjectMapper objectMapper
     ) {
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
         this.repositorioRadicacionHistorial = repositorioRadicacionHistorial;
         this.repositorioRadicacionDocumento = repositorioRadicacionDocumento;
         this.repositorioEmpresa = repositorioEmpresa;
         this.servicioContextoUsuario = servicioContextoUsuario;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -79,27 +103,84 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     }
 
     @Override
-    public RadicacionSolicitud crear(String identificadorIngreso, String tipoSolicitud, String descripcion, String usoEstimativo) {
+    public RadicacionSolicitud crear(
+        String identificadorIngreso,
+        String tipoSolicitud,
+        String descripcion,
+        String usoEstimativo,
+        SolicitudRelevamientoPedidoLotes relevamientoPedidoLotes
+    ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa asociada no existe"));
 
         String numero = generarNumeroRadicado();
+        String tipoSolicitudNormalizado = tipoSolicitud.trim();
         String usoEstimativoNormalizado = usoEstimativo == null ? null : usoEstimativo.trim();
         if (usoEstimativoNormalizado != null && usoEstimativoNormalizado.isBlank()) {
             usoEstimativoNormalizado = null;
         }
+        validarConsistenciaRelevamiento(tipoSolicitudNormalizado, relevamientoPedidoLotes);
+        String relevamientoPedidoLotesJson = serializarRelevamiento(relevamientoPedidoLotes);
         RadicacionSolicitud nueva = RadicacionSolicitud.crear(
             numero,
             empresa,
-            tipoSolicitud.trim(),
+            tipoSolicitudNormalizado,
             descripcion.trim(),
-            usoEstimativoNormalizado
+            usoEstimativoNormalizado,
+            relevamientoPedidoLotesJson
         );
         RadicacionSolicitud guardada = repositorioRadicacionSolicitud.save(nueva);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(guardada, guardada.getEstado(), "Solicitud creada", identificadorIngreso));
         return guardada;
+    }
+
+    private void validarConsistenciaRelevamiento(String tipoSolicitud, SolicitudRelevamientoPedidoLotes relevamiento) {
+        boolean esPedidoLotes = TIPO_SOLICITUD_PEDIDO_LOTES.equalsIgnoreCase(tipoSolicitud);
+        if (esPedidoLotes && relevamiento == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe enviar el relevamiento para solicitudes PEDIDO_LOTES");
+        }
+        if (!esPedidoLotes && relevamiento != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El relevamiento solo aplica para solicitudes PEDIDO_LOTES");
+        }
+        if (relevamiento == null) {
+            return;
+        }
+
+        String cuitDigitos = relevamiento.cuit().replace("-", "").trim();
+        if (!cuitDigitos.matches("\\d{11}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El CUIT debe contener 11 digitos");
+        }
+
+        if (!OPCIONES_TIEMPO_RADICACION.contains(relevamiento.tiempoRadicacionMeses())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tiempo de radicacion debe ser 6, 12, 24 o 36 meses");
+        }
+
+        if (!OPCIONES_NECESIDAD_M2.contains(relevamiento.necesidadMetrosCuadrados())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La necesidad de m2 debe coincidir con las opciones permitidas");
+        }
+
+        if ("EXISTENTE".equalsIgnoreCase(relevamiento.tipoEmpresa())
+            && (relevamiento.objetoProyecto() == null || relevamiento.objetoProyecto().isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar el objeto del proyecto para empresa existente");
+        }
+
+        if ("OTROS".equalsIgnoreCase(relevamiento.rubro())
+            && (relevamiento.rubroOtro() == null || relevamiento.rubroOtro().isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe detallar el rubro cuando se selecciona OTROS");
+        }
+    }
+
+    private String serializarRelevamiento(SolicitudRelevamientoPedidoLotes relevamiento) {
+        if (relevamiento == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(relevamiento);
+        } catch (JsonProcessingException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo serializar el relevamiento");
+        }
     }
 
     @Override
@@ -110,10 +191,26 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         }
 
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, id);
+        validarTransicionEstado(radicacion.getEstado(), estado, comentario);
         radicacion.cambiarEstado(estado);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estado, comentario, identificadorIngreso));
         return actualizada;
+    }
+
+    private void validarTransicionEstado(EstadoRadicacion actual, EstadoRadicacion siguiente, String comentario) {
+        if (actual == siguiente) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La radicacion ya se encuentra en ese estado");
+        }
+        Set<EstadoRadicacion> estadosPermitidos = TRANSICIONES_VALIDAS.getOrDefault(actual, Set.of());
+        if (!estadosPermitidos.contains(siguiente)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Transicion de estado no permitida");
+        }
+
+        boolean requiereComentario = siguiente == EstadoRadicacion.RECHAZADA || siguiente == EstadoRadicacion.CANCELADA;
+        if (requiereComentario && (comentario == null || comentario.isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar un comentario para el estado seleccionado");
+        }
     }
 
     @Override

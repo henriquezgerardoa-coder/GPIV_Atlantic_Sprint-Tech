@@ -43,6 +43,9 @@ public class RadicacionSolicitud {
 	@Column(name = "uso_estimativo", length = 120)
 	private String usoEstimativo;
 
+	@Column(name = "relevamiento_pedido_lotes", length = 12000)
+	private String relevamientoPedidoLotesJson;
+
 	@Column(name = "fecha_radicacion", nullable = false)
 	private LocalDate fechaRadicacion;
 
@@ -56,12 +59,20 @@ public class RadicacionSolicitud {
 	protected RadicacionSolicitud() {
 	}
 
-	private RadicacionSolicitud(String numeroRadicado, Empresa empresa, String tipoSolicitud, String descripcion, String usoEstimativo) {
+	private RadicacionSolicitud(
+		String numeroRadicado,
+		Empresa empresa,
+		String tipoSolicitud,
+		String descripcion,
+		String usoEstimativo,
+		String relevamientoPedidoLotesJson
+	) {
 		this.numeroRadicado = numeroRadicado;
 		this.empresa = empresa;
 		this.tipoSolicitud = tipoSolicitud;
 		this.descripcion = descripcion;
 		this.usoEstimativo = usoEstimativo;
+		this.relevamientoPedidoLotesJson = relevamientoPedidoLotesJson;
 		this.fechaRadicacion = LocalDate.now();
 		this.estado = EstadoRadicacion.PENDIENTE;
 	}
@@ -71,9 +82,10 @@ public class RadicacionSolicitud {
 		Empresa empresa,
 		String tipoSolicitud,
 		String descripcion,
-		String usoEstimativo
+		String usoEstimativo,
+		String relevamientoPedidoLotesJson
 	) {
-		return new RadicacionSolicitud(numeroRadicado, empresa, tipoSolicitud, descripcion, usoEstimativo);
+		return new RadicacionSolicitud(numeroRadicado, empresa, tipoSolicitud, descripcion, usoEstimativo, relevamientoPedidoLotesJson);
 	}
 
 	@PrePersist
@@ -104,6 +116,10 @@ public class RadicacionSolicitud {
 
 	public String getUsoEstimativo() {
 		return usoEstimativo;
+	}
+
+	public String getRelevamientoPedidoLotesJson() {
+		return relevamientoPedidoLotesJson;
 	}
 
 	public LocalDate getFechaRadicacion() {

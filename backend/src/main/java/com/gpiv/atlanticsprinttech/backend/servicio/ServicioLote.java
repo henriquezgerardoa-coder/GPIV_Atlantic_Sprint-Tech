@@ -9,9 +9,26 @@ public interface ServicioLote {
 
     Lote obtenerPorId(Long id, String identificadorIngreso);
 
-    Lote crear(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Long empresaId, String identificadorIngreso);
+    Lote crear(
+        String codigo,
+        Double superficieMetrosCuadrados,
+        boolean ocupado,
+        Long empresaId,
+        String estadoAsignacion,
+        String numeroExpedienteReferencia,
+        String identificadorIngreso
+    );
 
-    Lote actualizar(Long id, String codigo, Double superficieMetrosCuadrados, boolean ocupado, Long empresaId, String identificadorIngreso);
+    Lote actualizar(
+        Long id,
+        String codigo,
+        Double superficieMetrosCuadrados,
+        boolean ocupado,
+        Long empresaId,
+        String estadoAsignacion,
+        String numeroExpedienteReferencia,
+        String identificadorIngreso
+    );
 
     void eliminar(Long id, String identificadorIngreso);
 }

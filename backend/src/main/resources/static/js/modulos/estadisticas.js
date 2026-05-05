@@ -1,5 +1,5 @@
 /**
- * ModuloEstadisticas — Informes y estadisticas del parque industrial.
+ * ModuloEstadisticas — Informes y estadísticas del parque industrial.
  * Visible para ADMINISTRADOR y DIRECTIVO (R-14: lectura de informes).
  */
 const ModuloEstadisticas = (() => {
@@ -8,14 +8,14 @@ const ModuloEstadisticas = (() => {
         try {
             const resp = await ApiCliente.obtener('/api/estadisticas/resumen');
             if (!resp || !resp.ok) {
-                mostrarAlerta('No se pudieron cargar las estadisticas.', 'danger');
+                mostrarAlerta('No se pudieron cargar las estadísticas.', 'danger');
                 return;
             }
             const datos = await resp.json();
             renderizar(datos);
         } catch (err) {
-            console.error('Error al cargar estadisticas:', err);
-            mostrarAlerta('Error al cargar estadisticas.', 'danger');
+            console.error('Error al cargar estadísticas:', err);
+            mostrarAlerta('Error al cargar estadísticas.', 'danger');
         }
     }
 
@@ -39,8 +39,9 @@ const ModuloEstadisticas = (() => {
             { clave: 'PENDIENTE',                    etiqueta: 'Pendiente',                color: 'warning' },
             { clave: 'EN_REVISION',                  etiqueta: 'En revisión',              color: 'info'    },
             { clave: 'APROBADA',                     etiqueta: 'Aprobada',                 color: 'success' },
+            { clave: 'RADICADA',                     etiqueta: 'Radicada',                 color: 'primary' },
             { clave: 'RECHAZADA',                    etiqueta: 'Rechazada',                color: 'danger'  },
-            { clave: 'REQUIERE_INFORMACION_ADICIONAL', etiqueta: 'Requiere inf. adicional', color: 'secondary' },
+            { clave: 'REQUIERE_INFORMACION_ADICIONAL', etiqueta: 'Requiere información adicional', color: 'secondary' },
             { clave: 'CANCELADA',                    etiqueta: 'Cancelada',                color: 'dark'    },
         ];
         tbody.innerHTML = estados.map(e => {

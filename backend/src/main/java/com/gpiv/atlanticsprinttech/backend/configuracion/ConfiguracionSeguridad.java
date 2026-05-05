@@ -37,9 +37,15 @@ public class ConfiguracionSeguridad {
                 .requestMatchers("/api/usuarios/mi-clave").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/usuarios/roles").hasRole("ADMINISTRADOR")
                 .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.GET, "/api/empresas/admin/vista/**").hasRole("ADMINISTRADOR")
                 .requestMatchers(HttpMethod.GET, "/api/empresas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "EMPRESA")
                 .requestMatchers(HttpMethod.GET, "/api/lotes/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "EMPRESA")
-                .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
+                .requestMatchers(HttpMethod.POST, "/api/empresas").hasAnyRole("ADMINISTRADOR", "EMPRESA")
+                .requestMatchers(HttpMethod.PUT, "/api/empresas/*").hasAnyRole("ADMINISTRADOR", "EMPRESA")
+                .requestMatchers(HttpMethod.DELETE, "/api/empresas/*").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.GET, "/api/empresas/*/servicios-post-radicacion").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "EMPRESA")
+                .requestMatchers(HttpMethod.PATCH, "/api/empresas/*/servicios-post-radicacion").hasAnyRole("ADMINISTRADOR", "EMPRESA")
+                .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "EMPRESA")
                 .requestMatchers("/api/lotes/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
                 // R-14: informes/estadisticas solo para ADMINISTRADOR y DIRECTIVO (lectura legislativa).
                 // El rol EMPRESA no accede a estadisticas globales.

@@ -6,6 +6,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/lotes")
 public class ControladorLote {
+
+    private static final String EMPRESA_SIN_ASIGNAR = "Sin asignar";
 
     private final ServicioLote servicioLote;
 
@@ -45,6 +48,8 @@ public class ControladorLote {
             solicitud.superficieMetrosCuadrados(),
             solicitud.ocupado(),
             solicitud.empresaId(),
+            solicitud.estadoAsignacion(),
+            solicitud.numeroExpedienteReferencia(),
             autenticacion.getName()
         );
         return ResponseEntity.created(URI.create("/api/lotes/" + loteCreado.getId()))
@@ -59,6 +64,8 @@ public class ControladorLote {
             solicitud.superficieMetrosCuadrados(),
             solicitud.ocupado(),
             solicitud.empresaId(),
+            solicitud.estadoAsignacion(),
+            solicitud.numeroExpedienteReferencia(),
             autenticacion.getName()
         );
         return crearRespuesta(loteActualizado);
@@ -71,13 +78,24 @@ public class ControladorLote {
     }
 
     private RespuestaLote crearRespuesta(Lote lote) {
+        Long empresaId = lote.getEmpresa() != null ? lote.getEmpresa().getId() : null;
+        String nombreEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getNombre() : EMPRESA_SIN_ASIGNAR;
+        String cuitEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getCuit() : null;
+        String estadoAsignacion = lote.getEstadoAsignacion() != null ? lote.getEstadoAsignacion().name() : null;
+        String fechaAsignacion = lote.getFechaAsignacion() != null
+            ? lote.getFechaAsignacion().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            : null;
         return new RespuestaLote(
             lote.getId(),
             lote.getCodigo(),
             lote.getSuperficieMetrosCuadrados(),
             lote.isOcupado(),
-            lote.getEmpresa().getId(),
-            lote.getEmpresa().getNombre()
+            empresaId,
+            nombreEmpresa,
+            cuitEmpresa,
+            estadoAsignacion,
+            fechaAsignacion,
+            lote.getNumeroExpedienteReferencia()
         );
     }
 }

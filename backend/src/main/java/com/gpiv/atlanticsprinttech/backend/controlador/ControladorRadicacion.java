@@ -63,7 +63,8 @@ public class ControladorRadicacion {
             autenticacion.getName(),
             solicitud.tipoSolicitud(),
             solicitud.descripcion(),
-            solicitud.usoEstimativo()
+            solicitud.usoEstimativo(),
+            solicitud.relevamientoPedidoLotes()
         );
         return ResponseEntity.created(URI.create("/api/radicaciones/" + creada.getId())).body(crearRespuesta(creada));
     }
@@ -136,10 +137,19 @@ public class ControladorRadicacion {
             radicacion.getTipoSolicitud(),
             radicacion.getDescripcion(),
             radicacion.getUsoEstimativo(),
+            radicacion.getRelevamientoPedidoLotesJson() != null,
+            obtenerEtapaActual(radicacion.getEstado()),
             radicacion.getEstado(),
             radicacion.getFechaRadicacion(),
             radicacion.getFechaUltimaActualizacion()
         );
+    }
+
+    private Integer obtenerEtapaActual(EstadoRadicacion estado) {
+        return switch (estado) {
+            case PENDIENTE, EN_REVISION, REQUIERE_INFORMACION_ADICIONAL -> 2;
+            case APROBADA, RADICADA, RECHAZADA, CANCELADA -> 3;
+        };
     }
 
     private RespuestaDocumentoRadicacion crearRespuestaDocumento(RadicacionDocumento documento) {

@@ -11,20 +11,22 @@ public interface RepositorioLote extends JpaRepository<Lote, Long> {
 
     boolean existsByEmpresaIdAndCodigo(Long empresaId, String codigo);
 
+    boolean existsByEmpresaIsNullAndCodigo(String codigo);
+
     Optional<Lote> findByEmpresaIdAndCodigo(Long empresaId, String codigo);
 
     boolean existsByEmpresaId(Long empresaId);
 
-    @Query("SELECT l FROM Lote l JOIN FETCH l.empresa WHERE l.id = :id")
+    @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa WHERE l.id = :id")
     Optional<Lote> findByIdConEmpresa(@Param("id") Long id);
 
-    @Query("SELECT l FROM Lote l JOIN FETCH l.empresa")
+    @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa")
     List<Lote> findAllConEmpresa();
 
-    @Query("SELECT l FROM Lote l JOIN FETCH l.empresa WHERE l.empresa.id = :empresaId")
+    @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa WHERE l.empresa.id = :empresaId")
     List<Lote> findAllByEmpresaIdConEmpresa(@Param("empresaId") Long empresaId);
 
-    @Query("SELECT l FROM Lote l JOIN FETCH l.empresa WHERE l.id = :id AND l.empresa.id = :empresaId")
+    @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa WHERE l.id = :id AND l.empresa.id = :empresaId")
     Optional<Lote> findByIdAndEmpresaIdConEmpresa(@Param("id") Long id, @Param("empresaId") Long empresaId);
 
     /** Cuenta lotes ocupados — para estadisticas (R-14). */

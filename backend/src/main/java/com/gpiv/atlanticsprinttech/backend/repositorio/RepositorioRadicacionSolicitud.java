@@ -35,6 +35,12 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
     @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa WHERE r.id = :id AND r.empresa.id = :empresaId")
     Optional<RadicacionSolicitud> findByIdAndEmpresaIdConEmpresa(@Param("id") Long id, @Param("empresaId") Long empresaId);
 
+    boolean existsByEmpresaIdAndEstado(Long empresaId, EstadoRadicacion estado);
+
+    Optional<RadicacionSolicitud> findFirstByEmpresaIdOrderByFechaUltimaActualizacionDesc(Long empresaId);
+
+    boolean existsByEmpresaId(Long empresaId);
+
     /** Cuenta radicaciones agrupadas por estado — para informes/estadisticas (R-14). */
     @Query("SELECT r.estado, COUNT(r) FROM RadicacionSolicitud r GROUP BY r.estado")
     List<Object[]> contarPorEstado();

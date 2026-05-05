@@ -50,7 +50,8 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         long totalRadicaciones = radicacionesPorEstado.values().stream().mapToLong(Long::longValue).sum();
         long pendientes  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.PENDIENTE.name(), 0L);
         long enRevision  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.EN_REVISION.name(), 0L);
-        long aprobadas   = radicacionesPorEstado.getOrDefault(EstadoRadicacion.APROBADA.name(), 0L);
+        long aprobadas   = radicacionesPorEstado.getOrDefault(EstadoRadicacion.APROBADA.name(), 0L)
+            + radicacionesPorEstado.getOrDefault(EstadoRadicacion.RADICADA.name(), 0L);
         long rechazadas  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.RECHAZADA.name(), 0L);
 
         return new RespuestaEstadisticas(

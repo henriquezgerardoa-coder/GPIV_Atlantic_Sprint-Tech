@@ -12,6 +12,8 @@ public record RespuestaRadicacion(
     String tipoSolicitud,
     String descripcion,
     String usoEstimativo,
+    Boolean tieneRelevamientoPedidoLotes,
+    Integer etapaActual,
     EstadoRadicacion estado,
     LocalDate fechaRadicacion,
     LocalDateTime fechaUltimaActualizacion

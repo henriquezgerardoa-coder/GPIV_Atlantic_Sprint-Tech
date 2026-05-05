@@ -76,7 +76,7 @@ const ModuloUsuarios = (() => {
     function abrirCreacion() {
         modoEdicion = false;
         idEdicion   = null;
-        document.getElementById('tituloModalUsuario').textContent   = 'Nuevo Usuario';
+        document.getElementById('tituloModalUsuario').textContent   = 'Nuevo usuario';
         document.getElementById('formularioUsuario').reset();
         document.getElementById('campoNombreUsuario').disabled      = false;
         document.getElementById('grupoClaveUsuario').classList.remove('d-none');
@@ -91,7 +91,7 @@ const ModuloUsuarios = (() => {
         if (!usuario) return;
         modoEdicion = true;
         idEdicion   = id;
-        document.getElementById('tituloModalUsuario').textContent   = 'Editar Usuario';
+        document.getElementById('tituloModalUsuario').textContent   = 'Editar usuario';
         document.getElementById('campoNombreUsuario').value         = usuario.nombreUsuario;
         document.getElementById('campoNombreUsuario').disabled      = true;
         document.getElementById('campoNombreCompleto').value        = usuario.nombreCompleto;

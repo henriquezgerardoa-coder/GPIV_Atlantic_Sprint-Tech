@@ -2,6 +2,7 @@ package com.gpiv.atlanticsprinttech.commons.comunicacion.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 
 public record SolicitudRadicacion(
     @NotBlank(message = "El tipo de solicitud es obligatorio")
@@ -11,6 +12,8 @@ public record SolicitudRadicacion(
     @Size(max = 1000, message = "La descripcion no puede superar 1000 caracteres")
     String descripcion,
     @Size(max = 120, message = "El uso estimativo no puede superar 120 caracteres")
-    String usoEstimativo
+    String usoEstimativo,
+    @Valid
+    SolicitudRelevamientoPedidoLotes relevamientoPedidoLotes
 ) {
 }

@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.servicio;
 
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamientoPedidoLotes;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionHistorial;
@@ -13,7 +14,13 @@ public interface ServicioRadicacion {
 
     RadicacionSolicitud obtenerPorId(String identificadorIngreso, Long id);
 
-    RadicacionSolicitud crear(String identificadorIngreso, String tipoSolicitud, String descripcion, String usoEstimativo);
+    RadicacionSolicitud crear(
+        String identificadorIngreso,
+        String tipoSolicitud,
+        String descripcion,
+        String usoEstimativo,
+        SolicitudRelevamientoPedidoLotes relevamientoPedidoLotes
+    );
 
     RadicacionSolicitud cambiarEstado(String identificadorIngreso, Long id, EstadoRadicacion estado, String comentario);
 
