@@ -1,0 +1,8 @@
+BEGIN;
+
+ALTER TABLE lotes ADD COLUMN IF NOT EXISTS fecha_asignacion DATE;
+ALTER TABLE lotes ADD COLUMN IF NOT EXISTS estado_asignacion VARCHAR(40);
+ALTER TABLE lotes ADD COLUMN IF NOT EXISTS numero_expediente_referencia VARCHAR(40);
+
+COMMIT;
+

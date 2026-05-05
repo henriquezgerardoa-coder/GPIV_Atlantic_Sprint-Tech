@@ -42,10 +42,12 @@ function navegarA(seccion) {
     offcanvas?.hide();
 
     switch (seccion) {
-        case 'panel':    cargarPanel();            break;
-        case 'empresas': ModuloEmpresas.cargar();  break;
-        case 'lotes':    ModuloLotes.cargar();     break;
-        case 'usuarios': ModuloUsuarios.cargar();  break;
+        case 'panel':      cargarPanel();                break;
+        case 'empresas':   ModuloEmpresas.cargar();      break;
+        case 'lotes':      ModuloLotes.cargar();         break;
+        case 'radicaciones': ModuloRadicaciones.cargar(); break;
+        case 'informes':   ModuloEstadisticas.cargar();  break;
+        case 'usuarios':   ModuloUsuarios.cargar();      break;
     }
 }
 
@@ -66,9 +68,7 @@ async function cargarPanel() {
     } catch (err) {
         console.error('Error al cargar el panel:', err);
     }
-}
-
-/* ═══════════════════════════════════════════════════
+}/* ═══════════════════════════════════════════════════
    Inicialización al cargar la página
 ═══════════════════════════════════════════════════ */
 
@@ -78,12 +78,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const sesion = Autenticacion.obtenerSesion();
 
     // Mostrar información del usuario en la barra superior
-    document.getElementById('nombreUsuarioNavbar').textContent = sesion.nombreUsuario;
+    document.getElementById('nombreUsuarioNavbar').textContent = sesion.nombreCompleto || sesion.nombreUsuario;
     document.getElementById('rolesUsuarioNavbar').textContent  = sesion.roles.join(', ');
+
+    document.getElementById('campoMiNombreCompleto').value = sesion.nombreCompleto || '';
+    document.getElementById('campoMiCorreoElectronico').value = sesion.correoElectronico || '';
 
     // Ocultar la sección Usuarios si no es administrador
     if (!Autenticacion.esAdministrador()) {
         document.getElementById('itemNavUsuarios')?.classList.add('d-none');
+        document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
+    }
+
+    // Ocultar Informes para el rol EMPRESA (R-14: solo ADMINISTRADOR y DIRECTIVO)
+    if (Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO'])) {
+        document.getElementById('itemNavInformes')?.classList.add('d-none');
+        document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
+        document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));
+    }
+
+    if (Autenticacion.tieneAcceso(['EMPRESA'])) {
+        ocultarAccesosEmpresaRestringidos();
+        document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
+        document.getElementById('btnNuevoLote')?.classList.add('d-none');
     }
 
     // Botón cerrar sesión
@@ -111,6 +128,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Cambiar mis datos personales
+    document.getElementById('formMiPerfil').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nombreCompleto = document.getElementById('campoMiNombreCompleto').value.trim();
+        const correoElectronico = document.getElementById('campoMiCorreoElectronico').value.trim();
+
+        if (!nombreCompleto) {
+            mostrarAlertaModal('alertaModalMiPerfil', 'El nombre completo es obligatorio.');
+            return;
+        }
+
+        const respuesta = await ApiCliente.parche('/api/yo/perfil', { nombreCompleto, correoElectronico });
+        if (respuesta?.ok) {
+            const sesionActualizada = { ...sesion, nombreCompleto, correoElectronico };
+            sessionStorage.setItem('usuario', JSON.stringify(sesionActualizada));
+            document.getElementById('nombreUsuarioNavbar').textContent = nombreCompleto;
+            bootstrap.Modal.getInstance(document.getElementById('modalMiPerfil'))?.hide();
+            mostrarAlerta('Datos personales actualizados.');
+        } else {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlertaModal('alertaModalMiPerfil', error?.mensaje || 'No se pudieron actualizar los datos.');
+        }
+    });
+
     // Confirmación genérica de eliminación
     document.getElementById('btnConfirmarEliminar').addEventListener('click', async function () {
         const id   = parseInt(this.dataset.eliminarId);
@@ -132,6 +173,22 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     // Cargar sección inicial
-    navegarA('panel');
+    if (Autenticacion.tieneAcceso(['EMPRESA'])) {
+        navegarA('empresas');
+    } else {
+        navegarA('panel');
+    }
 });
+
+function ocultarAccesosEmpresaRestringidos() {
+    document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
+    document.getElementById('nav-lotes')?.closest('.nav-item')?.classList.add('d-none');
+    document.getElementById('itemNavUsuarios')?.classList.add('d-none');
+    document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
+    document.getElementById('itemNavInformes')?.classList.add('d-none');
+    document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
+
+    document.querySelectorAll("a.enlace-nav[onclick*='navegarA(\"panel\")'], a.enlace-nav[onclick*='navegarA(\"lotes\")'], a.enlace-nav[onclick*=\"navegarA('panel')\"], a.enlace-nav[onclick*=\"navegarA('lotes')\"]")
+        .forEach(el => el.closest('.nav-item')?.classList.add('d-none'));
+}
 

@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
@@ -44,6 +45,11 @@ public class Usuario {
     private LocalDateTime tokenVerificacionExpiraEn;
     @Column(name = "fecha_verificacion_email")
     private LocalDateTime fechaVerificacionEmail;
+    @Column(name = "fecha_ultimo_acceso")
+    private LocalDateTime fechaUltimoAcceso;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "usuarios_roles", joinColumns = @JoinColumn(name = "usuario_id"))
@@ -111,16 +117,36 @@ public class Usuario {
     public Set<RolUsuario> getRoles() {
         return Collections.unmodifiableSet(roles);
     }
-    public void actualizarDatos(String nombreCompleto, boolean activo, Set<RolUsuario> roles) {
+
+    public LocalDateTime getFechaUltimoAcceso() {
+        return fechaUltimoAcceso;
+    }
+    public Empresa getEmpresa() {
+        return empresa;
+    }
+    public Long getEmpresaId() {
+        return empresa == null ? null : empresa.getId();
+    }
+    public void actualizarDatos(String nombreCompleto, boolean activo, Set<RolUsuario> roles, Empresa empresa) {
         this.nombreCompleto = nombreCompleto;
         this.activo = activo;
         this.roles = new HashSet<>(roles);
+        this.empresa = empresa;
     }
     public void actualizarClaveAccesoHash(String claveAccesoHash) {
         this.claveAccesoHash = claveAccesoHash;
     }
     public void actualizarCorreoElectronico(String correoElectronico) {
         this.correoElectronico = correoElectronico;
+    }
+
+    public void actualizarPerfilPersonal(String nombreCompleto, String correoElectronico) {
+        this.nombreCompleto = nombreCompleto;
+        this.correoElectronico = correoElectronico;
+    }
+
+    public void actualizarEmpresa(Empresa empresa) {
+        this.empresa = empresa;
     }
     public void iniciarVerificacionEmail(String tokenVerificacionEmail, LocalDateTime tokenVerificacionExpiraEn) {
         this.tokenVerificacionEmail = tokenVerificacionEmail;
@@ -136,6 +162,10 @@ public class Usuario {
         this.fechaVerificacionEmail = fechaVerificacion;
         this.tokenVerificacionEmail = null;
         this.tokenVerificacionExpiraEn = null;
+    }
+
+    public void registrarUltimoAcceso(LocalDateTime fechaUltimoAcceso) {
+        this.fechaUltimoAcceso = fechaUltimoAcceso;
     }
 }
 

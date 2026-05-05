@@ -1,11 +1,13 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesRegistroPublico;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCorreoVerificacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.RegistroIntentosEnMemoria;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
+import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +29,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     private static final Pattern PATRON_CLAVE_SEGURA = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,72}$");
 
     private final RepositorioUsuario repositorioUsuario;
+    private final RepositorioEmpresa repositorioEmpresa;
     private final PasswordEncoder codificadorClave;
     private final ServicioCorreoVerificacion servicioCorreoVerificacion;
     private final PropiedadesRegistroPublico propiedadesRegistroPublico;
@@ -34,12 +37,14 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
 
     public ServicioUsuarioImpl(
         RepositorioUsuario repositorioUsuario,
+        RepositorioEmpresa repositorioEmpresa,
         PasswordEncoder codificadorClave,
         ServicioCorreoVerificacion servicioCorreoVerificacion,
         PropiedadesRegistroPublico propiedadesRegistroPublico,
         RegistroIntentosEnMemoria registroIntentosEnMemoria
     ) {
         this.repositorioUsuario = repositorioUsuario;
+        this.repositorioEmpresa = repositorioEmpresa;
         this.codificadorClave = codificadorClave;
         this.servicioCorreoVerificacion = servicioCorreoVerificacion;
         this.propiedadesRegistroPublico = propiedadesRegistroPublico;
@@ -55,25 +60,30 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
     @Override
-    public Usuario crear(String nombreUsuario, String nombreCompleto, String clavePlano, boolean activo, Set<RolUsuario> roles) {
-        validarRoles(roles);
+    public Usuario crear(String nombreUsuario, String nombreCompleto, String clavePlano, boolean activo, Set<RolUsuario> roles, Long empresaId) {
+        Set<RolUsuario> rolesNormalizados = normalizarRoles(roles);
+        validarRoles(rolesNormalizados);
         if (repositorioUsuario.existsByNombreUsuario(nombreUsuario)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario con ese nombre");
         }
+        Empresa empresa = resolverEmpresaParaUsuario(rolesNormalizados, empresaId);
         Usuario usuario = Usuario.crear(
             nombreUsuario,
             nombreCompleto,
             codificadorClave.encode(clavePlano),
             activo,
-            roles
+            rolesNormalizados
         );
+        usuario.actualizarEmpresa(empresa);
         return repositorioUsuario.save(usuario);
     }
     @Override
-    public Usuario actualizar(Long id, String nombreCompleto, boolean activo, Set<RolUsuario> roles) {
-        validarRoles(roles);
+    public Usuario actualizar(Long id, String nombreCompleto, boolean activo, Set<RolUsuario> roles, Long empresaId) {
+        Set<RolUsuario> rolesNormalizados = normalizarRoles(roles);
+        validarRoles(rolesNormalizados);
         Usuario usuario = obtenerPorId(id);
-        usuario.actualizarDatos(nombreCompleto, activo, roles);
+        Empresa empresa = resolverEmpresaParaUsuario(rolesNormalizados, empresaId);
+        usuario.actualizarDatos(nombreCompleto, activo, rolesNormalizados, empresa);
         return repositorioUsuario.save(usuario);
     }
     @Override
@@ -96,6 +106,25 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         }
         usuario.actualizarClaveAccesoHash(codificadorClave.encode(claveNueva));
         repositorioUsuario.save(usuario);
+    }
+
+    @Override
+    public Usuario actualizarPerfilPropio(String identificadorIngreso, String nombreCompleto, String correoElectronico) {
+        Usuario usuario = obtenerUsuarioPorIdentificador(identificadorIngreso);
+        String nombreNormalizado = nombreCompleto == null ? "" : nombreCompleto.trim();
+        if (nombreNormalizado.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre completo es obligatorio");
+        }
+
+        String correoNormalizado = normalizarCorreoOpcional(correoElectronico);
+        if (correoNormalizado != null
+            && !correoNormalizado.equalsIgnoreCase(usuario.getCorreoElectronico())
+            && repositorioUsuario.existsByCorreoElectronicoIgnoreCase(correoNormalizado)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo electronico ya esta registrado");
+        }
+
+        usuario.actualizarPerfilPersonal(nombreNormalizado, correoNormalizado);
+        return repositorioUsuario.save(usuario);
     }
 
     @Override
@@ -123,7 +152,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             "Usuario " + nombreUsuarioUnico,
             correoNormalizado,
             codificadorClave.encode(clave),
-            EnumSet.of(RolUsuario.VISOR)
+            EnumSet.of(RolUsuario.EMPRESA)
         );
         renovarTokenVerificacion(usuario);
         repositorioUsuario.save(usuario);
@@ -167,6 +196,25 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         }
     }
 
+    private Set<RolUsuario> normalizarRoles(Set<RolUsuario> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return Set.of();
+        }
+        return EnumSet.copyOf(roles);
+    }
+
+    private Empresa resolverEmpresaParaUsuario(Set<RolUsuario> roles, Long empresaId) {
+        boolean esEmpresa = roles.contains(RolUsuario.EMPRESA);
+        if (!esEmpresa) {
+            return null;
+        }
+        if (empresaId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El rol EMPRESA requiere una empresa asociada");
+        }
+        return repositorioEmpresa.findById(empresaId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa indicada no existe"));
+    }
+
     private void validarPoliticaClave(String clave) {
         if (clave == null || !PATRON_CLAVE_SEGURA.matcher(clave).matches()) {
             throw new ResponseStatusException(
@@ -181,6 +229,21 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             return "";
         }
         return correoElectronico.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizarCorreoOpcional(String correoElectronico) {
+        if (correoElectronico == null) {
+            return null;
+        }
+        String normalizado = correoElectronico.trim().toLowerCase(Locale.ROOT);
+        return normalizado.isBlank() ? null : normalizado;
+    }
+
+    private Usuario obtenerUsuarioPorIdentificador(String identificadorIngreso) {
+        String normalizado = normalizarCorreo(identificadorIngreso);
+        return repositorioUsuario.findByNombreUsuario(identificadorIngreso)
+            .or(() -> repositorioUsuario.findByCorreoElectronicoIgnoreCase(normalizado))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
 
     private String generarNombreBase(String correoElectronico) {

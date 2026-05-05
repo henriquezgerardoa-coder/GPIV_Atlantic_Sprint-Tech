@@ -12,7 +12,8 @@ public record SolicitudActualizacionUsuario(
     String nombreCompleto,
     boolean activo,
     @NotEmpty(message = "Debe asignar al menos un rol")
-    Set<RolUsuario> roles
+    Set<RolUsuario> roles,
+    Long empresaId
 ) {
 }
 

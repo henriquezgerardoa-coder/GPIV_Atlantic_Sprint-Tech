@@ -8,7 +8,9 @@ public record RespuestaUsuario(
     String nombreUsuario,
     String nombreCompleto,
     boolean activo,
-    Set<RolUsuario> roles
+    Set<RolUsuario> roles,
+    Long empresaId,
+    String nombreEmpresa
 ) {
 }
 

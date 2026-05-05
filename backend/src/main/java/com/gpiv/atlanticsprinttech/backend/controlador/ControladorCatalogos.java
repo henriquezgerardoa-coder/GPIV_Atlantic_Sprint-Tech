@@ -12,6 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class ControladorCatalogos {
     @GetMapping("/roles")
     public List<RolUsuario> listarRolesDisponibles() {
-        return Arrays.asList(RolUsuario.values());
+        return Arrays.stream(RolUsuario.values()).toList();
     }
 }

@@ -16,8 +16,13 @@ public record SolicitudLote(
 
     boolean ocupado,
 
-    @NotNull(message = "La empresa es obligatoria")
-    Long empresaId
+    Long empresaId,
+
+    @Size(max = 40, message = "El estado de asignacion no puede superar 40 caracteres")
+    String estadoAsignacion,
+
+    @Size(max = 40, message = "El numero de expediente no puede superar 40 caracteres")
+    String numeroExpedienteReferencia
 ) {
 }
 

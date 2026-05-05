@@ -6,7 +6,11 @@ public record RespuestaLote(
     Double superficieMetrosCuadrados,
     boolean ocupado,
     Long empresaId,
-    String nombreEmpresa
+    String nombreEmpresa,
+    String cuitEmpresa,
+    String estadoAsignacion,
+    String fechaAsignacion,
+    String numeroExpedienteReferencia
 ) {
 }
 

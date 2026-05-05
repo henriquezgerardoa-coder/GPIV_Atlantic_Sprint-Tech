@@ -2,7 +2,8 @@
 set -euo pipefail
 
 PUERTO="${SERVER_PORT:-8090}"
-RAIZ_PROYECTO="/home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RAIZ_PROYECTO="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ARCHIVO_BLOQUEO="/tmp/gpiv-backend-${PUERTO}.lock"
 
 exec 9>"${ARCHIVO_BLOQUEO}"
@@ -31,5 +32,7 @@ fi
 
 echo "Iniciando backend en puerto ${PUERTO}..."
 cd "${RAIZ_PROYECTO}"
+echo "Sincronizando modulos (entities/commons/backend)..."
+mvn -q -DskipTests install
 exec mvn -pl backend spring-boot:run -Dspring-boot.run.arguments=--server.port="${PUERTO}"
 

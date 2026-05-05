@@ -5,14 +5,31 @@ import java.util.List;
 
 public interface ServicioLote {
 
-    List<Lote> listar();
+    List<Lote> listar(String identificadorIngreso);
 
-    Lote obtenerPorId(Long id);
+    Lote obtenerPorId(Long id, String identificadorIngreso);
 
-    Lote crear(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Long empresaId);
+    Lote crear(
+        String codigo,
+        Double superficieMetrosCuadrados,
+        boolean ocupado,
+        Long empresaId,
+        String estadoAsignacion,
+        String numeroExpedienteReferencia,
+        String identificadorIngreso
+    );
 
-    Lote actualizar(Long id, String codigo, Double superficieMetrosCuadrados, boolean ocupado, Long empresaId);
+    Lote actualizar(
+        Long id,
+        String codigo,
+        Double superficieMetrosCuadrados,
+        boolean ocupado,
+        Long empresaId,
+        String estadoAsignacion,
+        String numeroExpedienteReferencia,
+        String identificadorIngreso
+    );
 
-    void eliminar(Long id);
+    void eliminar(Long id, String identificadorIngreso);
 }
 

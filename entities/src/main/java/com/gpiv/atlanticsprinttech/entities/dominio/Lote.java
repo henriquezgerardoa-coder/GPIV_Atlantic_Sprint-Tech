@@ -8,8 +8,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "lotes", uniqueConstraints = {
@@ -30,9 +33,19 @@ public class Lote {
     @Column(nullable = false)
     private boolean ocupado;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "empresa_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "empresa_id", nullable = true)
     private Empresa empresa;
+
+    @Column(name = "fecha_asignacion")
+    private LocalDate fechaAsignacion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_asignacion", length = 40)
+    private EstadoAsignacionLote estadoAsignacion;
+
+    @Column(name = "numero_expediente_referencia", length = 40)
+    private String numeroExpedienteReferencia;
 
     protected Lote() {
     }
@@ -68,11 +81,46 @@ public class Lote {
         return empresa;
     }
 
+    public LocalDate getFechaAsignacion() {
+        return fechaAsignacion;
+    }
+
+    public EstadoAsignacionLote getEstadoAsignacion() {
+        return estadoAsignacion;
+    }
+
+    public String getNumeroExpedienteReferencia() {
+        return numeroExpedienteReferencia;
+    }
+
     public void actualizarDatos(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa) {
         this.codigo = codigo;
         this.superficieMetrosCuadrados = superficieMetrosCuadrados;
         this.ocupado = ocupado;
         this.empresa = empresa;
+
+        if (this.empresa == null) {
+            this.fechaAsignacion = null;
+            this.estadoAsignacion = null;
+            this.numeroExpedienteReferencia = null;
+        } else if (this.fechaAsignacion == null) {
+            this.fechaAsignacion = LocalDate.now();
+        }
+    }
+
+    public void actualizarAsignacion(EstadoAsignacionLote estadoAsignacion, String numeroExpedienteReferencia) {
+        if (this.empresa == null) {
+            this.fechaAsignacion = null;
+            this.estadoAsignacion = null;
+            this.numeroExpedienteReferencia = null;
+            return;
+        }
+
+        if (this.fechaAsignacion == null) {
+            this.fechaAsignacion = LocalDate.now();
+        }
+        this.estadoAsignacion = estadoAsignacion;
+        this.numeroExpedienteReferencia = numeroExpedienteReferencia;
     }
 }
 
