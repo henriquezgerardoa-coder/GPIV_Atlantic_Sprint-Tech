@@ -31,7 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ServicioEmpresaImpl implements ServicioEmpresa {
 	private final RepositorioEmpresa repositorioEmpresa;
 	private final RepositorioLote repositorioLote;
-	private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
+	private final RepositorioRadicacionSolicitud repositororioRadicacionSolicitud;
 	private final RepositorioUsuario repositorioUsuario;
 	private final ServicioContextoUsuario servicioContextoUsuario;
 	private final ObjectMapper objectMapper;
@@ -46,7 +46,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	) {
 		this.repositorioEmpresa = repositorioEmpresa;
 		this.repositorioLote = repositorioLote;
-		this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
+		this.repositororioRadicacionSolicitud = repositorioRadicacionSolicitud;
 		this.repositorioUsuario = repositorioUsuario;
 		this.servicioContextoUsuario = servicioContextoUsuario;
 		this.objectMapper = objectMapper;
@@ -97,7 +97,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			if (!empresaId.equals(id)) {
 				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
 			}
-			if (repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(id, EstadoRadicacion.RADICADA)) {
+			if (repositororioRadicacionSolicitud.existsByEmpresaIdAndEstado(id, EstadoRadicacion.RADICADA)) {
 				throw new ResponseStatusException(
 					HttpStatus.CONFLICT,
 					"Los datos generales de la empresa no son editables luego de la radicacion"
@@ -148,7 +148,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		Empresa empresa = obtenerPorIdInterno(empresaId);
 		List<RespuestaVehiculoEmpresa> vehiculos = leerVehiculos(empresa.getVehiculosAsignadosJson());
 		RespuestaUsuarioEmpresaAdmin usuarioAsociado = construirUsuarioAsociado(empresaId);
-		String estadoExpediente = repositorioRadicacionSolicitud.findFirstByEmpresaIdOrderByFechaUltimaActualizacionDesc(empresaId)
+		String estadoExpediente = repositororioRadicacionSolicitud.findFirstByEmpresaIdOrderByFechaUltimaActualizacionDesc(empresaId)
 			.map(RadicacionSolicitud::getEstado)
 			.map(Enum::name)
 			.orElse(null);
@@ -176,14 +176,14 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	@Override
 	public boolean permiteServiciosPostRadicacion(Long empresaId, String identificadorIngreso) {
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
-		return repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA);
+		return repositororioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA);
 	}
 
 	@Override
 	public RespuestaServiciosPostRadicacion obtenerServiciosPostRadicacion(Long empresaId, String identificadorIngreso) {
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
 		Empresa empresa = obtenerPorIdInterno(empresaId);
-		if (!repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA)) {
+		if (!repositororioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "La empresa aun no tiene un expediente en estado RADICADA");
 		}
 		return new RespuestaServiciosPostRadicacion(
@@ -201,7 +201,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	) {
 		validarNoDirectivoEnMutacion(servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso));
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
-		if (!repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA)) {
+		if (!repositororioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo puedes gestionar servicios despues de la radicacion");
 		}
 
