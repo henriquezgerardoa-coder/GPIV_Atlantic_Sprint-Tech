@@ -1,6 +1,6 @@
 package com.gpiv.atlanticsprinttech.entities.lote;
 
-import com.gpiv.atlanticsprinttech.entities.shared.BusinessException;
+import com.gpiv.atlanticsprinttech.entities.compartido.ExcepcionNegocio;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -58,8 +58,7 @@ public class Lote {
     private boolean ocupado;
 
     @SuppressWarnings("unused") // Requerido por JPA
-    protected Lote() {
-    }
+    protected Lote() {}
 
     private Lote(String codigo, Double superficieMetrosCuadrados, ZonaParque zona) {
         this.codigo = codigo;
@@ -97,9 +96,7 @@ public class Lote {
         return fechaAsignacion;
     }
 
-    public EstadoAsignacionLote getEstadoAsignacion() {
-        return estadoAsignacion;
-    }
+    public EstadoAsignacionLote getEstadoAsignacion() { return estadoAsignacion; }
 
     /**
      * TDA: El lote sabe su propio empresaId sin que el servicio tenga que preguntar
@@ -117,15 +114,19 @@ public class Lote {
         return zona;
     }
 
+    public boolean esAdjudicable() {
+        return this.estadoAsignacion == EstadoAsignacionLote.DISPONIBLE;
+    }
+
     public void actualizarDatos(String codigo, Double superficieMetrosCuadrados, ZonaParque zona) {
         this.codigo = codigo;
         this.superficieMetrosCuadrados = superficieMetrosCuadrados;
         this.zona = zona;
     }
 
-    public void preAdjudicarALaSolicitud(String numeroExpediente) throws BusinessException {
+    public void preAdjudicarALaSolicitud(String numeroExpediente) throws ExcepcionNegocio {
         if (this.estadoAsignacion != EstadoAsignacionLote.DISPONIBLE) {
-            throw new BusinessException("El lote " + this.codigo + " no está disponible para pre-adjudicación. Estado actual: " + this.estadoAsignacion);
+            throw new ExcepcionNegocio("El lote " + this.codigo + " no está disponible para pre-adjudicación. Estado actual: " + this.estadoAsignacion);
         }
         this.estadoAsignacion = EstadoAsignacionLote.PREADJUDICADO_A_SOLICITUD;
         this.ocupado = true;
@@ -134,12 +135,14 @@ public class Lote {
         this.fechaAsignacion = LocalDate.now();
     }
 
-    public void asignarEmpresa(Empresa nuevaEmpresa, String expediente) throws BusinessException {
+    public void asignarEmpresa(Empresa nuevaEmpresa, String expediente) throws ExcepcionNegocio {
         if (nuevaEmpresa == null) {
-            throw new BusinessException("No se puede asignar un lote a una empresa nula.");
+            throw new ExcepcionNegocio("No se puede asignar un lote a una empresa nula.");
         }
-        if (this.estadoAsignacion != EstadoAsignacionLote.PREADJUDICADO_A_SOLICITUD && this.estadoAsignacion != EstadoAsignacionLote.DISPONIBLE) {
-            throw new BusinessException("El lote " + this.codigo + " no puede ser asignado en su estado actual. Estado actual: " + this.estadoAsignacion);
+        if (this.estadoAsignacion != EstadoAsignacionLote.PREADJUDICADO_A_SOLICITUD
+            && this.estadoAsignacion != EstadoAsignacionLote.DISPONIBLE
+            && this.estadoAsignacion != EstadoAsignacionLote.ASIGNADO_A_EMPRESA) {
+            throw new ExcepcionNegocio("El lote " + this.codigo + " no puede ser asignado en su estado actual. Estado actual: " + this.estadoAsignacion);
         }
 
         this.empresa = nuevaEmpresa;
@@ -149,9 +152,9 @@ public class Lote {
         this.fechaAsignacion = LocalDate.now();
     }
 
-    public void adjudicarRadicada(Empresa nuevaEmpresa, String expediente) throws BusinessException {
+    public void adjudicarRadicada(Empresa nuevaEmpresa, String expediente) throws ExcepcionNegocio {
         if (nuevaEmpresa == null) {
-            throw new BusinessException("No se puede adjudicar un lote a una empresa nula.");
+            throw new ExcepcionNegocio("No se puede adjudicar un lote a una empresa nula.");
         }
         this.empresa = nuevaEmpresa;
         this.estadoAsignacion = EstadoAsignacionLote.ADJUDICADO_RADICADA;

@@ -248,7 +248,61 @@ body.auth-modal-open {
     }
 }
 
+.footer-contacto {
+    background: #070d1a;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 50px;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 14px;
+}
+
+.footer-info {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.footer-info span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-redes {
+    display: flex;
+    gap: 14px;
+}
+
+.footer-redes a {
+    color: #94a3b8;
+    font-size: 22px;
+    transition: color 0.2s;
+    text-decoration: none;
+}
+
+.footer-redes a:hover {
+    color: #ffffff;
+}
+
 @media (max-width: 920px) {
+    .footer-contacto {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 20px 24px;
+        gap: 12px;
+    }
+
+    .footer-info {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+
     .navbar {
         padding: 16px 20px;
     }

@@ -4,7 +4,7 @@ import com.gpiv.atlanticsprinttech.backend.config.PropiedadesRegistroPublico;
 import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.registro.application.ServicioCorreoVerificacion;
-import com.gpiv.atlanticsprinttech.backend.security.RegistroIntentosEnMemoria;
+import com.gpiv.atlanticsprinttech.backend.seguridad.RegistroIntentosEnMemoria;
 import com.gpiv.atlanticsprinttech.entities.usuario.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
@@ -185,7 +185,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
 
         Usuario usuario = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correoNormalizado)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe una cuenta asociada a ese correo"));
-        if (usuario.isEmailVerificado()) {
+        if (usuario.tieneEmailVerificado()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo ya se encuentra verificado");
         }
         renovarTokenVerificacion(usuario);

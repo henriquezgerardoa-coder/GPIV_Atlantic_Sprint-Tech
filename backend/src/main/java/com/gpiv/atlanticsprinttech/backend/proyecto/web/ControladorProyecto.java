@@ -12,7 +12,7 @@ import com.gpiv.atlanticsprinttech.entities.proyecto.DocumentoPDF;
 import com.gpiv.atlanticsprinttech.entities.proyecto.EstadoProyecto;
 import com.gpiv.atlanticsprinttech.entities.proyecto.HitoObra;
 import com.gpiv.atlanticsprinttech.entities.proyecto.ProyectoProductivo;
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaPaginada;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaPaginada;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
@@ -173,7 +173,7 @@ public class ControladorProyecto {
             h.getId(),
             h.getDescripcion(),
             h.getFechaVencimientoReal(),
-            h.isCumplido(),
+            h.estaCumplido(),
             h.estaVencido()
         );
     }

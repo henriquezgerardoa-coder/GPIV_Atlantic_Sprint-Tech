@@ -57,6 +57,15 @@ public class RadicacionSolicitud {
 	@Column(name = "fecha_ultima_actualizacion", nullable = false)
 	private LocalDateTime fechaUltimaActualizacion;
 
+	@Column(name = "rentabilidad_estimada")
+	private Double rentabilidadEstimada;
+
+	@Column(name = "empleados_previstos")
+	private Integer empleadosPrevistos;
+
+	@Column(name = "plan_ambiental", length = 2000)
+	private String planAmbiental;
+
 	protected RadicacionSolicitud() {
 	}
 
@@ -133,6 +142,31 @@ public class RadicacionSolicitud {
 
 	public LocalDateTime getFechaUltimaActualizacion() {
 		return fechaUltimaActualizacion;
+	}
+
+	public boolean validarCuit() {
+		String cuit = empresa != null ? empresa.getCuit() : null;
+		if (cuit == null || cuit.isBlank()) return false;
+		String digitos = cuit.replaceAll("[^0-9]", "");
+		return digitos.length() == 11;
+	}
+
+	public Double getRentabilidadEstimada() {
+		return rentabilidadEstimada;
+	}
+
+	public Integer getEmpleadosPrevistos() {
+		return empleadosPrevistos;
+	}
+
+	public String getPlanAmbiental() {
+		return planAmbiental;
+	}
+
+	public void actualizarDatosProyecto(Double rentabilidadEstimada, Integer empleadosPrevistos, String planAmbiental) {
+		this.rentabilidadEstimada = rentabilidadEstimada;
+		this.empleadosPrevistos = empleadosPrevistos;
+		this.planAmbiental = planAmbiental;
 	}
 
 	public void cambiarEstado(EstadoRadicacion nuevoEstado) {

@@ -267,6 +267,8 @@ body {
 /* ── Página de ingreso ── */
 body.pagina-ingreso {
     background: linear-gradient(forestgreen 100%);
+    flex-direction: column;
+    justify-content: center;
 }
 
 .tarjeta-registro {
@@ -338,6 +340,61 @@ body.pagina-ingreso {
 #iconoVerificacion.estado-error {
     background: rgba(220, 53, 69, 0.16);
     color: #dc3545;
+}
+
+/* ── Footer de páginas auth ── */
+.footer-auth {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 24px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+}
+
+.footer-auth__info {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.footer-auth__info span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.footer-auth__redes {
+    display: flex;
+    gap: 14px;
+}
+
+.footer-auth__redes a {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 20px;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-auth__redes a:hover {
+    color: #ffffff;
+}
+
+@media (max-width: 576px) {
+    .footer-auth {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 16px;
+    }
+
+    .footer-auth__info {
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+    }
 }
 
 /* ── Responsive ── */

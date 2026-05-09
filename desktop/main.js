@@ -126,7 +126,7 @@ function createSplashWindow() {
 
   const splashHtml = `
     <html>
-      <body style="margin:0;display:flex;align-items:center;justify-content:center;background:#0d6efd;color:#fff;font-family:Arial,sans-serif;">
+      <body style="margin:0;display:flex;align-items:center;justify-content:center;background:#17e202;color:#fff;font-family:Arial,sans-serif;">
         <div style="text-align:center;">
           <h2 style="margin:0 0 12px 0;">GPIV Desktop</h2>
           <p style="margin:0;opacity:.9;">Iniciando backend y cargando interfaz...</p>

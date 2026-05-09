@@ -1,10 +1,10 @@
 package com.gpiv.atlanticsprinttech.backend.usuario.web;
 
 import com.gpiv.atlanticsprinttech.backend.empresa.application.ServicioEmpresa;
-import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.backend.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.usuario.application.ServicioUsuario;
 import com.gpiv.atlanticsprinttech.commons.empresa.dto.SolicitudVincularEmpresa;
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaOperacion;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.commons.usuario.dto.RespuestaYo;
 import com.gpiv.atlanticsprinttech.commons.usuario.dto.SolicitudActualizacionPerfil;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
@@ -22,12 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/yo")
 public class ControladorYo {
 
-    private final RepositorioUsuario repositorioUsuario;
+    private final ServicioContextoUsuario servicioContextoUsuario;
     private final ServicioUsuario servicioUsuario;
     private final ServicioEmpresa servicioEmpresa;
 
-    public ControladorYo(RepositorioUsuario repositorioUsuario, ServicioUsuario servicioUsuario, ServicioEmpresa servicioEmpresa) {
-        this.repositorioUsuario = repositorioUsuario;
+    public ControladorYo(
+        ServicioContextoUsuario servicioContextoUsuario,
+        ServicioUsuario servicioUsuario,
+        ServicioEmpresa servicioEmpresa
+    ) {
+        this.servicioContextoUsuario = servicioContextoUsuario;
         this.servicioUsuario = servicioUsuario;
         this.servicioEmpresa = servicioEmpresa;
     }
@@ -37,12 +41,16 @@ public class ControladorYo {
         List<String> roles = autenticacion.getAuthorities().stream()
             .map(a -> a.getAuthority().replace("ROLE_", ""))
             .toList();
-        Usuario usuario = repositorioUsuario.findByNombreUsuarioConEmpresa(autenticacion.getName()).orElse(null);
-        Long empresaId = usuario == null ? null : usuario.getEmpresaId();
-        String nombreEmpresa = usuario != null && usuario.getEmpresa() != null ? usuario.getEmpresa().getNombre() : null;
-        String nombreCompleto = usuario == null ? null : usuario.getNombreCompleto();
-        String correoElectronico = usuario == null ? null : usuario.getCorreoElectronico();
-        return new RespuestaYo(autenticacion.getName(), nombreCompleto, correoElectronico, roles, empresaId, nombreEmpresa);
+        Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(autenticacion.getName());
+        String nombreEmpresa = usuario.getEmpresa() != null ? usuario.getEmpresa().getNombre() : null;
+        return new RespuestaYo(
+            autenticacion.getName(),
+            usuario.getNombreCompleto(),
+            usuario.getCorreoElectronico(),
+            roles,
+            usuario.getEmpresaId(),
+            nombreEmpresa
+        );
     }
 
     @PatchMapping("/empresa")
@@ -67,4 +75,3 @@ public class ControladorYo {
         return ResponseEntity.ok(new RespuestaOperacion("Datos personales actualizados"));
     }
 }
-

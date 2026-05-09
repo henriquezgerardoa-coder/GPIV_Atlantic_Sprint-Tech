@@ -103,10 +103,10 @@ public class Usuario {
     public String getClaveAccesoHash() {
         return claveAccesoHash;
     }
-    public boolean isActivo() {
+    public boolean estaActivo() {
         return activo;
     }
-    public boolean isEmailVerificado() {
+    public boolean tieneEmailVerificado() {
         return Boolean.TRUE.equals(emailVerificado);
     }
     public String getTokenVerificacionEmail() {
@@ -122,6 +122,19 @@ public class Usuario {
     /** TDA: Encapsula la verificación de rol para evitar ask-then-decide externo. */
     public boolean tieneRol(RolUsuario rol) {
         return roles.contains(rol);
+    }
+
+    /** Overload para verificación de rol por nombre (compatibilidad con diagrama de clases). */
+    public boolean tieneRol(String nombreRol) {
+        try {
+            return roles.contains(RolUsuario.valueOf(nombreRol));
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public void bloquearCuenta() {
+        this.activo = false;
     }
 
     /** TDA: El usuario sabe si es administrador. */

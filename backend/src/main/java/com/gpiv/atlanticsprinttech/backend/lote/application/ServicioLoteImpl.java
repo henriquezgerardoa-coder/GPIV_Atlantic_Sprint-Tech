@@ -4,10 +4,10 @@ import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioEmpres
 import com.gpiv.atlanticsprinttech.backend.lote.persistence.RepositorioLote;
 import com.gpiv.atlanticsprinttech.entities.lote.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.lote.ZonaParque;
-import com.gpiv.atlanticsprinttech.backend.security.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.backend.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import com.gpiv.atlanticsprinttech.entities.lote.Lote;
-import com.gpiv.atlanticsprinttech.entities.shared.BusinessException;
+import com.gpiv.atlanticsprinttech.entities.compartido.ExcepcionNegocio;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -78,7 +78,7 @@ public class ServicioLoteImpl implements ServicioLote {
         Lote lote = Lote.crear(codigo, superficieMetrosCuadrados, resolverZona(zona));
 
         try {
-            EstadoAsignacionLote estado = resolverEstadoAsignacion(estadoAsignacion);
+            EstadoAsignacionLote estado = resolverEstadoAsignacion(estadoAsignacion, empresaObjetivo);
             if (estado == EstadoAsignacionLote.PREADJUDICADO_A_SOLICITUD) {
                 lote.preAdjudicarALaSolicitud(normalizarTexto(numeroExpedienteReferencia));
             } else if (estado == EstadoAsignacionLote.ASIGNADO_A_EMPRESA) {
@@ -88,7 +88,7 @@ public class ServicioLoteImpl implements ServicioLote {
             } else {
                 lote.liberar();
             }
-        } catch (BusinessException e) {
+        } catch (ExcepcionNegocio e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
         Lote guardado = repositorioLote.save(lote);
@@ -118,7 +118,7 @@ public class ServicioLoteImpl implements ServicioLote {
         loteActual.actualizarDatos(codigo, superficieMetrosCuadrados, resolverZona(zona));
 
         try {
-            EstadoAsignacionLote estado = resolverEstadoAsignacion(estadoAsignacion);
+            EstadoAsignacionLote estado = resolverEstadoAsignacion(estadoAsignacion, empresaObjetivo);
             if (estado == EstadoAsignacionLote.PREADJUDICADO_A_SOLICITUD) {
                 loteActual.preAdjudicarALaSolicitud(normalizarTexto(numeroExpedienteReferencia));
             } else if (estado == EstadoAsignacionLote.ASIGNADO_A_EMPRESA) {
@@ -128,7 +128,7 @@ public class ServicioLoteImpl implements ServicioLote {
             } else {
                 loteActual.liberar();
             }
-        } catch (BusinessException e) {
+        } catch (ExcepcionNegocio e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
         Lote guardado = repositorioLote.save(loteActual);
@@ -187,10 +187,11 @@ public class ServicioLoteImpl implements ServicioLote {
         }
     }
 
-    private EstadoAsignacionLote resolverEstadoAsignacion(String estadoAsignacion) {
+    private EstadoAsignacionLote resolverEstadoAsignacion(String estadoAsignacion, Long empresaId) {
         String valor = normalizarTexto(estadoAsignacion);
         if (valor == null) {
-            return EstadoAsignacionLote.DISPONIBLE;
+            // Si se provee empresa sin estado explícito, inferir ASIGNADO_A_EMPRESA
+            return empresaId != null ? EstadoAsignacionLote.ASIGNADO_A_EMPRESA : EstadoAsignacionLote.DISPONIBLE;
         }
         String normalizadoEnum = valor.toUpperCase().replace('-', '_').replace(' ', '_');
         try {

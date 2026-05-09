@@ -5,7 +5,7 @@ import com.gpiv.atlanticsprinttech.backend.proyecto.persistence.RepositorioDocum
 import com.gpiv.atlanticsprinttech.backend.proyecto.persistence.RepositorioHitoObra;
 import com.gpiv.atlanticsprinttech.backend.proyecto.persistence.RepositorioProyecto;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionSolicitud;
-import com.gpiv.atlanticsprinttech.backend.security.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.backend.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import com.gpiv.atlanticsprinttech.entities.lote.Lote;

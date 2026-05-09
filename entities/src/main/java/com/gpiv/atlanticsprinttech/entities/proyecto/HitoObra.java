@@ -67,7 +67,7 @@ public class HitoObra {
 		return fechaVencimientoReal;
 	}
 
-	public boolean isCumplido() {
+	public boolean estaCumplido() {
 		return cumplido;
 	}
 

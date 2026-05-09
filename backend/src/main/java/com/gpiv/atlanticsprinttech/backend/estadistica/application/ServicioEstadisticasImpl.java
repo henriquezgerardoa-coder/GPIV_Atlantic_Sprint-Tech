@@ -3,7 +3,6 @@ package com.gpiv.atlanticsprinttech.backend.estadistica.application;
 import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.lote.persistence.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionSolicitud;
-import com.gpiv.atlanticsprinttech.backend.estadistica.application.ServicioEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.estadistica.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.entities.lote.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.radicacion.EstadoRadicacion;

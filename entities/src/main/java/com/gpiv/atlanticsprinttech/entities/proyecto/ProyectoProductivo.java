@@ -4,7 +4,7 @@ import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import com.gpiv.atlanticsprinttech.entities.lote.Lote;
 import com.gpiv.atlanticsprinttech.entities.radicacion.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.radicacion.RadicacionSolicitud;
-import com.gpiv.atlanticsprinttech.entities.shared.BusinessException;
+import com.gpiv.atlanticsprinttech.entities.compartido.ExcepcionNegocio;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -113,12 +113,12 @@ public class ProyectoProductivo {
 		return new ProyectoProductivo(nombre, descripcion, fechaEstimadaFin, montoInversion, empresa, lote, responsableSeguimiento);
 	}
 
-	public void iniciarProyecto(RadicacionSolicitud expediente) throws BusinessException {
+	public void iniciarProyecto(RadicacionSolicitud expediente) throws ExcepcionNegocio {
 		if (!EstadoRadicacion.RADICADA.equals(expediente.getEstado())) {
-			throw new BusinessException("Solo se puede iniciar un proyecto desde una radicacion en estado RADICADA.");
+			throw new ExcepcionNegocio("Solo se puede iniciar un proyecto desde una radicacion en estado RADICADA.");
 		}
 		if (this.estado != EstadoProyecto.INICIADO) {
-			throw new BusinessException("El proyecto ya fue iniciado.");
+			throw new ExcepcionNegocio("El proyecto ya fue iniciado.");
 		}
 		this.radicacionOrigen = expediente;
 		this.fechaInicioReal = LocalDate.now();
@@ -139,11 +139,11 @@ public class ProyectoProductivo {
 
 	public double calcularAvanceFisico() {
 		if (hitos.isEmpty()) return 0.0;
-		long cumplidos = hitos.stream().filter(HitoObra::isCumplido).count();
+		long cumplidos = hitos.stream().filter(HitoObra::estaCumplido).count();
 		return (double) cumplidos / hitos.size() * 100.0;
 	}
 
-	public void registrarDocumentacionTecnica(DocumentoPDF doc) throws BusinessException {
+	public void registrarDocumentacionTecnica(DocumentoPDF doc) throws ExcepcionNegocio {
 		doc.validarExtension();
 		doc.validarTamano();
 		this.documentos.add(doc);

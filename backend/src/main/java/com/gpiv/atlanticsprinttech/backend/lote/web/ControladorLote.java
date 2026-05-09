@@ -3,7 +3,8 @@ package com.gpiv.atlanticsprinttech.backend.lote.web;
 import com.gpiv.atlanticsprinttech.backend.lote.application.ServicioLote;
 import com.gpiv.atlanticsprinttech.commons.lote.dto.RespuestaLote;
 import com.gpiv.atlanticsprinttech.commons.lote.dto.SolicitudLote;
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaPaginada;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaPaginada;
+import com.gpiv.atlanticsprinttech.entities.lote.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.lote.Lote;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -90,7 +91,8 @@ public class ControladorLote {
         Long empresaId = lote.getEmpresa() != null ? lote.getEmpresa().getId() : null;
         String nombreEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getNombre() : EMPRESA_SIN_ASIGNAR;
         String cuitEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getCuit() : null;
-        String estadoAsignacion = lote.getEstadoAsignacion() != null ? lote.getEstadoAsignacion().name() : null;
+        String estadoAsignacion = (lote.getEstadoAsignacion() != null && lote.getEstadoAsignacion() != EstadoAsignacionLote.DISPONIBLE)
+            ? lote.getEstadoAsignacion().name() : null;
         String fechaAsignacion = lote.getFechaAsignacion() != null
             ? lote.getFechaAsignacion().format(DateTimeFormatter.ISO_LOCAL_DATE)
             : null;

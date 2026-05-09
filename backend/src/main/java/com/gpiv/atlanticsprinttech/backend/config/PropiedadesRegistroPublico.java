@@ -9,7 +9,7 @@ public class PropiedadesRegistroPublico {
     private String urlBaseVerificacion = "http://localhost:8090/verificar.html";
     private String contactoSoporte = "soporte@gpiv.local";
     private Token token = new Token();
-    private Mail mail = new Mail();
+    private ConfiguracionCorreo correo = new ConfiguracionCorreo();
     private Limites limites = new Limites();
 
     public String getUrlBaseVerificacion() {
@@ -36,12 +36,12 @@ public class PropiedadesRegistroPublico {
         this.token = token;
     }
 
-    public Mail getMail() {
-        return mail;
+    public ConfiguracionCorreo getCorreo() {
+        return correo;
     }
 
-    public void setMail(Mail mail) {
-        this.mail = mail;
+    public void setCorreo(ConfiguracionCorreo correo) {
+        this.correo = correo;
     }
 
     public Limites getLimites() {
@@ -64,7 +64,7 @@ public class PropiedadesRegistroPublico {
         }
     }
 
-    public static class Mail {
+    public static class ConfiguracionCorreo {
         private boolean habilitado = false;
         private String remitente = "no-reply@gpiv.local";
 
@@ -124,4 +124,3 @@ public class PropiedadesRegistroPublico {
         }
     }
 }
-

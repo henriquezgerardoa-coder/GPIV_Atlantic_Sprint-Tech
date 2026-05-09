@@ -4,8 +4,8 @@ import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioEmpres
 import com.gpiv.atlanticsprinttech.backend.lote.persistence.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
-import com.gpiv.atlanticsprinttech.backend.security.ServicioContextoUsuario;
-import com.gpiv.atlanticsprinttech.backend.util.JsonUtil;
+import com.gpiv.atlanticsprinttech.backend.seguridad.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.backend.utilidades.ExtractorJson;
 import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaServiciosPostRadicacion;
 import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaEmpresaDetalleAdmin;
 import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaEmpresaListadoAdmin;
@@ -299,7 +299,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 				usuario.getNombreCompleto(),
 				usuario.getCorreoElectronico(),
 				usuario.getRoles(),
-				usuario.isActivo(),
+				usuario.estaActivo(),
 				usuario.getFechaUltimoAcceso()
 			))
 			.toList();
@@ -316,7 +316,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 				r.getEstado().name(),
 				r.getFechaRadicacion(),
 				r.getFechaUltimaActualizacion(),
-				JsonUtil.extraerNecesidadMetrosCuadrados(r.getRelevamientoPedidoLotesJson())
+				ExtractorJson.extraerNecesidadMetrosCuadrados(r.getRelevamientoPedidoLotesJson())
 			))
 			.toList();
 	}

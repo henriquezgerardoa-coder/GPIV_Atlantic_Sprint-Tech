@@ -8,7 +8,8 @@ import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRad
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.correo.application.ServicioCorreo;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionSolicitud;
-import com.gpiv.atlanticsprinttech.backend.security.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.backend.seguridad.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.entities.compartido.ExcepcionNegocio;
 import com.gpiv.atlanticsprinttech.entities.lote.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.lote.Lote;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.SolicitudRelevamientoPedidoLotes;
@@ -322,13 +323,9 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         Lote lote = repositorioLote.findByIdConEmpresa(loteId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lote no encontrado"));
 
-        if (lote.getEstadoAsignacion() != EstadoAsignacionLote.DISPONIBLE) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El lote no está disponible para asignación");
-        }
-
         try {
             lote.preAdjudicarALaSolicitud(radicacion.getNumeroRadicado());
-        } catch (Exception ex) {
+        } catch (ExcepcionNegocio ex) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
         }
         repositorioLote.save(lote);
