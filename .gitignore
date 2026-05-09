@@ -19,3 +19,7 @@ Thumbs.db
 .env
 **/application-neon.properties
 
+# Electron / desktop
+desktop/node_modules/
+desktop/dist/
+
