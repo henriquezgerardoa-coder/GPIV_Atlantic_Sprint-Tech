@@ -176,18 +176,13 @@ function navegarA(seccion) {
 
 async function cargarPanel() {
     try {
-        const [respEmpresas, respLotes] = await Promise.all([
-            ApiCliente.obtener('/api/empresas'),
-            ApiCliente.obtener('/api/lotes')
-        ]);
-        const empresas  = respEmpresas?.ok ? await respEmpresas.json() : [];
-        const lotes     = respLotes?.ok    ? await respLotes.json()    : [];
-        const ocupados  = lotes.filter(l => l.ocupado).length;
-
-        document.getElementById('statEmpresas').textContent      = empresas.length;
-        document.getElementById('statLotes').textContent         = lotes.length;
-        document.getElementById('statLotesOcupados').textContent = ocupados;
-        document.getElementById('statLotesLibres').textContent   = lotes.length - ocupados;
+        const resp = await ApiCliente.obtener('/api/estadisticas/resumen');
+        if (!resp?.ok) return;
+        const datos = await resp.json();
+        document.getElementById('statEmpresas').textContent      = datos.totalEmpresas;
+        document.getElementById('statLotes').textContent         = datos.totalLotes;
+        document.getElementById('statLotesOcupados').textContent = datos.lotesOcupados;
+        document.getElementById('statLotesLibres').textContent   = datos.lotesDisponibles;
     } catch (err) {
         console.error('Error al cargar el panel:', err);
     }
