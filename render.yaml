@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: gpiv-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    port: 8090
+    region: ohio          # US East — menor latencia hacia Argentina que Oregon
+    plan: free
+    healthCheckPath: /api/salud
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false       # se carga manualmente en el dashboard de Render
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update

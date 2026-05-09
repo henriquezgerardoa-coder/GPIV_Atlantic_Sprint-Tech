@@ -8,42 +8,104 @@ Este repositorio utiliza Maven multimodulo con un `pom.xml` agregador en la raiz
 - `backend/pom.xml`: modulo Spring Boot (API y logica servidor)
 - `entities/pom.xml`: modulo de entidades y modelo de dominio
 - `commons/pom.xml`: contratos de comunicacion compartidos
-- `frontend/pom.xml`: modulo reservado para cliente/UI
+- `frontend/pom.xml`: modulo cliente/UI (recursos web)
 
 ## Estructura de paquetes
 
+- `com.gpiv.atlanticsprinttech`
+  - `AplicacionGestionGpiv` permanece en la raiz para conservar el auto-scan de Spring Boot.
 - `com.gpiv.atlanticsprinttech.backend`
-  - `controlador`, `servicio`, `servicio.implementacion`, `repositorio`
+  - `config`: propiedades e inicializadores de infraestructura.
+  - `security`: configuracion de Spring Security, filtros y servicios de contexto/autenticacion.
+  - `shared.web`: manejo transversal de errores HTTP.
+  - `salud.web`, `catalogo.web`: endpoints transversales simples.
+  - `empresa`, `lote`, `radicacion`, `usuario`, `registro`, `estadistica`
+    - `web`: controladores REST.
+    - `application`: contratos e implementaciones de casos de uso.
+    - `persistence`: repositorios JPA.
 - `com.gpiv.atlanticsprinttech.entities`
-  - `dominio`
+  - `empresa`, `lote`, `radicacion`, `usuario`
 - `com.gpiv.atlanticsprinttech.commons`
-  - `comunicacion.dto`
+  - `empresa.dto`, `lote.dto`, `radicacion.dto`, `usuario.dto`, `registro.dto`, `estadistica.dto`, `shared.dto`
 - `com.gpiv.atlanticsprinttech.frontend`
-  - reservado para UI/cliente
+  - namespace del modulo frontend
+
+## Convencion de paquetes (limpieza segura)
+
+- `backend`
+  - Dominios funcionales: `empresa`, `lote`, `radicacion`, `usuario`, `registro`, `estadistica`, `salud`, `catalogo`.
+  - Subcapas estandar cuando aplica:
+    - `web`: controladores REST.
+    - `application`: casos de uso y servicios de aplicacion.
+    - `persistence`: repositorios y acceso a datos.
+  - Paquetes transversales reservados:
+    - `config`: bootstrap y propiedades.
+    - `security`: autenticacion, autorizacion y contexto de usuario.
+    - `shared.web`: manejo transversal de errores HTTP.
+- `entities`
+  - Separacion por dominio (`empresa`, `lote`, `radicacion`, `usuario`).
+  - Sin capas tecnicas adicionales para mantener el modelo de dominio simple.
+- `commons`
+  - Separacion por dominio y subpaquete `dto` (`empresa.dto`, `lote.dto`, `radicacion.dto`, `usuario.dto`, `registro.dto`, `estadistica.dto`, `shared.dto`).
+  - Los DTO son contratos compartidos entre backend y frontend.
+- `frontend`
+  - Namespace del modulo cliente y recursos web en `META-INF/resources`.
+
+Regla de limpieza segura aplicada:
+
+- No se mezclan paquetes antiguos y nuevos para la misma responsabilidad.
+- Se evita crear alias paralelos de paquetes (por ejemplo, `controlador` y `web` al mismo tiempo).
+- Cualquier nuevo paquete debe seguir la convencion anterior para evitar duplicados semanticos.
+
+Ubicacion actual de recursos de UI:
+
+- `frontend/src/main/resources/META-INF/resources` (`index.html`, `ingreso.html`, `app.html`, `registro.html`, `verificar.html`, `css/`, `js/`, `img/`)
 
 Distribucion actual de clases:
 
-- `backend.controlador`
-  - `ControladorEmpresa`, `ControladorSalud`
-- `backend.servicio`
-  - `ServicioEmpresa`
-- `backend.servicio.implementacion`
-  - `ServicioEmpresaImpl`
-- `backend.repositorio`
+- `backend.empresa.web`
+  - `ControladorEmpresa`
+- `backend.empresa.application`
+  - `ServicioEmpresa`, `ServicioEmpresaImpl`
+- `backend.empresa.persistence`
   - `RepositorioEmpresa`
-- `entities.dominio`
+- `backend.salud.web`
+  - `ControladorSalud`
+- `backend.security`
+  - `ConfiguracionSeguridad`, `FiltroLimitacionIngreso`, `ServicioContextoUsuario`, `RegistroIntentosEnMemoria`
+- `backend.config`
+  - `PropiedadesApiUsuarios`, `PropiedadesRegistroPublico`, `InicializadorUsuariosPredeterminados`, `MigradorConstraintRoles`
+- `entities.empresa`
   - `Empresa`
-- `commons.comunicacion.dto`
-  - `SolicitudEmpresa`, `RespuestaEmpresa`
-  - `SolicitudUsuario`, `SolicitudActualizacionUsuario`, `SolicitudCambioClave`, `SolicitudRestablecerClave`, `RespuestaUsuario`
-- `entities.dominio`
+- `entities.lote`
+  - `Lote`, `EstadoAsignacionLote`
+- `entities.radicacion`
+  - `RadicacionSolicitud`, `RadicacionDocumento`, `RadicacionHistorial`, `EstadoRadicacion`, `TipoDocumentoRadicacion`
+- `entities.usuario`
   - `Usuario`, `RolUsuario`
+- `commons.empresa.dto`
+  - `SolicitudEmpresa`, `SolicitudServiciosPostRadicacion`, `SolicitudVehiculoEmpresa`
+  - `RespuestaEmpresa`, `RespuestaEmpresaListadoAdmin`, `RespuestaEmpresaDetalleAdmin`, `RespuestaServiciosPostRadicacion`, `RespuestaUsuarioEmpresaAdmin`, `RespuestaVehiculoEmpresa`
+- `commons.lote.dto`
+  - `SolicitudLote`, `RespuestaLote`
+- `commons.radicacion.dto`
+  - `SolicitudRadicacion`, `SolicitudCambioEstadoRadicacion`, `SolicitudObservacionRadicacion`, `SolicitudRelevamientoPedidoLotes`
+  - `RespuestaRadicacion`, `RespuestaDocumentoRadicacion`, `RespuestaHistorialRadicacion`
+- `commons.usuario.dto`
+  - `SolicitudUsuario`, `SolicitudActualizacionUsuario`, `SolicitudActualizacionPerfil`, `SolicitudCambioClave`, `SolicitudRestablecerClave`
+  - `RespuestaUsuario`, `RespuestaYo`
+- `commons.registro.dto`
+  - `SolicitudRegistroPublico`, `SolicitudReenvioVerificacion`
+- `commons.estadistica.dto`
+  - `RespuestaEstadisticas`
+- `commons.shared.dto`
+  - `RespuestaOperacion`
 
 Dependencias entre paquetes:
 
 - `backend` depende de `entities` y `commons`
 - `commons` comparte contratos de comunicacion entre frontend y backend
-- `frontend` consumira contratos desde `commons`
+- `frontend` contiene los estaticos web y puede consumir contratos desde `commons`
 - `entities` no depende de los demas paquetes
 
 ## Gestion de usuarios y roles
@@ -70,7 +132,7 @@ Registro publico con verificacion por correo:
 
 El login acepta usuario o correo verificado.
 
-Estas credenciales se configuran mediante `app.api.usuarios.semilla.*` y se centralizan en `backend/src/main/java/com/gpiv/atlanticsprinttech/backend/configuracion/PropiedadesApiUsuarios.java`.
+Estas credenciales se configuran mediante `app.api.usuarios.semilla.*` y se centralizan en `backend/src/main/java/com/gpiv/atlanticsprinttech/backend/config/PropiedadesApiUsuarios.java`.
 
 Permisos por rol:
 
@@ -108,7 +170,7 @@ Cabeceras de deprecacion en `GET /api/usuarios/roles`:
 - `Sunset: configurable por app.api.usuarios.roles-legado.sunset / USUARIOS_ROLES_LEGADO_SUNSET`
 - `Link: configurable por app.api.usuarios.roles-legado.link / USUARIOS_ROLES_LEGADO_LINK`
 
-Estas propiedades se centralizan en `backend/src/main/java/com/gpiv/atlanticsprinttech/backend/configuracion/PropiedadesApiUsuarios.java`.
+Estas propiedades se centralizan en `backend/src/main/java/com/gpiv/atlanticsprinttech/backend/config/PropiedadesApiUsuarios.java`.
 
 Endpoints de usuarios:
 
@@ -246,6 +308,17 @@ DB_CONTAINER='gisto-db' DB_NAME='gpiv' DB_USER='admin' bash setup/migrar_detalle
 
 El SQL aplicado queda en `setup/sql/006_detalle_asignacion_lotes.sql`.
 
+### Migracion de columna espacial `poligono` en lotes (PostGIS)
+
+Para habilitar persistencia real de geometria en lotes (`geometry(Polygon,4326)`), ejecuta una vez:
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
+DB_CONTAINER='gisto-db' DB_NAME='gpiv' DB_USER='admin' bash setup/migrar_poligono_lotes.sh
+```
+
+El SQL aplicado queda en `setup/sql/008_habilitar_poligono_lotes.sql`.
+
 ### Desasignar todos los lotes (empresa en blanco / "Sin asignar")
 
 Si necesitas dejar todos los lotes sin empresa asignada (asignacion posterior por expediente), ejecuta:
@@ -369,3 +442,30 @@ En pruebas se usa `H2` en memoria (`backend/src/test/resources/application-test.
 - Encapsulamiento en entidades, exponiendo solo comportamiento necesario.
 - Servicio mediante interfaz para mantener polimorfismo sin sobreingenieria.
 
+## Variante desktop (Electron)
+
+Se agrego un wrapper desktop en `desktop/` para ejecutar GPIV como aplicacion de escritorio reutilizando el backend Spring Boot actual.
+
+Inicio rapido:
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech/desktop
+npm install
+npm run dev
+```
+
+Empaquetado Linux:
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech/desktop
+npm run dist:linux
+```
+
+Mas detalle en `desktop/README.md`.
+
+Comando rapido para reiniciar backend local en `8090` y validar headers de iframe (`SAMEORIGIN` + CSP):
+
+```bash
+cd /home/gerardo/IdeaProjects/GPIV_Atlantic_Sprint-Tech
+bash setup/restart_backend.sh
+```

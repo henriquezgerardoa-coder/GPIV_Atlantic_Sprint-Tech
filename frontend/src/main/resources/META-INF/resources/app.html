@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPIV – Panel de Gestión</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     NAVBAR SUPERIOR
+══════════════════════════════════════════════════ -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm" style="height:56px;">
+    <div class="container-fluid">
+        <!-- Botón menú móvil -->
+        <button class="navbar-toggler me-2 border-0" type="button"
+                data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Logo y título -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="#">
+            <i class="bi bi-building-gear fs-5"></i>
+            <span>ENREPAVI</span>
+            <span class="d-none d-md-inline text-white-50 fw-normal small">Bienvenido</span>
+        </a>
+
+        <!-- Info de usuario + acciones -->
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <div class="d-none d-sm-flex flex-column align-items-end me-2" style="line-height:1.2;">
+                <span class="text-white fw-semibold small" id="nombreUsuarioNavbar">–</span>
+                <span class="text-white-50" style="font-size:.7rem;" id="rolesUsuarioNavbar">–</span>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-outline-light btn-sm rounded-circle p-1" style="width:34px;height:34px;"
+                        data-bs-toggle="dropdown" title="Opciones de usuario">
+                    <i class="bi bi-person-fill fs-5"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li>
+                        <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalMiPerfil">
+                            <i class="bi bi-person-lines-fill me-2"></i>Actualizar mis datos
+                        </button>
+                    </li>
+                    <li>
+                        <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalMiClave">
+                            <i class="bi bi-lock me-2"></i>Cambiar mi contraseña
+                        </button>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <button class="dropdown-item text-danger" id="btnCerrarSesion">
+                            <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     BARRA LATERAL (escritorio: fija | móvil: offcanvas)
+══════════════════════════════════════════════════ -->
+
+<!-- Versión fija para pantallas grandes -->
+<nav class="barra-lateral d-none d-lg-flex flex-column pt-2">
+    <ul class="nav flex-column w-100">
+        <li class="nav-item">
+            <a id="nav-panel" class="nav-link enlace-nav" href="#" onclick="navegarA('panel'); return false;">
+                <i class="bi bi-grid-1x2-fill"></i> Panel
+            </a>
+        </li>
+        <li class="nav-item">
+            <a id="nav-empresas" class="nav-link enlace-nav" href="#" onclick="navegarA('empresas'); return false;">
+                <i class="bi bi-building"></i> Empresas
+            </a>
+        </li>
+        <li class="nav-item">
+            <a id="nav-lotes" class="nav-link enlace-nav" href="#" onclick="navegarA('lotes'); return false;">
+                <i class="bi bi-map"></i> Lotes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a id="nav-radicaciones" class="nav-link enlace-nav" href="#" onclick="navegarA('radicaciones'); return false;">
+                <i class="bi bi-file-earmark-text"></i> Radicaciones
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavInformes">
+            <a id="nav-informes" class="nav-link enlace-nav" href="#" onclick="navegarA('informes'); return false;">
+                <i class="bi bi-bar-chart-line"></i> Informes
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavUsuarios">
+            <a id="nav-usuarios" class="nav-link enlace-nav" href="#" onclick="navegarA('usuarios'); return false;">
+                <i class="bi bi-people"></i> Usuarios
+            </a>
+        </li>
+    </ul>
+    <div class="mt-auto p-3 text-muted small border-top">
+        <AST class="bi bi-info-circle me-1"></AST> Atlantic Sprint Tech v0.1.0
+    </div>
+</nav>
+
+<!-- Versión offcanvas para móviles -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSidebar" style="width:240px;">
+    <div class="offcanvas-header bg-primary text-white">
+        <h6 class="offcanvas-title"><i class="bi bi-building-gear me-2"></i>GPIV</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <ul class="nav flex-column pt-2">
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('panel'); return false;">
+                    <i class="bi bi-grid-1x2-fill"></i> Panel
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('empresas'); return false;">
+                    <i class="bi bi-building"></i> Empresas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('lotes'); return false;">
+                    <i class="bi bi-map"></i> Lotes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('radicaciones'); return false;">
+                    <i class="bi bi-file-earmark-text"></i> Radicaciones
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavInformesMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('informes'); return false;">
+                    <i class="bi bi-bar-chart-line"></i> Informes
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavUsuariosMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('usuarios'); return false;">
+                    <i class="bi bi-people"></i> Usuarios
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     CONTENIDO PRINCIPAL
+══════════════════════════════════════════════════ -->
+<main class="contenido-principal" style="margin-top:56px;">
+
+    <!-- Alertas flotantes -->
+    <div id="contenedorAlertas"></div>
+
+    <!-- ── SECCIÓN: PANEL ─────────────────────────── -->
+    <section id="seccion-panel" class="seccion-contenido">
+        <div class="encabezado-seccion">
+            <h4 class="fw-bold mb-1"><i class="bi bi-grid-1x2-fill text-primary me-2"></i>Panel de resumen</h4>
+            <p class="text-muted small mb-0">Vista general del estado del parque industrial</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Empresas -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statEmpresas">–</div>
+                            <div class="text-muted small">Empresas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Lotes totales -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-map"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statLotes">–</div>
+                            <div class="text-muted small">Lotes totales</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Lotes ocupados -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-slash-circle"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statLotesOcupados">–</div>
+                            <div class="text-muted small">Lotes ocupados</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Lotes libres -->
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statLotesLibres">–</div>
+                            <div class="text-muted small">Lotes disponibles</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted mb-3"><i class="bi bi-lightning-charge me-2 text-warning"></i>Accesos rápidos</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="navegarA('empresas')">
+                                <i class="bi bi-building me-1"></i>Ver empresas
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="navegarA('lotes')">
+                                <i class="bi bi-map me-1"></i>Ver lotes
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm acceso-informes" onclick="navegarA('informes')">
+                                <i class="bi bi-bar-chart-line me-1"></i>Ver informes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: RADICACIONES ───────────────────── -->
+    <section id="seccion-radicaciones" class="seccion-contenido d-none">
+        <div class="encabezado-seccion">
+            <h4 class="fw-bold mb-1"><i class="bi bi-file-earmark-text text-primary me-2"></i>Radicaciones</h4>
+            <p class="text-muted small mb-0">Solicitud, seguimiento de estado y carga de documentación</p>
+        </div>
+
+        <ul class="nav nav-tabs mb-3" id="tabsRadicaciones" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-rad-a" data-bs-toggle="tab" data-bs-target="#panel-rad-a" type="button" role="tab" aria-controls="panel-rad-a" aria-selected="true">A) Solicitud</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-rad-b" data-bs-toggle="tab" data-bs-target="#panel-rad-b" type="button" role="tab" aria-controls="panel-rad-b" aria-selected="false">Listado de Expedientes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link d-none" id="tab-rad-c" data-bs-toggle="tab" data-bs-target="#panel-rad-c" type="button" role="tab" aria-controls="panel-rad-c" aria-selected="false">C) Historial de expedientes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-rad-d" data-bs-toggle="tab" data-bs-target="#panel-rad-d" type="button" role="tab" aria-controls="panel-rad-d" aria-selected="false">D) Documentación</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="panel-rad-a" role="tabpanel" aria-labelledby="tab-rad-a" tabindex="0">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">A) Solicitar radicación</h6>
+                        <div id="alertaRadicacionNueva" class="alert alert-danger d-none ui-state ui-state-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
+                        <form id="formRadicacionNueva" novalidate>
+                            <div class="mb-2">
+                                <label for="campoTipoSolicitudRad" class="form-label fw-semibold">Tipo de solicitud</label>
+                                <input id="campoTipoSolicitudRad" class="form-control" maxlength="80" required value="PEDIDO_LOTES">
+                            </div>
+                            <div class="mb-2">
+                                <label for="campoDescripcionRad" class="form-label fw-semibold">Descripción</label>
+                                <textarea id="campoDescripcionRad" class="form-control" maxlength="1000" rows="2" required>Relevamiento inicial para pedido de lotes.</textarea>
+                            </div>
+                            <div class="mb-2">
+                                <label for="campoUsoEstimativoRad" class="form-label fw-semibold">Uso estimativo del servicio</label>
+                                <input id="campoUsoEstimativoRad" class="form-control" maxlength="120" placeholder="Ej: 350 m3/mes de agua">
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="activarRelevamientoPedidoLotes" checked>
+                                <label class="form-check-label" for="activarRelevamientoPedidoLotes">Usar formulario de relevamiento de pedido de lotes</label>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="ModuloRadicaciones.guardarBorradorAhora()"><i class="bi bi-save me-1"></i>Guardar borrador</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="ModuloRadicaciones.descartarBorrador()"><i class="bi bi-trash me-1"></i>Descartar borrador</button>
+                                <span id="estadoBorradorRadicacion" class="text-muted small">Sin borrador guardado</span>
+                            </div>
+
+                            <div id="bloqueRelevamientoPedidoLotes" class="border rounded p-2 bg-light-subtle">
+                                <div class="row g-2">
+                                    <div class="col-md-6"><label for="relCorreo" class="form-label small">Correo</label><input id="relCorreo" class="form-control form-control-sm" type="email"></div>
+                                    <div class="col-md-6"><label for="relRazonSocial" class="form-label small">Razón social</label><input id="relRazonSocial" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relCuit" class="form-label small">CUIT</label><input id="relCuit" class="form-control form-control-sm" placeholder="20123456789"></div>
+                                    <div class="col-md-6"><label for="relIngresosBrutos" class="form-label small">Ingresos Brutos</label><input id="relIngresosBrutos" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relActividadPrincipal" class="form-label small">Actividad principal</label><input id="relActividadPrincipal" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relActividadSecundaria" class="form-label small">Actividad secundaria</label><input id="relActividadSecundaria" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relTipoEmpresa" class="form-label small">Empresa</label><select id="relTipoEmpresa" class="form-select form-select-sm"><option value="NUEVA">Nueva</option><option value="EXISTENTE">Existente</option></select></div>
+                                    <div class="col-md-6"><label for="relObjetoProyecto" class="form-label small">Objeto del proyecto (si es existente)</label><select id="relObjetoProyecto" class="form-select form-select-sm"><option value="">Seleccione</option><option value="TRASLADO_TOTAL_PARCIAL">Traslado total o parcial</option><option value="NUEVOS_PRODUCTOS">Elaborar nuevos productos</option><option value="INCREMENTAR_PRODUCCION">Incrementar producción total</option></select></div>
+                                    <div class="col-md-6"><label for="relDireccion" class="form-label small">Dirección</label><input id="relDireccion" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relPersonaReferente" class="form-label small">Persona referente</label><input id="relPersonaReferente" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relTelefono" class="form-label small">Teléfono</label><input id="relTelefono" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relCorreoElectronico" class="form-label small">Correo electrónico de contacto</label><input id="relCorreoElectronico" type="email" class="form-control form-control-sm"></div>
+                                    <div class="col-md-6"><label for="relRubro" class="form-label small">Rubro</label><select id="relRubro" class="form-select form-select-sm"><option value="SERVICIOS">Servicios</option><option value="BIENES">Bienes</option><option value="BIENES_Y_SERVICIOS">Bienes y servicios</option><option value="OTROS">Otros</option></select></div>
+                                    <div class="col-md-6"><label for="relRubroOtro" class="form-label small">Detalle rubro otros</label><input id="relRubroOtro" class="form-control form-control-sm"></div>
+                                    <div class="col-12"><label for="relDescripcionServicio" class="form-label small">Descripción del servicio o bien ofrecido</label><textarea id="relDescripcionServicio" rows="2" class="form-control form-control-sm"></textarea></div>
+                                    <div class="col-md-6"><label for="relEmplazamiento" class="form-label small">Emplazamiento actual</label><select id="relEmplazamiento" class="form-select form-select-sm"><option value="PROPIO">Propio</option><option value="ALQUILADO">Alquilado</option></select></div>
+                                    <div class="col-md-2"><label for="relPersonalJerarquico" class="form-label small">Personal jerárquico</label><input id="relPersonalJerarquico" type="number" min="0" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-2"><label for="relPersonalProduccion" class="form-label small">Personal producción</label><input id="relPersonalProduccion" type="number" min="0" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-2"><label for="relPersonalAdministrativo" class="form-label small">Personal administrativo</label><input id="relPersonalAdministrativo" type="number" min="0" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-4"><label for="relTiempoRadicacion" class="form-label small">Tiempo de radicación</label><select id="relTiempoRadicacion" class="form-select form-select-sm"><option value="6">6 meses</option><option value="12">12 meses</option><option value="24">24 meses</option><option value="36">36 o más</option></select></div>
+                                    <div class="col-md-4"><label for="relNecesidadM2" class="form-label small">Necesidad de m²</label><select id="relNecesidadM2" class="form-select form-select-sm"><option value="1200">1200</option><option value="1800">1800</option><option value="2500">2500</option><option value="3300">3300</option><option value="5000">5000</option><option value="6000">6000</option></select></div>
+                                    <div class="col-md-4"><label for="relPersonalAOcupar" class="form-label small">Personal a ocupar</label><input id="relPersonalAOcupar" type="number" min="0" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-3"><label for="relSupTrabajo" class="form-label small">Sup. trabajo (m²)</label><input id="relSupTrabajo" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-3"><label for="relSupDeposito" class="form-label small">Sup. depósito (m²)</label><input id="relSupDeposito" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-3"><label for="relSupExpansion" class="form-label small">Sup. expansión (m²)</label><input id="relSupExpansion" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-3"><label for="relSupEstacionamiento" class="form-label small">Sup. estacionamiento (m²)</label><input id="relSupEstacionamiento" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-4"><label for="relTienePlanos" class="form-label small">Tiene planos</label><select id="relTienePlanos" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
+                                    <div class="col-md-4"><label for="relTension" class="form-label small">Tensión alimentación</label><select id="relTension" class="form-select form-select-sm"><option value="MEDIA">Media</option><option value="BAJA">Baja</option></select></div>
+                                    <div class="col-md-4"><label for="relPotenciaKw" class="form-label small">Potencia instalada simultánea (kW)</label><input id="relPotenciaKw" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-4"><label for="relAguaLtsMes" class="form-label small">Agua (lts/mes)</label><input id="relAguaLtsMes" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
+                                    <div class="col-md-4">
+                                        <label for="relRequiereGas" class="form-label small">Gas</label>
+                                        <select id="relRequiereGas" class="form-select form-select-sm">
+                                            <option value="true">Sí</option>
+                                            <option value="false">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4"><label for="relTratamientoPlanta" class="form-label small">Tratamiento en planta</label><select id="relTratamientoPlanta" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
+                                    <div class="col-md-4"><label for="relBalanzaPublica" class="form-label small">Necesidad balanza pública</label><select id="relBalanzaPublica" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
+                                    <div class="col-md-4">
+                                        <label for="relComedorUnitario" class="form-label small">Necesidad comedor unitario</label>
+                                        <select id="relComedorUnitario" class="form-select form-select-sm">
+                                            <option value="true">Sí</option>
+                                            <option value="false">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="relSalonCoworking" class="form-label small">Necesidad SUM/coworking</label>
+                                        <select id="relSalonCoworking" class="form-select form-select-sm">
+                                            <option value="true">Sí</option>
+                                            <option value="false">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12"><label for="relMateriasPrimas" class="form-label small">Materias primas</label><textarea id="relMateriasPrimas" rows="2" class="form-control form-control-sm"></textarea></div>
+                                    <div class="col-12"><label for="relDestinoProduccion" class="form-label small">Destino de la producción</label><textarea id="relDestinoProduccion" rows="2" class="form-control form-control-sm"></textarea></div>
+                                    <div class="col-12"><label for="relTipoResiduos" class="form-label small">Residuos/Efluentes</label><textarea id="relTipoResiduos" rows="2" class="form-control form-control-sm"></textarea></div>
+                                    <div class="col-12"><label for="relPlanAmbiental" class="form-label small">Plan Ambiental <span class="text-danger">*</span></label><textarea id="relPlanAmbiental" rows="3" class="form-control form-control-sm" placeholder="Describa las medidas de gestión ambiental previstas: tratamiento de residuos, efluentes, emisiones, etc."></textarea></div>
+                                    <div class="col-12"><label for="relRentabilidad" class="form-label small">Rentabilidad estimada <span class="text-danger">*</span></label><textarea id="relRentabilidad" rows="2" class="form-control form-control-sm" placeholder="Indique la proyección de rentabilidad del proyecto (ej.: 20% anual en 3 años)"></textarea></div>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-primary mt-2" onclick="ModuloRadicaciones.crear()"><i class="bi bi-send me-1"></i>Solicitar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="panel-rad-b" role="tabpanel" aria-labelledby="tab-rad-b" tabindex="0">
+                <div class="card border-0 shadow-sm mb-3 ui-panel">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-muted mb-0">Listado de Expedientes</h6>
+                            <span id="badgeTotalRadicaciones" class="badge text-bg-secondary"></span>
+                        </div>
+                        <div class="row g-2 align-items-end ui-toolbar">
+                            <div class="col-md-4">
+                                <label for="filtroEstadoRad" class="form-label small">Estado</label>
+                                <select id="filtroEstadoRad" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    <option value="PENDIENTE">Pendiente</option>
+                                    <option value="EN_REVISION">En revisión</option>
+                                    <option value="APROBADA">Aprobada</option>
+                                    <option value="RADICADA">Radicada</option>
+                                    <option value="RECHAZADA">Rechazada</option>
+                                    <option value="REQUIERE_INFORMACION_ADICIONAL">Requiere información adicional</option>
+                                    <option value="CANCELADA">Cancelada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtroDesdeRad" class="form-label small">Desde</label>
+                                <input id="filtroDesdeRad" type="date" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtroHastaRad" class="form-label small">Hasta</label>
+                                <input id="filtroHastaRad" type="date" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-outline-primary btn-sm w-100" onclick="ModuloRadicaciones.cargar()">Filtrar</button>
+                            </div>
+                        </div>
+                        <div class="mt-3" id="filtrosMultiplesEstadoRadAdmin">
+                            <label class="form-label small fw-semibold mb-2">Filtrar por uno o varios estados</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="PENDIENTE"><span class="form-check-label ms-1">Pendiente</span></label>
+                                <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="EN_REVISION"><span class="form-check-label ms-1">En revisión</span></label>
+                                <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="CANCELADA"><span class="form-check-label ms-1">Cancelada</span></label>
+                                <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="RECHAZADA"><span class="form-check-label ms-1">Rechazada</span></label>
+                                <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="REQUIERE_INFORMACION_ADICIONAL"><span class="form-check-label ms-1">Requiere información adicional</span></label>
+                                <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="APROBADA"><span class="form-check-label ms-1">Aprobada</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm mb-3 ui-panel">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">N° Radicado</th>
+                                        <th>Tipo</th>
+                                        <th>Uso estimativo</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Última actualización</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaRadicaciones">
+                                    <tr><td colspan="7" class="text-center py-3 text-muted ui-state ui-state-muted">Sin registros</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm d-none ui-panel" id="bloqueHistorialExpedienteRad">
+                    <div class="card-body p-0">
+                        <div class="d-flex justify-content-between align-items-center px-3 pt-3 flex-wrap gap-2">
+                            <h6 class="text-muted mb-0">Historial del expediente seleccionado</h6>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <label for="filtroEstadoHistorialRad" class="visually-hidden">Filtrar historial por estado</label>
+                                <select id="filtroEstadoHistorialRad" class="form-select form-select-sm" style="max-width: 220px;">
+                                    <option value="">Todos los estados</option>
+                                    <option value="PENDIENTE">Pendiente</option>
+                                    <option value="EN_REVISION">En revisión</option>
+                                    <option value="APROBADA">Aprobada</option>
+                                    <option value="RADICADA">Radicada</option>
+                                    <option value="RECHAZADA">Rechazada</option>
+                                    <option value="REQUIERE_INFORMACION_ADICIONAL">Requiere información adicional</option>
+                                    <option value="CANCELADA">Cancelada</option>
+                                </select>
+                                <button id="btnUltimos10HistorialRad" type="button" class="btn btn-outline-secondary btn-sm">Últimos 10</button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center px-3 pt-2">
+                            <small id="tituloHistorialRadDetalle" class="text-muted">Seleccione un expediente para ver eventos</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <small id="indicadorRestauracionHistorialRad" class="badge text-bg-info d-none" title="">
+                                    <i class="bi bi-clock-history me-1"></i><span id="textoIndicadorRestauracionHistorialRad">Expediente recuperado de la sesión</span>
+                                </small>
+                                <small id="subtituloFiltrosHistorialRad" class="text-muted">Sin filtros</small>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0 mt-2">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3">Fecha</th>
+                                        <th>Estado Anterior</th>
+                                        <th>Estado Nuevo</th>
+                                        <th>Comentario</th>
+                                        <th>Usuario</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaHistorialRadicacion">
+                                    <tr><td colspan="5" class="text-center py-3 text-muted">Sin historial seleccionado</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="panel-rad-c" role="tabpanel" aria-labelledby="tab-rad-c" tabindex="0">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-muted small">Vista integrada en la pestaña B.</div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="panel-rad-d" role="tabpanel" aria-labelledby="tab-rad-d" tabindex="0">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">D) Adjuntar documentación</h6>
+                        <div id="alertaDocumentoRad" class="alert alert-danger d-none ui-state ui-state-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
+                        <form id="formDocumentoRad" class="row g-2" novalidate>
+                            <div class="col-md-3">
+                                <label for="selectorRadicacionDocumento" class="form-label small">Radicación</label>
+                                <select id="selectorRadicacionDocumento" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="selectorTipoDocumentoRad" class="form-label small">Tipo</label>
+                                <select id="selectorTipoDocumentoRad" class="form-select form-select-sm">
+                                    <option value="OBLIGATORIO">Obligatorio</option>
+                                    <option value="ADICIONAL">Adicional</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="campoDescripcionDocumentoRad" class="form-label small">Descripción</label>
+                                <input id="campoDescripcionDocumentoRad" class="form-control form-control-sm" maxlength="250">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="campoArchivoDocumentoRad" class="form-label small">Archivo</label>
+                                <input id="campoArchivoDocumentoRad" type="file" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-1 d-grid">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="ModuloRadicaciones.subirDocumento()">Subir</button>
+                            </div>
+                        </form>
+                        <small class="text-muted d-block mt-2">Permitidos: PDF, DOC, DOCX, JPG, PNG. Máximo por archivo: 10MB.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: INFORMES / ESTADÍSTICAS ──────────── -->
+    <section id="seccion-informes" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-bar-chart-line text-primary me-2"></i>Informes y estadísticas</h4>
+                <p class="text-muted small mb-0">Resumen ejecutivo del estado del parque industrial (R-14)</p>
+            </div>
+            <button class="btn btn-outline-primary btn-sm" onclick="ModuloEstadisticas.cargar()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+        </div>
+
+        <!-- Tarjetas de resumen -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-primary bg-opacity-10 text-primary"><i class="bi bi-building"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoEmpresas">–</div>
+                            <div class="text-muted small">Empresas registradas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-info bg-opacity-10 text-info"><i class="bi bi-map"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoLotes">–</div>
+                            <div class="text-muted small">Lotes totales</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-danger bg-opacity-10 text-danger"><i class="bi bi-slash-circle"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoOcupados">–</div>
+                            <div class="text-muted small">Lotes ocupados</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card tarjeta-stat h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="icono-stat bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle"></i></div>
+                        <div>
+                            <div class="fs-2 fw-bold" id="statInfoDisponibles">–</div>
+                            <div class="text-muted small">Lotes disponibles</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila radicaciones -->
+        <div class="row g-3 mb-3">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-secondary h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold" id="statInfoRadicaciones">–</div>
+                        <div class="text-muted small">Radicaciones totales</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-warning h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-warning" id="statInfoPendientes">–</div>
+                        <div class="text-muted small">Pendientes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-success h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-success" id="statInfoAprobadas">–</div>
+                        <div class="text-muted small">Aprobadas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-start border-4 border-danger h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-danger" id="statInfoRechazadas">–</div>
+                        <div class="text-muted small">Rechazadas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla detallada por estado -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0 text-muted"><i class="bi bi-table me-2"></i>Detalle de radicaciones por estado</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Estado</th>
+                                <th>Cantidad</th>
+                                <th style="min-width:120px;">Distribución</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaEstadosRadicacion">
+                            <tr><td colspan="4" class="text-center py-3 text-muted">Sin datos</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: EMPRESAS ──────────────────────── -->
+    <section id="seccion-empresas" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-building text-primary me-2"></i>Empresas</h4>
+                <p class="text-muted small mb-0">Gestión de empresas registradas en el parque</p>
+            </div>
+            <span id="indicadorModoSoloLecturaEmpresas" class="badge text-bg-secondary d-none">
+                <i class="bi bi-eye me-1"></i>Modo solo lectura (DIRECTIVO)
+            </span>
+            <button class="btn btn-primary" onclick="ModuloEmpresas.abrirCreacion()" id="btnNuevaEmpresa">
+                <i class="bi bi-plus-lg me-1"></i>Nueva empresa
+            </button>
+        </div>
+
+        <div id="panelEmpresasAdminVisualizacion" class="d-none">
+            <div class="card border-0 shadow-sm mb-3 ui-panel">
+                <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h6 class="text-muted mb-1">Panel de empresas</h6>
+                        <small class="text-muted">Seleccione una empresa para ver su información completa.</small>
+                    </div>
+                    <span class="badge text-bg-primary" id="badgeTotalEmpresasAdmin">Total: 0</span>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm ui-panel">
+                <div class="card-body">
+                    <div id="estadoCargaEmpresasAdmin" class="text-muted small mb-2 d-none ui-state ui-state-muted">
+                        <span class="spinner-border spinner-border-sm me-2"></span>Cargando empresas...
+                    </div>
+                    <div id="errorEmpresasAdmin" class="alert alert-danger d-none ui-state ui-state-error"></div>
+                    <div id="sinEmpresasAdmin" class="alert alert-secondary d-none mb-0 ui-state ui-state-muted">No hay empresas disponibles.</div>
+                    <div id="listaEmpresasAdmin" class="list-group"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panelEmpresasGestion">
+        <div class="card border-0 shadow-sm ui-panel">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Nombre</th>
+                                <th>Razón social</th>
+                                <th>NIT</th>
+                                <th>CUIT</th>
+                                <th>Correo electrónico</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaEmpresas">
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted ui-state ui-state-muted">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-3 ui-panel">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Servicios habilitados luego de radicación</h6>
+                <p class="small text-muted mb-3">Disponible cuando el expediente de la empresa esté en estado <strong>RADICADA</strong>.</p>
+                <div id="alertaServiciosPostRadicacion" class="alert alert-danger d-none ui-state ui-state-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
+                <form id="formServiciosPostRadicacion" class="row g-2" novalidate>
+                    <div class="col-md-4">
+                        <label for="selectorEmpresaServiciosPost" class="form-label small">Empresa</label>
+                        <select id="selectorEmpresaServiciosPost" class="form-select form-select-sm"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="campoCantidadEmpleadosPost" class="form-label small">Cantidad de empleados</label>
+                        <input id="campoCantidadEmpleadosPost" type="number" min="0" class="form-control form-control-sm" value="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="campoVehiculosPost" class="form-label small">Vehículos (una línea por vehículo: <code>PLACA|TIPO|DESCRIPCION</code>)</label>
+                        <textarea id="campoVehiculosPost" rows="3" class="form-control form-control-sm" placeholder="ABC123|CAMION|Unidad principal"></textarea>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="ModuloEmpresas.cargarServiciosPostRadicacion()">Consultar</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="ModuloEmpresas.guardarServiciosPostRadicacion()">Guardar servicios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: LOTES ─────────────────────────── -->
+    <section id="seccion-lotes" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-map text-primary me-2"></i>Lotes</h4>
+                <p class="text-muted small mb-0">Lotes del parque industrial y su estado de ocupación</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModuloLotes.abrirCreacion()" id="btnNuevoLote">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo lote
+            </button>
+        </div>
+
+        <!-- Filtros de lotes -->
+        <div class="card border-0 shadow-sm mb-3 ui-panel">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <span class="small fw-semibold text-muted">
+                        <i class="bi bi-funnel me-1"></i>Filtrar:
+                    </span>
+
+                    <!-- Zona -->
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small text-muted me-1">Zona:</span>
+                        <div class="btn-group btn-group-sm" role="group" id="filtroZonaLote">
+                            <button type="button" class="btn btn-outline-secondary active" data-zona=""
+                                    onclick="ModuloLotes.filtrar(this)">Todas</button>
+                            <button type="button" class="btn btn-outline-secondary" data-zona="PARQUE_VIEJO"
+                                    onclick="ModuloLotes.filtrar(this)">Parque Viejo</button>
+                            <button type="button" class="btn btn-outline-secondary" data-zona="PARQUE_NUEVO"
+                                    onclick="ModuloLotes.filtrar(this)">Parque Nuevo</button>
+                        </div>
+                    </div>
+
+                    <!-- Superficie -->
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small text-muted me-1">Superficie:</span>
+                        <div class="btn-group btn-group-sm" role="group" id="filtroSuperficieLote">
+                            <button type="button" class="btn btn-outline-secondary active" data-sup=""
+                                    onclick="ModuloLotes.filtrar(this)">Todas</button>
+                            <button type="button" class="btn btn-outline-secondary" data-sup="1250"
+                                    onclick="ModuloLotes.filtrar(this)">1.250 m²</button>
+                            <button type="button" class="btn btn-outline-secondary" data-sup="2500"
+                                    onclick="ModuloLotes.filtrar(this)">2.500 m²</button>
+                            <button type="button" class="btn btn-outline-secondary" data-sup="5000"
+                                    onclick="ModuloLotes.filtrar(this)">5.000 m²</button>
+                        </div>
+                    </div>
+
+                    <!-- Estado ocupación -->
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small text-muted me-1">Estado:</span>
+                        <div class="btn-group btn-group-sm" role="group" id="filtroEstadoOcupacionLote">
+                            <button type="button" class="btn btn-outline-secondary active" data-ocupacion=""
+                                    onclick="ModuloLotes.filtrar(this)">Todos</button>
+                            <button type="button" class="btn btn-outline-secondary" data-ocupacion="libre"
+                                    onclick="ModuloLotes.filtrar(this)">Libre</button>
+                            <button type="button" class="btn btn-outline-secondary" data-ocupacion="ocupado"
+                                    onclick="ModuloLotes.filtrar(this)">Ocupado</button>
+                        </div>
+                    </div>
+
+                    <span id="badgeLotesFiltrados" class="badge text-bg-secondary ms-auto"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm ui-panel">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Código</th>
+                                <th>Zona</th>
+                                <th>Empresa</th>
+                                <th>Superficie</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaLotes">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted ui-state ui-state-muted">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: USUARIOS ─────────────────────── -->
+    <section id="seccion-usuarios" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Usuarios</h4>
+                <p class="text-muted small mb-0">Administración de cuentas y permisos</p>
+            </div>
+            <button class="btn btn-primary" onclick="ModuloUsuarios.abrirCreacion()">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
+            </button>
+        </div>
+
+        <div class="card border-0 shadow-sm ui-panel">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Usuario</th>
+                                <th>Nombre completo</th>
+                                <th>Roles</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaUsuarios">
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted ui-state ui-state-muted">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════
+     MODALES
+══════════════════════════════════════════════════ -->
+
+<!-- Modal: Configuración inicial (primer ingreso EMPRESA sin empresa asociada) -->
+<div class="modal fade" id="modalConfiguracionInicial" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <div>
+                    <h5 class="modal-title mb-0"><i class="bi bi-building-add me-2"></i>Configuración inicial de empresa</h5>
+                    <small class="text-white-50">Para continuar, registrá o vinculá la empresa que vas a representar</small>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="alertaConfiguracionInicial" class="alert alert-danger alerta-modal d-none" role="alert" aria-live="assertive"></div>
+
+                <ul class="nav nav-tabs mb-3" id="tabsConfigInicial" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-nueva-empresa-ci" data-bs-toggle="tab"
+                                data-bs-target="#panel-nueva-empresa-ci" type="button" role="tab">
+                            <i class="bi bi-plus-circle me-1"></i>Nueva empresa
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-empresa-existente-ci" data-bs-toggle="tab"
+                                data-bs-target="#panel-empresa-existente-ci" type="button" role="tab">
+                            <i class="bi bi-search me-1"></i>Mi empresa ya está registrada
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab: Nueva empresa -->
+                    <div class="tab-pane fade show active" id="panel-nueva-empresa-ci" role="tabpanel">
+                        <p class="text-muted small mb-3">Completá los datos de tu empresa. Quedará asociada a tu cuenta automáticamente.</p>
+                        <form id="formNuevaEmpresaCI" novalidate>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="ciNombre" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ciNombre" maxlength="120" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ciRazonSocial" class="form-label fw-semibold">Razón social <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ciRazonSocial" maxlength="160" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ciNit" class="form-label fw-semibold">NIT <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ciNit" maxlength="30" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ciCuit" class="form-label fw-semibold">CUIT <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ciCuit" placeholder="XX-XXXXXXXX-X" maxlength="20" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="ciDireccion" class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ciDireccion" maxlength="240" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ciActividad" class="form-label fw-semibold">Actividad económica <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ciActividad" maxlength="180" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ciCorreo" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="ciCorreo" maxlength="120" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ciTelefono" class="form-label fw-semibold">Teléfono</label>
+                                    <input type="text" class="form-control" id="ciTelefono" maxlength="40" placeholder="Ej: 2990000000">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab: Empresa existente -->
+                    <div class="tab-pane fade" id="panel-empresa-existente-ci" role="tabpanel">
+                        <p class="text-muted small mb-3">Buscá tu empresa por nombre, razón social o CUIT y vinculá tu cuenta.</p>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="campoBusquedaEmpresaCI"
+                                   placeholder="Nombre, razón social o CUIT..." maxlength="100">
+                            <button class="btn btn-outline-primary" type="button"
+                                    onclick="ConfiguracionInicial.buscarEmpresa()">
+                                <i class="bi bi-search me-1"></i>Buscar
+                            </button>
+                        </div>
+                        <div id="resultadosBusquedaEmpresaCI">
+                            <p class="text-muted small text-center">Ingresá un término para buscar.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnConfirmarConfiguracionInicial"
+                        onclick="ConfiguracionInicial.confirmar()">
+                    <i class="bi bi-check-lg me-1"></i>Confirmar y continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Crear / Editar Empresa -->
+<div class="modal fade" id="modalEmpresa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModalEmpresa">Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalEmpresa" class="alert alert-danger alerta-modal d-none ui-state ui-state-error" role="alert" aria-live="assertive"></div>
+                <form id="formularioEmpresa" novalidate>
+                    <div class="mb-3">
+                        <label for="campoNombreEmpresa" class="form-label fw-semibold">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreEmpresa" placeholder="Razón social" maxlength="120" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoRazonSocialEmpresa" class="form-label fw-semibold">Razón social <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoRazonSocialEmpresa" placeholder="Razón social completa" maxlength="160" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoNitEmpresa" class="form-label fw-semibold">NIT <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNitEmpresa" placeholder="NIT" maxlength="30" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoCuitEmpresa" class="form-label fw-semibold">CUIT <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoCuitEmpresa" placeholder="XX-XXXXXXXX-X" maxlength="20" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoDireccionEmpresa" class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoDireccionEmpresa" placeholder="Dirección fiscal" maxlength="240" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoActividadEconomicaEmpresa" class="form-label fw-semibold">Actividad económica <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoActividadEconomicaEmpresa" placeholder="Actividad principal" maxlength="180" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoCorreoEmpresa" class="form-label fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="campoCorreoEmpresa" placeholder="empresa@ejemplo.com" maxlength="120" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoTelefonoEmpresa" class="form-label fw-semibold">Teléfono</label>
+                        <input type="text" class="form-control" id="campoTelefonoEmpresa" placeholder="Ej: 2990000000" maxlength="40">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.guardar()">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleEmpresaAdmin" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-0"><i class="bi bi-building me-2 text-primary"></i><span id="detEmpresaTituloModal">Detalle de empresa</span></h5>
+                    <small class="text-muted" id="detEmpresaSubtituloModal"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="estadoCargaDetalleEmpresaAdmin" class="text-muted small p-3 d-none ui-state ui-state-muted">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando detalle...
+                </div>
+                <div id="errorDetalleEmpresaAdmin" class="alert alert-danger m-3 d-none ui-state ui-state-error"></div>
+
+                <div id="contenidoDetalleEmpresaAdmin" class="d-none">
+                    <!-- Tabs de navegación -->
+                    <ul class="nav nav-tabs px-3 pt-2 border-bottom" id="tabsDetalleEmpresa" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tab-emp-datos" data-bs-toggle="tab" data-bs-target="#panel-emp-datos" type="button" role="tab">
+                                <i class="bi bi-info-circle me-1"></i>Datos generales
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-emp-usuarios" data-bs-toggle="tab" data-bs-target="#panel-emp-usuarios" type="button" role="tab">
+                                <i class="bi bi-person me-1"></i>Usuarios <span id="badgeUsuariosEmpresaDet" class="badge bg-secondary ms-1">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-emp-solicitudes" data-bs-toggle="tab" data-bs-target="#panel-emp-solicitudes" type="button" role="tab">
+                                <i class="bi bi-file-earmark-text me-1"></i>Solicitudes <span id="badgeSolicitudesEmpresaDet" class="badge bg-secondary ms-1">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-emp-servicios" data-bs-toggle="tab" data-bs-target="#panel-emp-servicios" type="button" role="tab">
+                                <i class="bi bi-tools me-1"></i>Servicios
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-3">
+                        <!-- Tab: Datos generales -->
+                        <div class="tab-pane fade show active" id="panel-emp-datos" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="card border-0 bg-light h-100">
+                                        <div class="card-body">
+                                            <h6 class="text-muted mb-3">Identificación</h6>
+                                            <dl class="row mb-0 small">
+                                                <dt class="col-sm-5">Nombre comercial</dt>
+                                                <dd class="col-sm-7 fw-semibold" id="detEmpresaNombre">-</dd>
+                                                <dt class="col-sm-5">Razón social</dt>
+                                                <dd class="col-sm-7" id="detEmpresaRazonSocial">-</dd>
+                                                <dt class="col-sm-5">NIT / RFC</dt>
+                                                <dd class="col-sm-7" id="detEmpresaNit">-</dd>
+                                                <dt class="col-sm-5">CUIT</dt>
+                                                <dd class="col-sm-7 font-monospace" id="detEmpresaCuit">-</dd>
+                                                <dt class="col-sm-5">Estado</dt>
+                                                <dd class="col-sm-7"><span id="detEmpresaStatus" class="badge bg-success">-</span></dd>
+                                                <dt class="col-sm-5">Fecha de registro</dt>
+                                                <dd class="col-sm-7" id="detEmpresaFechaRegistro">-</dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card border-0 bg-light h-100">
+                                        <div class="card-body">
+                                            <h6 class="text-muted mb-3">Contacto y actividad</h6>
+                                            <dl class="row mb-0 small">
+                                                <dt class="col-sm-5">Teléfono</dt>
+                                                <dd class="col-sm-7" id="detEmpresaTelefono">-</dd>
+                                                <dt class="col-sm-5">Correo</dt>
+                                                <dd class="col-sm-7 text-break" id="detEmpresaCorreo">-</dd>
+                                                <dt class="col-sm-5">Dirección</dt>
+                                                <dd class="col-sm-7" id="detEmpresaDireccion">-</dd>
+                                                <dt class="col-sm-5">Actividad económica</dt>
+                                                <dd class="col-sm-7" id="detEmpresaActividad">-</dd>
+                                                <dt class="col-sm-5">Último expediente</dt>
+                                                <dd class="col-sm-7"><span id="detEmpresaEstado" class="badge bg-secondary">Sin expediente</span></dd>
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Usuarios -->
+                        <div class="tab-pane fade" id="panel-emp-usuarios" role="tabpanel">
+                            <div id="listaUsuariosEmpresaDet">
+                                <p class="text-muted small">Sin usuarios asociados.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Solicitudes -->
+                        <div class="tab-pane fade" id="panel-emp-solicitudes" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>N° expediente</th>
+                                            <th>Tipo</th>
+                                            <th>Estado</th>
+                                            <th>Sup. solicitada</th>
+                                            <th>Fecha</th>
+                                            <th>Última actualizacion</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpoSolicitudesEmpresaDet">
+                                        <tr><td colspan="6" class="text-muted text-center py-3">Sin solicitudes registradas</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Servicios post-radicación -->
+                        <div class="tab-pane fade" id="panel-emp-servicios" role="tabpanel">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light text-center">
+                                        <div class="card-body py-3">
+                                            <div class="fs-3 fw-bold text-primary" id="detTotalEmpleados">0</div>
+                                            <div class="text-muted small">Empleados declarados</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-light text-center">
+                                        <div class="card-body py-3">
+                                            <div class="fs-3 fw-bold text-primary" id="detTotalVehiculos">0</div>
+                                            <div class="text-muted small">Vehículos registrados</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <h6 class="text-muted">Listado de vehículos</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Placa</th><th>Tipo</th><th>Descripción</th></tr></thead>
+                                    <tbody id="cuerpoVehiculosEmpresaAdmin">
+                                        <tr><td colspan="3" class="text-muted ui-state ui-state-muted">Sin vehículos registrados</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div id="accionesAdminEmpresaDet" class="me-auto d-none">
+                    <button type="button" class="btn btn-outline-danger me-2"
+                            onclick="ModuloEmpresas.eliminarDesdeDetalle()">
+                        <i class="bi bi-trash me-1"></i>Eliminar empresa
+                    </button>
+                    <button type="button" class="btn btn-primary"
+                            onclick="ModuloEmpresas.editarDesdeDetalle()">
+                        <i class="bi bi-pencil me-1"></i>Editar empresa
+                    </button>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleRadicacionAdmin" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Detalle de expediente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="estadoCargaDetalleRadAdmin" class="text-muted small mb-2 d-none ui-state ui-state-muted"><span class="spinner-border spinner-border-sm me-2"></span>Cargando detalle...</div>
+                <div id="errorDetalleRadAdmin" class="alert alert-danger d-none ui-state ui-state-error"></div>
+                <div id="contenidoDetalleRadAdmin" class="d-none">
+                    <!-- Datos generales -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4"><strong>N° expediente:</strong> <span id="detRadNumero">-</span></div>
+                        <div class="col-md-4"><strong>Solicitante:</strong> <span id="detRadSolicitante">-</span></div>
+                        <div class="col-md-4"><strong>Tipo trámite:</strong> <span id="detRadTipo">-</span></div>
+                        <div class="col-md-4"><strong>Estado actual:</strong> <span id="detRadEstado">-</span></div>
+                        <div class="col-md-4"><strong>Fecha creación:</strong> <span id="detRadFechaCreacion">-</span></div>
+                        <div class="col-md-4"><strong>Última modificación:</strong> <span id="detRadFechaModificacion">-</span></div>
+                        <div class="col-md-6"><strong>Uso estimativo:</strong> <span id="detRadUsoEstimativo">-</span></div>
+                        <div class="col-md-6"><strong>Relevamiento de lotes:</strong> <span id="detRadRelevamiento">-</span></div>
+                        <div class="col-12">
+                            <strong>Descripción:</strong>
+                            <p id="detRadDescripcion" class="mb-0 mt-1 text-secondary small border rounded p-2 bg-light" style="white-space:pre-wrap">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Cambiar estado -->
+                    <div class="card border-0 bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-2">Cambiar estado</h6>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="selectorNuevoEstadoRadAdmin" class="form-label small">Nuevo estado</label>
+                                    <select id="selectorNuevoEstadoRadAdmin" class="form-select form-select-sm"></select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label id="labelObservacionesRadAdmin" for="campoObservacionesRadAdmin" class="form-label small">Observaciones</label>
+                                    <textarea id="campoObservacionesRadAdmin" class="form-control form-control-sm" rows="2" placeholder="Ingrese observaciones para el cambio"></textarea>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="ModuloRadicaciones.confirmarCambioEstadoDetalleAdmin()">Aplicar cambio</button>
+                                </div>
+                            </div>
+                            <small id="ayudaObservacionesRadAdmin" class="text-muted">Para estados Rechazada/Cancelada la observación es obligatoria.</small>
+                        </div>
+                    </div>
+
+                    <!-- Lote reservado -->
+                    <div class="card border-0 mb-3" id="bloqueAsignacionLoteRad">
+                        <div class="card-body border rounded">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="text-muted mb-0"><i class="bi bi-map me-1"></i>Lote reservado</h6>
+                                <span id="detRadSuperficieSolicitada" class="d-none badge bg-info text-dark fs-6 px-3"></span>
+                            </div>
+                            <!-- Lote ya asignado -->
+                            <div id="loteAsignadoRad" class="d-none">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-auto"><span class="badge bg-warning text-dark fs-6 px-3 py-2" id="detRadLoteCodigo">-</span></div>
+                                    <div class="col"><span class="text-muted small" id="detRadLoteSuperficie">-</span></div>
+                                    <div class="col-auto"><span class="badge bg-secondary" id="detRadLoteEstado">Preadjudicado a solicitud</span></div>
+                                </div>
+                            </div>
+                            <!-- Sin lote asignado -->
+                            <div id="sinLoteAsignadoRad">
+                                <p class="text-muted small mb-2">No hay lote reservado para esta solicitud.</p>
+                                <div id="formAsignacionLoteRad" class="d-none">
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-7">
+                                            <label for="selectorLoteDisponibleRad" class="form-label small">Lote disponible</label>
+                                            <select id="selectorLoteDisponibleRad" class="form-select form-select-sm">
+                                                <option value="">Seleccionar lote...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-5 d-flex gap-2">
+                                            <button type="button" class="btn btn-success btn-sm flex-grow-1"
+                                                    onclick="ModuloRadicaciones.confirmarAsignacionLote()">
+                                                <i class="bi bi-pin-map me-1"></i>Reservar lote
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="document.getElementById('formAsignacionLoteRad').classList.add('d-none'); document.getElementById('btnMostrarFormLoteRad').classList.remove('d-none')">
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="alertaAsignacionLoteRad" class="alert alert-danger mt-2 d-none small"></div>
+                                </div>
+                                <button type="button" id="btnMostrarFormLoteRad" class="btn btn-outline-primary btn-sm"
+                                        onclick="ModuloRadicaciones.mostrarFormAsignacionLote()">
+                                    <i class="bi bi-pin-map me-1"></i>Asignar lote
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documentos e historial -->
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <h6 class="text-muted">Documentos adjuntos</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Tipo</th><th>Archivo</th><th>Fecha</th></tr></thead>
+                                    <tbody id="cuerpoDocumentosDetalleRadAdmin"><tr><td colspan="3" class="text-muted ui-state ui-state-muted">Sin documentos</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="text-muted">Historial y observaciones</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Fecha</th><th>Estado Anterior</th><th>Estado Nuevo</th><th>Observación</th><th>Usuario</th></tr></thead>
+                                    <tbody id="cuerpoHistorialDetalleRadAdmin"><tr><td colspan="5" class="text-muted ui-state ui-state-muted">Sin historial</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Crear / Editar Lote -->
+<div class="modal fade" id="modalLote" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModalLote">Lote</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalLote" class="alert alert-danger alerta-modal d-none ui-state ui-state-error" role="alert" aria-live="assertive"></div>
+                <form id="formularioLote" novalidate>
+                    <div class="mb-3">
+                        <label for="campoCodigoLote" class="form-label fw-semibold">Código <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoCodigoLote" placeholder="Ej: L-001" maxlength="40" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="selectorEmpresaLote" class="form-label fw-semibold">Empresa (opcional)</label>
+                        <select class="form-select" id="selectorEmpresaLote">
+                            <option value="" selected>Sin asignar</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoSuperficieLote" class="form-label fw-semibold">Superficie (m²) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="campoSuperficieLote" placeholder="Ej: 500.00" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="campoOcupadoLote">
+                            <label class="form-check-label fw-semibold" for="campoOcupadoLote">Lote ocupado</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="selectorEstadoAsignacionLote" class="form-label fw-semibold">Estado de asignación</label>
+                        <select class="form-select" id="selectorEstadoAsignacionLote">
+                            <option value="">Seleccionar estado</option>
+                            <option value="DISPONIBLE">Libre</option>
+                            <option value="PREADJUDICADO_A_SOLICITUD">Preadjudicado a solicitud</option>
+                            <option value="ASIGNADO_A_EMPRESA">Asignado a empresa</option>
+                            <option value="ADJUDICADO_RADICADA">Adjudicado - Radicada</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoExpedienteReferenciaLote" class="form-label fw-semibold">N° expediente de referencia</label>
+                        <input type="text" class="form-control" id="campoExpedienteReferenciaLote" maxlength="40" placeholder="Ej: EXP-2026-00123">
+                    </div>
+                    <div class="mb-3">
+                        <label for="selectorZonaLote" class="form-label fw-semibold">Zona del parque</label>
+                        <select class="form-select" id="selectorZonaLote">
+                            <option value="">Sin especificar</option>
+                            <option value="PARQUE_VIEJO">Parque Viejo</option>
+                            <option value="PARQUE_NUEVO">Parque Nuevo</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloLotes.guardar()">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleLote" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-map me-2 text-primary"></i>Detalle de lote</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="estadoCargaDetalleLote" class="text-muted small mb-2 d-none ui-state ui-state-muted">
+                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando detalle...
+                </div>
+                <div id="errorDetalleLote" class="alert alert-danger d-none ui-state ui-state-error"></div>
+
+                <div id="contenidoDetalleLote" class="d-none">
+                    <h6 class="text-muted">Datos del lote</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4"><strong>Código:</strong> <span id="detLoteCodigo">-</span></div>
+                        <div class="col-md-4"><strong>Superficie:</strong> <span id="detLoteSuperficie">-</span></div>
+                        <div class="col-md-4"><strong>Ocupación:</strong> <span id="detLoteOcupado">-</span></div>
+                        <div class="col-md-4"><strong>Zona:</strong> <span id="detLoteZona">-</span></div>
+                    </div>
+
+                    <h6 class="text-muted">Asignación y expediente</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6"><strong>Empresa asignada:</strong> <span id="detLoteEmpresa">-</span></div>
+                        <div class="col-md-6"><strong>CUIT empresa:</strong> <span id="detLoteEmpresaCuit">-</span></div>
+                        <div class="col-md-4"><strong>Fecha de asignación:</strong> <span id="detLoteFechaAsignacion">-</span></div>
+                        <div class="col-md-4"><strong>Estado:</strong> <span id="detLoteEstadoAsignacion">-</span></div>
+                        <div class="col-md-4"><strong>N° expediente:</strong> <span id="detLoteExpediente">-</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Crear / Editar Usuario -->
+<div class="modal fade" id="modalUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tituloModalUsuario">Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalUsuario" class="alert alert-danger alerta-modal d-none ui-state ui-state-error" role="alert" aria-live="assertive"></div>
+                <form id="formularioUsuario" novalidate>
+                    <div class="mb-3">
+                        <label for="campoNombreUsuario" class="form-label fw-semibold">Nombre de usuario <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreUsuario" placeholder="Ej: jperez" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoNombreCompleto" class="form-label fw-semibold">Nombre completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreCompleto" placeholder="Ej: Juan Pérez" required>
+                    </div>
+                    <div class="mb-3" id="grupoClaveUsuario">
+                        <label for="campoClaveUsuario" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="campoClaveUsuario" placeholder="Mínimo 8 caracteres">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Roles <span class="text-danger">*</span></label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolAdmin" value="ADMINISTRADOR">
+                                <label class="form-check-label" for="rolAdmin">
+                                    <span class="badge bg-danger">ADMINISTRADOR</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolDirectivo" value="DIRECTIVO">
+                                <label class="form-check-label" for="rolDirectivo">
+                                    <span class="badge bg-warning text-dark">DIRECTIVO</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolEmpresa" value="EMPRESA">
+                                <label class="form-check-label" for="rolEmpresa">
+                                    <span class="badge bg-secondary">EMPRESA</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="grupoEmpresaUsuario">
+                        <label for="selectorEmpresaUsuario" class="form-label fw-semibold">Empresa asociada (rol EMPRESA)</label>
+                        <select id="selectorEmpresaUsuario" class="form-select">
+                            <option value="">-- Seleccione empresa --</option>
+                        </select>
+                    </div>
+                    <div class="mb-1">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="campoActivoUsuario" checked>
+                            <label class="form-check-label fw-semibold" for="campoActivoUsuario">Usuario activo</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloUsuarios.guardar()">
+                    <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Restablecer contraseña de usuario -->
+<div class="modal fade" id="modalRestablecerClave" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-key me-2 text-warning"></i>Restablecer contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    Nueva contraseña para: <strong id="nombreUsuarioRestablecerClave"></strong>
+                    <input type="hidden" id="idUsuarioRestablecerClave">
+                </p>
+                <div id="alertaModalRestablecerClave" class="alert alert-danger alerta-modal d-none ui-state ui-state-error" role="alert" aria-live="assertive"></div>
+                <form id="formularioRestablecerClave" novalidate>
+                    <div class="mb-3">
+                        <label for="campoClavaNuevaRest" class="form-label fw-semibold">Nueva contraseña</label>
+                        <input type="password" class="form-control" id="campoClavaNuevaRest" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoClaveConfirmRest" class="form-label fw-semibold">Confirmar contraseña</label>
+                        <input type="password" class="form-control" id="campoClaveConfirmRest" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="ModuloUsuarios.restablecerClave()">
+                    <i class="bi bi-key me-1"></i>Restablecer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cambiar mi contraseña -->
+<div class="modal fade" id="modalMiClave" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-lock me-2 text-primary"></i>Cambiar mi contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalMiClave" class="alert alert-danger alerta-modal d-none ui-state ui-state-error" role="alert" aria-live="assertive"></div>
+                <form id="formMiClave" novalidate>
+                    <div class="mb-3">
+                        <label for="campoMiClaveActual" class="form-label fw-semibold">Contraseña actual</label>
+                        <input type="password" class="form-control" id="campoMiClaveActual" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoMiClaveNueva" class="form-label fw-semibold">Nueva contraseña</label>
+                        <input type="password" class="form-control" id="campoMiClaveNueva" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoMiClaveConfirm" class="form-label fw-semibold">Confirmar nueva contraseña</label>
+                        <input type="password" class="form-control" id="campoMiClaveConfirm" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-floppy me-1"></i>Actualizar contraseña
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Actualizar mis datos personales -->
+<div class="modal fade" id="modalMiPerfil" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Actualizar mis datos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalMiPerfil" class="alert alert-danger alerta-modal d-none ui-state ui-state-error" role="alert" aria-live="assertive"></div>
+                <form id="formMiPerfil" novalidate>
+                    <div class="mb-3">
+                        <label for="campoMiNombreCompleto" class="form-label fw-semibold">Nombre completo</label>
+                        <input type="text" class="form-control" id="campoMiNombreCompleto" maxlength="120" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoMiCorreoElectronico" class="form-label fw-semibold">Correo electrónico</label>
+                        <input type="email" class="form-control" id="campoMiCorreoElectronico" maxlength="160">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-floppy me-1"></i>Actualizar datos
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmación de eliminación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" id="mensajeConfirmacionEliminar"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
+                    <i class="bi bi-trash me-1"></i>Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/apiCliente.js"></script>
+<script src="js/autenticacion.js"></script>
+<script src="js/modulos/empresas.js"></script>
+<script src="js/modulos/lotes.js"></script>
+<script src="js/modulos/radicaciones.js"></script>
+<script src="js/modulos/estadisticas.js"></script>
+<script src="js/modulos/usuarios.js"></script>
+<script src="js/aplicacion.js"></script>
+</body>
+</html>
+
