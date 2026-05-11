@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPIV - Verificacion de correo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="pagina-ingreso min-vh-100 d-flex align-items-center">
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-sm-10 col-md-7 col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 tarjeta-registro">
+                <div class="card-body p-4 p-md-5 text-center">
+                    <div id="iconoVerificacion" class="icono-registro mx-auto mb-3">
+                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    </div>
+                    <span class="badge text-bg-primary-subtle text-primary-emphasis mb-2">Paso 2 de 2</span>
+                    <h5 id="tituloVerificacion" class="text-muted mb-3">Verificación de correo</h5>
+                    <div id="estadoVerificacion" class="alert alert-info ui-state ui-state-info" role="alert" aria-live="assertive" aria-atomic="true" tabindex="-1">Validando enlace...</div>
+                    <p id="ayudaVerificacion" class="text-muted small mb-0">Cuando el proceso termine, podrás continuar al ingreso o volver al registro.</p>
+                    <a id="accionVerificacion" href="/ingreso.html" class="btn btn-primary mt-3">Ir a iniciar sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="js/verificacion.js"></script>
+</body>
+</html>
