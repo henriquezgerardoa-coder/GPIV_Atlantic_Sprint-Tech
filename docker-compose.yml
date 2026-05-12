@@ -1,0 +1,12 @@
+services:
+  app-backend:
+    build: .
+    container_name: gpiv_backend_container
+    ports:
+      - "8090:8090"
+    environment:
+      # Leer credenciales desde .env (ver .env.example)
+      - SPRING_DATASOURCE_URL=${NEON_DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DB_USER}
+      - DB_PASSWORD=${NEON_DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
