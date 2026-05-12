@@ -1,4 +1,4 @@
-package com.gpiv.atlanticsprinttech.backend.security;
+package com.gpiv.atlanticsprinttech.backend.seguridad;
 
 import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;

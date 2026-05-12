@@ -20,11 +20,14 @@ import com.gpiv.atlanticsprinttech.commons.empresa.dto.SolicitudEmpresa;
 import com.gpiv.atlanticsprinttech.entities.usuario.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -44,6 +47,32 @@ class AplicacionGestionGpivPruebas {
 
     @Autowired
     private RepositorioUsuario repositorioUsuario;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private PasswordEncoder codificadorClave;
+
+    @BeforeEach
+    void limpiarDatos() {
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+        jdbcTemplate.execute("TRUNCATE TABLE radicacion_historial");
+        jdbcTemplate.execute("TRUNCATE TABLE radicacion_documentos");
+        jdbcTemplate.execute("TRUNCATE TABLE radicaciones");
+        jdbcTemplate.execute("TRUNCATE TABLE hitos_obra");
+        jdbcTemplate.execute("TRUNCATE TABLE documentos_pdf");
+        jdbcTemplate.execute("TRUNCATE TABLE proyectos_productivos");
+        jdbcTemplate.execute("TRUNCATE TABLE lotes");
+        jdbcTemplate.execute("DELETE FROM usuarios_roles WHERE usuario_id NOT IN (SELECT id FROM usuarios WHERE nombre_usuario IN ('admin', 'directivo', 'empresa'))");
+        jdbcTemplate.execute("DELETE FROM usuarios WHERE nombre_usuario NOT IN ('admin', 'directivo', 'empresa')");
+        jdbcTemplate.execute("TRUNCATE TABLE empresas");
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+        jdbcTemplate.update("UPDATE usuarios SET nombre_completo = ?, clave_acceso_hash = ?, correo_electronico = NULL, empresa_id = NULL WHERE nombre_usuario = ?",
+            "Administrador General", codificadorClave.encode("admin12345"), "admin");
+        jdbcTemplate.update("UPDATE usuarios SET nombre_completo = ?, empresa_id = NULL, correo_electronico = NULL WHERE nombre_usuario = ?",
+            "Empresa GPIV", "empresa");
+    }
 
     @Test
     void deberiaResponderEstadoOkEnSalud() throws Exception {
@@ -212,8 +241,8 @@ class AplicacionGestionGpivPruebas {
             .andExpect(jsonPath("$.telefono").value("2990000000"))
             .andExpect(jsonPath("$.fechaRegistro").exists())
             .andExpect(jsonPath("$.statusEmpresa").value("ACTIVA"))
-            .andExpect(jsonPath("$.usuarioAsociado.nombreCompleto").value("Empresa Panel Admin"))
-            .andExpect(jsonPath("$.usuarioAsociado.fechaUltimoAcceso").exists())
+            .andExpect(jsonPath("$.usuariosAsociados[0].nombreCompleto").value("Empresa Panel Admin"))
+            .andExpect(jsonPath("$.usuariosAsociados[0].fechaUltimoAcceso").exists())
             .andExpect(jsonPath("$.totalEmpleados").value(0))
             .andExpect(jsonPath("$.totalVehiculos").value(0));
 
@@ -597,9 +626,9 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(get("/api/lotes")
                 .with(httpBasic("empresa_lotes_asignada", "EmpresaLote123")))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].id").value(idLoteA))
-            .andExpect(jsonPath("$[0].empresaId").value(idEmpresaA));
+            .andExpect(jsonPath("$.totalElementos").value(1))
+            .andExpect(jsonPath("$.contenido[0].id").value(idLoteA))
+            .andExpect(jsonPath("$.contenido[0].empresaId").value(idEmpresaA));
 
         mockMvc.perform(get("/api/lotes/{id}", idLoteB)
                 .with(httpBasic("empresa_lotes_asignada", "EmpresaLote123")))
@@ -675,7 +704,7 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(get("/api/radicaciones")
                 .with(httpBasic("empresa", "empresa12345")))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(0));
+            .andExpect(jsonPath("$.totalElementos").value(0));
 
         mockMvc.perform(patch("/api/yo/perfil")
                 .with(httpBasic("empresa", "empresa12345"))
@@ -716,7 +745,7 @@ class AplicacionGestionGpivPruebas {
               "relevamientoPedidoLotes": {
                 "correo": "empresa_formulario@gpiv.local",
                 "razonSocialEmpresa": "Empresa Formulario SRL",
-                "cuit": "20333444556",
+                "cuit": "20333444551",
                 "ingresosBrutos": "Convenio local",
                 "actividadPrincipal": "Produccion metalmecanica",
                 "actividadSecundaria": "Mantenimiento",

@@ -1,7 +1,7 @@
-package com.gpiv.atlanticsprinttech.backend.security;
+package com.gpiv.atlanticsprinttech.backend.seguridad;
 
 import com.gpiv.atlanticsprinttech.backend.config.PropiedadesRegistroPublico;
-import com.gpiv.atlanticsprinttech.backend.security.RegistroIntentosEnMemoria;
+import com.gpiv.atlanticsprinttech.backend.seguridad.RegistroIntentosEnMemoria;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

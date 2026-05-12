@@ -10,7 +10,7 @@ const Autenticacion = (() => {
 
     function cerrarSesion() {
         sessionStorage.clear();
-        window.location.href = '/ingreso.html';
+        window.location.href = '/index.html';
     }
 
     function esAdministrador() {

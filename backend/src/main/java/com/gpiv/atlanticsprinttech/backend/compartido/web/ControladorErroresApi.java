@@ -1,7 +1,7 @@
-package com.gpiv.atlanticsprinttech.backend.shared.web;
+package com.gpiv.atlanticsprinttech.backend.compartido.web;
 
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaOperacion;
-import com.gpiv.atlanticsprinttech.entities.shared.BusinessException;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaOperacion;
+import com.gpiv.atlanticsprinttech.entities.compartido.ExcepcionNegocio;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +23,9 @@ public class ControladorErroresApi {
             .body(new RespuestaOperacion(ex.getReason() == null ? "No se pudo completar la operacion" : ex.getReason()));
     }
 
-    @ExceptionHandler(BusinessException.class)
+    @ExceptionHandler(ExcepcionNegocio.class)
     @SuppressWarnings("unused")
-    public ResponseEntity<RespuestaOperacion> manejarBusinessException(BusinessException ex) {
+    public ResponseEntity<RespuestaOperacion> manejarExcepcionNegocio(ExcepcionNegocio ex) {
         return ResponseEntity.badRequest().body(new RespuestaOperacion(ex.getMessage()));
     }
 
@@ -46,4 +46,3 @@ public class ControladorErroresApi {
         return ResponseEntity.badRequest().body(new RespuestaOperacion(mensaje));
     }
 }
-

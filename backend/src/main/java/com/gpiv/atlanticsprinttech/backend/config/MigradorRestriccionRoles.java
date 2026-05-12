@@ -14,14 +14,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Order(0)
-public class MigradorConstraintRoles implements CommandLineRunner {
+public class MigradorRestriccionRoles implements CommandLineRunner {
 
-    private static final Logger logger = LoggerFactory.getLogger(MigradorConstraintRoles.class);
+    private static final Logger logger = LoggerFactory.getLogger(MigradorRestriccionRoles.class);
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
 
-    public MigradorConstraintRoles(DataSource dataSource, JdbcTemplate jdbcTemplate) {
+    public MigradorRestriccionRoles(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         this.dataSource = dataSource;
         this.jdbcTemplate = jdbcTemplate;
     }

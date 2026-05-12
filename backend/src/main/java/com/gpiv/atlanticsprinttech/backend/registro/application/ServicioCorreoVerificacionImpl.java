@@ -38,13 +38,13 @@ public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacio
             + "Soporte: " + contactoSoporte + "\n"
             + "GPIV";
 
-        if (!propiedadesRegistroPublico.getMail().isHabilitado()) {
+        if (!propiedadesRegistroPublico.getCorreo().isHabilitado()) {
             logger.info("[MAIL DESHABILITADO] Para {} enviar asunto='{}' cuerpo='{}'", correoDestino, asunto, cuerpo);
             return;
         }
 
         SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(propiedadesRegistroPublico.getMail().getRemitente());
+        mensaje.setFrom(propiedadesRegistroPublico.getCorreo().getRemitente());
         mensaje.setTo(correoDestino);
         mensaje.setSubject(asunto);
         mensaje.setText(cuerpo);

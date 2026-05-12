@@ -1,6 +1,6 @@
 package com.gpiv.atlanticsprinttech.entities.proyecto;
 
-import com.gpiv.atlanticsprinttech.entities.shared.BusinessException;
+import com.gpiv.atlanticsprinttech.entities.compartido.ExcepcionNegocio;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -55,22 +55,22 @@ public class DocumentoPDF {
 		long tamanoBytes,
 		byte[] contenido,
 		ProyectoProductivo proyecto
-	) throws BusinessException {
+	) throws ExcepcionNegocio {
 		DocumentoPDF doc = new DocumentoPDF(nombreArchivo, tamanoBytes, contenido, proyecto);
 		doc.validarExtension();
 		doc.validarTamano();
 		return doc;
 	}
 
-	public void validarExtension() throws BusinessException {
+	public void validarExtension() throws ExcepcionNegocio {
 		if (nombreArchivo == null || !nombreArchivo.toLowerCase().endsWith(".pdf")) {
-			throw new BusinessException("El documento debe tener extension .pdf: " + nombreArchivo);
+			throw new ExcepcionNegocio("El documento debe tener extension .pdf: " + nombreArchivo);
 		}
 	}
 
-	public void validarTamano() throws BusinessException {
+	public void validarTamano() throws ExcepcionNegocio {
 		if (tamanoBytes <= 0 || tamanoBytes > MAX_TAMANO_BYTES) {
-			throw new BusinessException("El tamano del documento excede el limite de 20 MB.");
+			throw new ExcepcionNegocio("El tamano del documento excede el limite de 20 MB.");
 		}
 	}
 

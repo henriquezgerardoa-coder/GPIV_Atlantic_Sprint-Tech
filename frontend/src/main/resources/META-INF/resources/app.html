@@ -267,98 +267,10 @@
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="panel-rad-a" role="tabpanel" aria-labelledby="tab-rad-a" tabindex="0">
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-3">A) Solicitar radicación</h6>
-                        <div id="alertaRadicacionNueva" class="alert alert-danger d-none ui-state ui-state-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
-                        <form id="formRadicacionNueva" novalidate>
-                            <div class="mb-2">
-                                <label for="campoTipoSolicitudRad" class="form-label fw-semibold">Tipo de solicitud</label>
-                                <input id="campoTipoSolicitudRad" class="form-control" maxlength="80" required value="PEDIDO_LOTES">
-                            </div>
-                            <div class="mb-2">
-                                <label for="campoDescripcionRad" class="form-label fw-semibold">Descripción</label>
-                                <textarea id="campoDescripcionRad" class="form-control" maxlength="1000" rows="2" required>Relevamiento inicial para pedido de lotes.</textarea>
-                            </div>
-                            <div class="mb-2">
-                                <label for="campoUsoEstimativoRad" class="form-label fw-semibold">Uso estimativo del servicio</label>
-                                <input id="campoUsoEstimativoRad" class="form-control" maxlength="120" placeholder="Ej: 350 m3/mes de agua">
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="activarRelevamientoPedidoLotes" checked>
-                                <label class="form-check-label" for="activarRelevamientoPedidoLotes">Usar formulario de relevamiento de pedido de lotes</label>
-                            </div>
-                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="ModuloRadicaciones.guardarBorradorAhora()"><i class="bi bi-save me-1"></i>Guardar borrador</button>
-                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="ModuloRadicaciones.descartarBorrador()"><i class="bi bi-trash me-1"></i>Descartar borrador</button>
-                                <span id="estadoBorradorRadicacion" class="text-muted small">Sin borrador guardado</span>
-                            </div>
-
-                            <div id="bloqueRelevamientoPedidoLotes" class="border rounded p-2 bg-light-subtle">
-                                <div class="row g-2">
-                                    <div class="col-md-6"><label for="relCorreo" class="form-label small">Correo</label><input id="relCorreo" class="form-control form-control-sm" type="email"></div>
-                                    <div class="col-md-6"><label for="relRazonSocial" class="form-label small">Razón social</label><input id="relRazonSocial" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relCuit" class="form-label small">CUIT</label><input id="relCuit" class="form-control form-control-sm" placeholder="20123456789"></div>
-                                    <div class="col-md-6"><label for="relIngresosBrutos" class="form-label small">Ingresos Brutos</label><input id="relIngresosBrutos" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relActividadPrincipal" class="form-label small">Actividad principal</label><input id="relActividadPrincipal" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relActividadSecundaria" class="form-label small">Actividad secundaria</label><input id="relActividadSecundaria" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relTipoEmpresa" class="form-label small">Empresa</label><select id="relTipoEmpresa" class="form-select form-select-sm"><option value="NUEVA">Nueva</option><option value="EXISTENTE">Existente</option></select></div>
-                                    <div class="col-md-6"><label for="relObjetoProyecto" class="form-label small">Objeto del proyecto (si es existente)</label><select id="relObjetoProyecto" class="form-select form-select-sm"><option value="">Seleccione</option><option value="TRASLADO_TOTAL_PARCIAL">Traslado total o parcial</option><option value="NUEVOS_PRODUCTOS">Elaborar nuevos productos</option><option value="INCREMENTAR_PRODUCCION">Incrementar producción total</option></select></div>
-                                    <div class="col-md-6"><label for="relDireccion" class="form-label small">Dirección</label><input id="relDireccion" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relPersonaReferente" class="form-label small">Persona referente</label><input id="relPersonaReferente" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relTelefono" class="form-label small">Teléfono</label><input id="relTelefono" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relCorreoElectronico" class="form-label small">Correo electrónico de contacto</label><input id="relCorreoElectronico" type="email" class="form-control form-control-sm"></div>
-                                    <div class="col-md-6"><label for="relRubro" class="form-label small">Rubro</label><select id="relRubro" class="form-select form-select-sm"><option value="SERVICIOS">Servicios</option><option value="BIENES">Bienes</option><option value="BIENES_Y_SERVICIOS">Bienes y servicios</option><option value="OTROS">Otros</option></select></div>
-                                    <div class="col-md-6"><label for="relRubroOtro" class="form-label small">Detalle rubro otros</label><input id="relRubroOtro" class="form-control form-control-sm"></div>
-                                    <div class="col-12"><label for="relDescripcionServicio" class="form-label small">Descripción del servicio o bien ofrecido</label><textarea id="relDescripcionServicio" rows="2" class="form-control form-control-sm"></textarea></div>
-                                    <div class="col-md-6"><label for="relEmplazamiento" class="form-label small">Emplazamiento actual</label><select id="relEmplazamiento" class="form-select form-select-sm"><option value="PROPIO">Propio</option><option value="ALQUILADO">Alquilado</option></select></div>
-                                    <div class="col-md-2"><label for="relPersonalJerarquico" class="form-label small">Personal jerárquico</label><input id="relPersonalJerarquico" type="number" min="0" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-2"><label for="relPersonalProduccion" class="form-label small">Personal producción</label><input id="relPersonalProduccion" type="number" min="0" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-2"><label for="relPersonalAdministrativo" class="form-label small">Personal administrativo</label><input id="relPersonalAdministrativo" type="number" min="0" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-4"><label for="relTiempoRadicacion" class="form-label small">Tiempo de radicación</label><select id="relTiempoRadicacion" class="form-select form-select-sm"><option value="6">6 meses</option><option value="12">12 meses</option><option value="24">24 meses</option><option value="36">36 o más</option></select></div>
-                                    <div class="col-md-4"><label for="relNecesidadM2" class="form-label small">Necesidad de m²</label><select id="relNecesidadM2" class="form-select form-select-sm"><option value="1200">1200</option><option value="1800">1800</option><option value="2500">2500</option><option value="3300">3300</option><option value="5000">5000</option><option value="6000">6000</option></select></div>
-                                    <div class="col-md-4"><label for="relPersonalAOcupar" class="form-label small">Personal a ocupar</label><input id="relPersonalAOcupar" type="number" min="0" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-3"><label for="relSupTrabajo" class="form-label small">Sup. trabajo (m²)</label><input id="relSupTrabajo" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-3"><label for="relSupDeposito" class="form-label small">Sup. depósito (m²)</label><input id="relSupDeposito" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-3"><label for="relSupExpansion" class="form-label small">Sup. expansión (m²)</label><input id="relSupExpansion" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-3"><label for="relSupEstacionamiento" class="form-label small">Sup. estacionamiento (m²)</label><input id="relSupEstacionamiento" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-4"><label for="relTienePlanos" class="form-label small">Tiene planos</label><select id="relTienePlanos" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
-                                    <div class="col-md-4"><label for="relTension" class="form-label small">Tensión alimentación</label><select id="relTension" class="form-select form-select-sm"><option value="MEDIA">Media</option><option value="BAJA">Baja</option></select></div>
-                                    <div class="col-md-4"><label for="relPotenciaKw" class="form-label small">Potencia instalada simultánea (kW)</label><input id="relPotenciaKw" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-4"><label for="relAguaLtsMes" class="form-label small">Agua (lts/mes)</label><input id="relAguaLtsMes" type="number" min="0" step="0.01" class="form-control form-control-sm" value="0"></div>
-                                    <div class="col-md-4">
-                                        <label for="relRequiereGas" class="form-label small">Gas</label>
-                                        <select id="relRequiereGas" class="form-select form-select-sm">
-                                            <option value="true">Sí</option>
-                                            <option value="false">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4"><label for="relTratamientoPlanta" class="form-label small">Tratamiento en planta</label><select id="relTratamientoPlanta" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
-                                    <div class="col-md-4"><label for="relBalanzaPublica" class="form-label small">Necesidad balanza pública</label><select id="relBalanzaPublica" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
-                                    <div class="col-md-4">
-                                        <label for="relComedorUnitario" class="form-label small">Necesidad comedor unitario</label>
-                                        <select id="relComedorUnitario" class="form-select form-select-sm">
-                                            <option value="true">Sí</option>
-                                            <option value="false">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="relSalonCoworking" class="form-label small">Necesidad SUM/coworking</label>
-                                        <select id="relSalonCoworking" class="form-select form-select-sm">
-                                            <option value="true">Sí</option>
-                                            <option value="false">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-12"><label for="relMateriasPrimas" class="form-label small">Materias primas</label><textarea id="relMateriasPrimas" rows="2" class="form-control form-control-sm"></textarea></div>
-                                    <div class="col-12"><label for="relDestinoProduccion" class="form-label small">Destino de la producción</label><textarea id="relDestinoProduccion" rows="2" class="form-control form-control-sm"></textarea></div>
-                                    <div class="col-12"><label for="relTipoResiduos" class="form-label small">Residuos/Efluentes</label><textarea id="relTipoResiduos" rows="2" class="form-control form-control-sm"></textarea></div>
-                                    <div class="col-12"><label for="relPlanAmbiental" class="form-label small">Plan Ambiental <span class="text-danger">*</span></label><textarea id="relPlanAmbiental" rows="3" class="form-control form-control-sm" placeholder="Describa las medidas de gestión ambiental previstas: tratamiento de residuos, efluentes, emisiones, etc."></textarea></div>
-                                    <div class="col-12"><label for="relRentabilidad" class="form-label small">Rentabilidad estimada <span class="text-danger">*</span></label><textarea id="relRentabilidad" rows="2" class="form-control form-control-sm" placeholder="Indique la proyección de rentabilidad del proyecto (ej.: 20% anual en 3 años)"></textarea></div>
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn btn-primary mt-2" onclick="ModuloRadicaciones.crear()"><i class="bi bi-send me-1"></i>Solicitar</button>
-                        </form>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-4 text-muted">
+                        <i class="bi bi-send fs-3 mb-2 d-block text-primary"></i>
+                        Use el botón <strong>Nueva Solicitud</strong> en la pestaña de listado.
                     </div>
                 </div>
             </div>
@@ -708,7 +620,8 @@
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm mt-3 ui-panel">
+        <!-- Admin/Directivo: formulario servicios post-radicación con selector de empresa -->
+        <div id="panelServiciosAdminForm" class="card border-0 shadow-sm mt-3 ui-panel">
             <div class="card-body">
                 <h6 class="text-muted mb-3">Servicios habilitados luego de radicación</h6>
                 <p class="small text-muted mb-3">Disponible cuando el expediente de la empresa esté en estado <strong>RADICADA</strong>.</p>
@@ -731,6 +644,47 @@
                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="ModuloEmpresas.guardarServiciosPostRadicacion()">Guardar servicios</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Rol EMPRESA: panel de servicios con acciones por modal -->
+        <div id="panelServiciosEmpresaRol" class="card border-0 shadow-sm mt-3 ui-panel d-none">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Mis servicios post-radicación</h6>
+                <div id="alertaServiciosEmpresa" class="alert alert-danger d-none ui-state ui-state-error" role="alert" aria-live="assertive" aria-atomic="true"></div>
+                <div id="contenidoServiciosEmpresa" class="d-none">
+                    <div class="d-flex flex-wrap gap-3 mb-3">
+                        <div class="border rounded-3 px-3 py-2 text-center" style="min-width:110px;">
+                            <div class="fw-bold fs-4 text-primary" id="displayCantidadEmpleados">0</div>
+                            <small class="text-muted">Empleados</small>
+                        </div>
+                        <div class="border rounded-3 px-3 py-2 text-center" style="min-width:110px;">
+                            <div class="fw-bold fs-4 text-primary" id="displayCantidadVehiculos">0</div>
+                            <small class="text-muted">Vehículos</small>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                onclick="ModuloEmpresas.verVehiculosEmpresa()">
+                            <i class="bi bi-truck me-1"></i>Ver vehículos
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                onclick="ModuloEmpresas.abrirAgregarEmpleados()">
+                            <i class="bi bi-person-plus me-1"></i>Agregar empleados
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                onclick="ModuloEmpresas.abrirAgregarVehiculo(false)">
+                            <i class="bi bi-plus-lg me-1"></i>Agregar vehículo
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm"
+                                onclick="ModuloEmpresas.abrirModalServicios()">
+                            <i class="bi bi-gear me-1"></i>Solicitar/Modificar Servicios
+                        </button>
+                    </div>
+                </div>
+                <div id="sinServiciosEmpresa" class="alert alert-info mb-0 d-none">
+                    <i class="bi bi-info-circle me-2"></i>Los servicios post-radicación estarán disponibles cuando su expediente esté en estado <strong>RADICADA</strong>.
+                </div>
             </div>
         </div>
         </div>
@@ -1583,6 +1537,156 @@
                         <i class="bi bi-floppy me-1"></i>Actualizar datos
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Ver vehículos (rol EMPRESA) -->
+<div class="modal fade" id="modalVehiculosEmpresa" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-truck me-2 text-primary"></i>Vehículos registrados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Placa</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoVehiculosEmpresa">
+                            <tr><td colspan="3" class="text-muted text-center py-3">Sin vehículos registrados</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Agregar empleados (rol EMPRESA) -->
+<div class="modal fade" id="modalAgregarEmpleadosEmpresa" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2 text-primary"></i>Agregar empleados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaAgregarEmpleados" class="alert alert-danger alerta-modal d-none" role="alert" aria-live="assertive"></div>
+                <p class="text-muted small mb-3">Empleados actuales: <strong id="empleadosActualesDisplay">0</strong></p>
+                <label for="campoAgregarEmpleados" class="form-label">Cantidad a agregar</label>
+                <input type="number" id="campoAgregarEmpleados" min="1" value="1" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.guardarAgregarEmpleados()">
+                    <i class="bi bi-save me-1"></i>Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Agregar vehículo (rol EMPRESA) -->
+<div class="modal fade" id="modalAgregarVehiculoEmpresa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2 text-primary"></i>Agregar vehículo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaAgregarVehiculo" class="alert alert-danger alerta-modal d-none" role="alert" aria-live="assertive"></div>
+                <form id="formAgregarVehiculo" novalidate>
+                    <div class="mb-3">
+                        <label for="campoPlacaVehiculo" class="form-label">Placa <span class="text-danger">*</span></label>
+                        <input type="text" id="campoPlacaVehiculo" class="form-control" placeholder="Ej: ABC-123">
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoTipoVehiculo" class="form-label">Tipo <span class="text-danger">*</span></label>
+                        <select id="campoTipoVehiculo" class="form-select">
+                            <option value="">Seleccione...</option>
+                            <option value="CAMION">Camión</option>
+                            <option value="FURGON">Furgón</option>
+                            <option value="AUTOMOVIL">Automóvil</option>
+                            <option value="MOTOCICLETA">Motocicleta</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoDescripcionVehiculo" class="form-label">Descripción <span class="text-muted small">(opcional)</span></label>
+                        <input type="text" id="campoDescripcionVehiculo" class="form-control" placeholder="Descripción del vehículo">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.guardarAgregarVehiculo()">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Solicitar/Modificar Servicios (rol EMPRESA) -->
+<div class="modal fade" id="modalServiciosEmpresa" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-gear me-2 text-primary"></i>Solicitar / Modificar Servicios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalServicios" class="alert alert-danger alerta-modal d-none" role="alert" aria-live="assertive"></div>
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">Cantidad de empleados</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="number" id="campoEmpleadosModalServicios" min="0" value="0"
+                               class="form-control" style="max-width:130px;">
+                        <span class="text-muted small">empleados en total</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-muted mb-0">Vehículos</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                onclick="ModuloEmpresas.abrirAgregarVehiculo(true)">
+                            <i class="bi bi-plus-lg me-1"></i>Agregar vehículo
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm tabla-datos mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Placa</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoVehiculosModalServicios">
+                                <tr><td colspan="4" class="text-muted text-center py-3">Sin vehículos</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.guardarServiciosEmpresaModal()">
+                    <i class="bi bi-save me-1"></i>Guardar servicios
+                </button>
             </div>
         </div>
     </div>

@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,9 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ControladorEmpresa {
 
     private final ServicioEmpresa servicioEmpresa;
+
     public ControladorEmpresa(ServicioEmpresa servicioEmpresa) {
         this.servicioEmpresa = servicioEmpresa;
     }
+
     @GetMapping("/buscar")
     public List<RespuestaEmpresa> buscar(@RequestParam String q, Authentication autenticacion) {
         return servicioEmpresa.buscar(q).stream()
@@ -41,6 +43,7 @@ public class ControladorEmpresa {
             .map(empresa -> crearRespuesta(empresa, autenticacion.getName()))
             .toList();
     }
+
     @GetMapping("/{id}")
     public RespuestaEmpresa obtenerPorId(@PathVariable Long id, Authentication autenticacion) {
         return crearRespuesta(servicioEmpresa.obtenerPorId(id, autenticacion.getName()), autenticacion.getName());
@@ -55,17 +58,20 @@ public class ControladorEmpresa {
     public RespuestaEmpresaDetalleAdmin obtenerDetalleVistaAdmin(@PathVariable Long id, Authentication autenticacion) {
         return servicioEmpresa.obtenerDetalleVistaAdmin(id, autenticacion.getName());
     }
+
     @PostMapping
     public ResponseEntity<RespuestaEmpresa> crear(@Valid @RequestBody SolicitudEmpresa solicitud, Authentication autenticacion) {
-        Empresa empresaCreada = servicioEmpresa.crear(crearEmpresa(solicitud), autenticacion.getName());
+        Empresa empresaCreada = servicioEmpresa.crear(crearEmpresaDesdeSolicitud(solicitud), autenticacion.getName());
         return ResponseEntity.created(URI.create("/api/empresas/" + empresaCreada.getId()))
             .body(crearRespuesta(empresaCreada, autenticacion.getName()));
     }
+
     @PutMapping("/{id}")
     public RespuestaEmpresa actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudEmpresa solicitud, Authentication autenticacion) {
-        Empresa empresaActualizada = servicioEmpresa.actualizar(id, crearEmpresa(solicitud), autenticacion.getName());
+        Empresa empresaActualizada = servicioEmpresa.actualizar(id, crearEmpresaDesdeSolicitud(solicitud), autenticacion.getName());
         return crearRespuesta(empresaActualizada, autenticacion.getName());
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication autenticacion) {
         servicioEmpresa.eliminar(id, autenticacion.getName());
@@ -91,40 +97,41 @@ public class ControladorEmpresa {
             @PathVariable Long id,
             @Valid @RequestBody SolicitudCambioRubroDto solicitud,
             Authentication authentication
-            ) {
+    ) {
         servicioEmpresa.solicitarAmpliacionOCambioRubro(id, solicitud, authentication.getName());
         return ResponseEntity.accepted().body(
                 new RespuestaOperacion("Solicitud de cambio de rubro generada correctamente. Pendiente de aprobación.")
         );
     }
 
-    private Empresa crearEmpresa(SolicitudEmpresa solicitud) {
-		return Empresa.crear(
-			solicitud.nombre(),
-			solicitud.razonSocial(),
-			solicitud.nit(),
-			solicitud.cuit(),
-			solicitud.direccion(),
-			solicitud.actividadEconomica(),
-          solicitud.correoElectronico(),
-          solicitud.telefono()
-		);
+    private Empresa crearEmpresaDesdeSolicitud(SolicitudEmpresa solicitud) {
+        return Empresa.crear(
+            solicitud.nombre(),
+            solicitud.razonSocial(),
+            solicitud.nit(),
+            solicitud.cuit(),
+            solicitud.direccion(),
+            solicitud.actividadEconomica(),
+            solicitud.correoElectronico(),
+            solicitud.telefono()
+        );
     }
+
     private RespuestaEmpresa crearRespuesta(Empresa empresa, String identificadorIngreso) {
-    boolean permiteServiciosPostRadicacion = empresa.getId() != null
-      && servicioEmpresa.permiteServiciosPostRadicacion(empresa.getId(), identificadorIngreso);
+        boolean permiteServiciosPostRadicacion = empresa.getId() != null
+            && servicioEmpresa.permiteServiciosPostRadicacion(empresa.getId(), identificadorIngreso);
         return new RespuestaEmpresa(
             empresa.getId(),
             empresa.getNombre(),
-			empresa.getRazonSocial(),
-			empresa.getNit(),
+            empresa.getRazonSocial(),
+            empresa.getNit(),
             empresa.getCuit(),
-			empresa.getDireccion(),
-			empresa.getActividadEconomica(),
-			empresa.getCorreoElectronico(),
-                  empresa.getTelefono(),
-			empresa.getCantidadEmpleados(),
-			permiteServiciosPostRadicacion
+            empresa.getDireccion(),
+            empresa.getActividadEconomica(),
+            empresa.getCorreoElectronico(),
+            empresa.getTelefono(),
+            empresa.getCantidadEmpleados(),
+            permiteServiciosPostRadicacion
         );
     }
 }

@@ -98,7 +98,7 @@ public class ControladorUsuario {
             usuario.getId(),
             usuario.getNombreUsuario(),
             usuario.getNombreCompleto(),
-            usuario.isActivo(),
+            usuario.estaActivo(),
             usuario.getRoles(),
             usuario.getEmpresaId(),
             null

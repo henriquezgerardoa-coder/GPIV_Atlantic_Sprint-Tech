@@ -113,12 +113,6 @@ public record SolicitudRelevamientoPedidoLotes(
     @NotNull(message = "Debe indicar necesidad de comedor unitario")
     Boolean necesitaComedorUnitario,
     @NotNull(message = "Debe indicar necesidad de salon o coworking")
-    Boolean necesitaSalonCoworking,
-    @NotBlank(message = "El plan ambiental es obligatorio")
-    @Size(max = 1000, message = "El plan ambiental no puede superar 1000 caracteres")
-    String planAmbiental,
-    @NotBlank(message = "La rentabilidad estimada es obligatoria")
-    @Size(max = 400, message = "La rentabilidad estimada no puede superar 400 caracteres")
-    String rentabilidadEstimada
+    Boolean necesitaSalonCoworking
 ) {
 }

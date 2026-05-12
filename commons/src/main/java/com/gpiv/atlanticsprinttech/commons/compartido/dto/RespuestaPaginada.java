@@ -1,4 +1,4 @@
-package com.gpiv.atlanticsprinttech.commons.shared.dto;
+package com.gpiv.atlanticsprinttech.commons.compartido.dto;
 
 import java.util.List;
 import org.springframework.data.domain.Page;

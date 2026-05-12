@@ -1,4 +1,4 @@
-package com.gpiv.atlanticsprinttech.backend.security;
+package com.gpiv.atlanticsprinttech.backend.seguridad;
 
 import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
@@ -119,7 +119,7 @@ public class ConfiguracionSeguridad {
                 .or(() -> repositorioUsuario.findByCorreoElectronicoIgnoreCase(identificadorNormalizado))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
-            if (!usuario.isActivo()) {
+            if (!usuario.estaActivo()) {
                 throw new UsernameNotFoundException("Usuario inactivo");
             }
             return crearUsuarioSeguridad(usuario);

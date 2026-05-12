@@ -46,7 +46,7 @@ public class ServicioCorreo {
     }
 
     private void enviar(String correo, String asunto, String cuerpo) {
-        if (!propiedades.getMail().isHabilitado()) {
+        if (!propiedades.getCorreo().isHabilitado()) {
             logger.info("[MAIL DESHABILITADO] Para={} asunto='{}'", correo, asunto);
             return;
         }
@@ -57,7 +57,7 @@ public class ServicioCorreo {
                 return;
             }
             SimpleMailMessage mensaje = new SimpleMailMessage();
-            mensaje.setFrom(propiedades.getMail().getRemitente());
+            mensaje.setFrom(propiedades.getCorreo().getRemitente());
             mensaje.setTo(correo);
             mensaje.setSubject(asunto);
             mensaje.setText(cuerpo);

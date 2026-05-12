@@ -1,11 +1,11 @@
 package com.gpiv.atlanticsprinttech.backend.radicacion.web;
 
 import com.gpiv.atlanticsprinttech.backend.radicacion.application.ServicioRadicacion;
-import com.gpiv.atlanticsprinttech.backend.util.JsonUtil;
+import com.gpiv.atlanticsprinttech.backend.utilidades.ExtractorJson;
 import com.gpiv.atlanticsprinttech.commons.lote.dto.RespuestaLote;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.RespuestaDocumentoRadicacion;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.RespuestaHistorialRadicacion;
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaOperacion;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.RespuestaRadicacion;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.SolicitudAsignacionLote;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.SolicitudCambioEstadoRadicacion;
@@ -17,7 +17,7 @@ import com.gpiv.atlanticsprinttech.entities.radicacion.RadicacionDocumento;
 import com.gpiv.atlanticsprinttech.entities.radicacion.RadicacionHistorial;
 import com.gpiv.atlanticsprinttech.entities.radicacion.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.radicacion.TipoDocumentoRadicacion;
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaPaginada;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaPaginada;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
@@ -167,7 +167,7 @@ public class ControladorRadicacion {
             radicacion.getDescripcion(),
             radicacion.getUsoEstimativo(),
             radicacion.getRelevamientoPedidoLotesJson() != null,
-            JsonUtil.extraerNecesidadMetrosCuadrados(radicacion.getRelevamientoPedidoLotesJson()),
+            ExtractorJson.extraerNecesidadMetrosCuadrados(radicacion.getRelevamientoPedidoLotesJson()),
             obtenerEtapaActual(radicacion.getEstado()),
             radicacion.getEstado(),
             radicacion.getFechaRadicacion(),

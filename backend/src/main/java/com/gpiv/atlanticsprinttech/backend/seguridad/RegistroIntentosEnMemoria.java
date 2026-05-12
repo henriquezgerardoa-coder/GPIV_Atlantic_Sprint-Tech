@@ -1,4 +1,4 @@
-package com.gpiv.atlanticsprinttech.backend.security;
+package com.gpiv.atlanticsprinttech.backend.seguridad;
 
 import java.time.Duration;
 import java.time.Instant;

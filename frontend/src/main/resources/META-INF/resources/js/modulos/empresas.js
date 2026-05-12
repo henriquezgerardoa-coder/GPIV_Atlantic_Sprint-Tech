@@ -4,12 +4,23 @@ const ModuloEmpresas = (() => {
     let idEdicion = null;
     let detalleActual = null;
 
+    // Estado para funcionalidades del rol EMPRESA
+    let vehiculosActuales = [];
+    let empleadosActuales = 0;
+    let empresaIdPropia = null;
+    let vehiculosEnEdicion = [];
+    let agregarVehiculoEnModalServicios = false;
+
     function esDirectivoSoloLectura() {
         return Autenticacion.tieneRol('DIRECTIVO');
     }
 
     function esAdmin() {
         return Autenticacion.tieneRol('ADMINISTRADOR');
+    }
+
+    function esEmpresaRol() {
+        return !esAdmin() && !esDirectivoSoloLectura();
     }
 
     async function cargar() {
@@ -23,27 +34,37 @@ const ModuloEmpresas = (() => {
         if (!respuesta?.ok) { mostrarAlerta('Error al cargar empresas.', 'danger'); return; }
         empresas = await respuesta.json();
         renderizarTabla();
-        poblarSelectorServiciosPost();
+        if (esEmpresaRol()) {
+            empresaIdPropia = empresas[0]?.id;
+            await cargarServiciosEmpresaRol();
+        } else {
+            poblarSelectorServiciosPost();
+        }
     }
 
     function actualizarIndicadorSoloLectura() {
         const indicador = document.getElementById('indicadorModoSoloLecturaEmpresas');
-        if (!indicador) {
-            return;
-        }
+        if (!indicador) return;
         indicador.classList.toggle('d-none', !esDirectivoSoloLectura());
     }
 
     function mostrarPanelAdmin(mostrar) {
         document.getElementById('panelEmpresasAdminVisualizacion')?.classList.toggle('d-none', !mostrar);
         document.getElementById('panelEmpresasGestion')?.classList.toggle('d-none', mostrar);
-        // Solo ocultar "Nueva empresa" para DIRECTIVO; el ADMIN siempre puede crear
-        if (mostrar && esDirectivoSoloLectura()) {
-            document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
-        } else if (!mostrar) {
-            document.getElementById('btnNuevaEmpresa')?.classList.remove('d-none');
+
+        const btn = document.getElementById('btnNuevaEmpresa');
+        if (btn) {
+            const ocultarBtn = (mostrar && esDirectivoSoloLectura()) || esEmpresaRol();
+            btn.classList.toggle('d-none', ocultarBtn);
+        }
+
+        if (!mostrar) {
+            document.getElementById('panelServiciosAdminForm')?.classList.toggle('d-none', esEmpresaRol());
+            document.getElementById('panelServiciosEmpresaRol')?.classList.toggle('d-none', !esEmpresaRol());
         }
     }
+
+    // ── Vista Admin/Directivo ──────────────────────────────────────────────────
 
     async function cargarVistaAdmin() {
         mostrarPanelAdmin(true);
@@ -52,9 +73,7 @@ const ModuloEmpresas = (() => {
         const vacio = document.getElementById('sinEmpresasAdmin');
         const lista = document.getElementById('listaEmpresasAdmin');
         const badge = document.getElementById('badgeTotalEmpresasAdmin');
-        if (!lista || !badge) {
-            return;
-        }
+        if (!lista || !badge) return;
         estado?.classList.remove('d-none');
         error?.classList.add('d-none');
         vacio?.classList.add('d-none');
@@ -62,7 +81,6 @@ const ModuloEmpresas = (() => {
         let respuesta = await ApiCliente.obtener('/api/empresas/admin/vista');
         estado?.classList.add('d-none');
         if (!respuesta?.ok) {
-            // Compatibilidad: si el endpoint nuevo no esta disponible, usar listado general.
             const respuestaFallback = await ApiCliente.obtener('/api/empresas');
             if (!respuestaFallback?.ok) {
                 const errorJson = await respuesta?.json().catch(() => ({}));
@@ -168,11 +186,9 @@ const ModuloEmpresas = (() => {
     }
 
     function renderizarDetalleAdmin(detalle) {
-        // Encabezado del modal
         setTexto('detEmpresaTituloModal', detalle?.nombre || 'Detalle de empresa');
         setTexto('detEmpresaSubtituloModal', detalle?.cuit ? `CUIT ${detalle.cuit}` : '');
 
-        // Tab: Datos generales
         setTexto('detEmpresaNombre', detalle?.nombre || '-');
         setTexto('detEmpresaRazonSocial', detalle?.razonSocial || '-');
         setTexto('detEmpresaNit', detalle?.nit || '-');
@@ -194,7 +210,6 @@ const ModuloEmpresas = (() => {
             elEstado.className = `badge ${colorEstadoRadicacion(detalle?.estadoExpediente)}`;
         }
 
-        // Tab: Usuarios
         const usuarios = detalle?.usuariosAsociados || [];
         const badgeUsuarios = document.getElementById('badgeUsuariosEmpresaDet');
         if (badgeUsuarios) badgeUsuarios.textContent = usuarios.length;
@@ -225,7 +240,6 @@ const ModuloEmpresas = (() => {
             }
         }
 
-        // Tab: Solicitudes
         const radicaciones = detalle?.radicaciones || [];
         const badgeSolicitudes = document.getElementById('badgeSolicitudesEmpresaDet');
         if (badgeSolicitudes) badgeSolicitudes.textContent = radicaciones.length;
@@ -246,7 +260,6 @@ const ModuloEmpresas = (() => {
             }
         }
 
-        // Tab: Servicios
         setTexto('detTotalEmpleados', `${detalle?.totalEmpleados ?? 0}`);
         setTexto('detTotalVehiculos', `${detalle?.totalVehiculos ?? 0}`);
         const cuerpoVehiculos = document.getElementById('cuerpoVehiculosEmpresaAdmin');
@@ -257,87 +270,259 @@ const ModuloEmpresas = (() => {
                 : '<tr><td colspan="3" class="text-muted">Sin vehículos registrados</td></tr>';
         }
 
-        // Activar primer tab al abrir
         const primerTab = document.getElementById('tab-emp-datos');
         if (primerTab && window.bootstrap?.Tab) {
             bootstrap.Tab.getOrCreateInstance(primerTab).show();
         }
     }
 
-    function formatearEstadoRadicacion(estado) {
-        const m = {
-            PENDIENTE: 'Pendiente', EN_REVISION: 'En revisión', APROBADA: 'Aprobada',
-            RADICADA: 'Radicada', RECHAZADA: 'Rechazada',
-            REQUIERE_INFORMACION_ADICIONAL: 'Requiere info. adicional', CANCELADA: 'Cancelada'
-        };
-        return m[estado] || estado || 'Sin expediente';
-    }
+    // ── Servicios post-radicación (rol EMPRESA) ────────────────────────────────
 
-    function colorEstadoRadicacion(estado) {
-        const m = {
-            PENDIENTE: 'bg-warning text-dark', EN_REVISION: 'bg-info text-dark',
-            APROBADA: 'bg-primary', RADICADA: 'bg-success',
-            RECHAZADA: 'bg-danger', CANCELADA: 'bg-secondary',
-            REQUIERE_INFORMACION_ADICIONAL: 'bg-warning text-dark'
-        };
-        return m[estado] || 'bg-secondary';
-    }
+    async function cargarServiciosEmpresaRol() {
+        const alerta = document.getElementById('alertaServiciosEmpresa');
+        const contenido = document.getElementById('contenidoServiciosEmpresa');
+        const sinServicios = document.getElementById('sinServiciosEmpresa');
+        alerta?.classList.add('d-none');
+        contenido?.classList.add('d-none');
+        sinServicios?.classList.add('d-none');
 
-    function setTexto(id, valor) {
-        const el = document.getElementById(id);
-        if (el) {
-            el.textContent = valor;
+        if (!empresaIdPropia) return;
+
+        const respuesta = await ApiCliente.obtener(`/api/empresas/${empresaIdPropia}/servicios-post-radicacion`);
+        if (!respuesta?.ok) {
+            sinServicios?.classList.remove('d-none');
+            return;
         }
+        const datos = await respuesta.json();
+        empleadosActuales = datos.cantidadEmpleados ?? 0;
+        vehiculosActuales = datos.vehiculos || [];
+        actualizarDisplayServiciosEmpresa();
+        contenido?.classList.remove('d-none');
     }
 
-    function editarDesdeDetalle() {
-        if (!detalleActual?.id) return;
-        bootstrap.Modal.getInstance(document.getElementById('modalDetalleEmpresaAdmin'))?.hide();
-        modoEdicion = true;
-        idEdicion = detalleActual.id;
-        document.getElementById('tituloModalEmpresa').textContent = 'Editar empresa';
-        document.getElementById('campoNombreEmpresa').value             = detalleActual.nombre || '';
-        document.getElementById('campoRazonSocialEmpresa').value        = detalleActual.razonSocial || '';
-        document.getElementById('campoNitEmpresa').value                = detalleActual.nit || '';
-        document.getElementById('campoCuitEmpresa').value               = detalleActual.cuit || '';
-        document.getElementById('campoDireccionEmpresa').value          = detalleActual.direccion || '';
-        document.getElementById('campoActividadEconomicaEmpresa').value = detalleActual.actividadEconomica || '';
-        document.getElementById('campoCorreoEmpresa').value             = detalleActual.correoElectronico || '';
-        document.getElementById('campoTelefonoEmpresa').value           = detalleActual.telefono || '';
-        ocultarAlertaModal('alertaModalEmpresa');
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa')).show();
+    function actualizarDisplayServiciosEmpresa() {
+        setTexto('displayCantidadEmpleados', `${empleadosActuales}`);
+        setTexto('displayCantidadVehiculos', `${vehiculosActuales.length}`);
     }
 
-    function eliminarDesdeDetalle() {
-        if (!detalleActual?.id) return;
-        bootstrap.Modal.getInstance(document.getElementById('modalDetalleEmpresaAdmin'))?.hide();
-        confirmarEliminacion(detalleActual.id, detalleActual.nombre || 'esta empresa');
+    function verVehiculosEmpresa() {
+        renderizarTablaVehiculos('cuerpoVehiculosEmpresa', vehiculosActuales, false);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalVehiculosEmpresa')).show();
     }
 
-    function asegurarModalDetalleAdmin() {
-        return document.getElementById('modalDetalleEmpresaAdmin');
+    function abrirAgregarEmpleados() {
+        document.getElementById('alertaAgregarEmpleados')?.classList.add('d-none');
+        setTexto('empleadosActualesDisplay', `${empleadosActuales}`);
+        const campo = document.getElementById('campoAgregarEmpleados');
+        if (campo) campo.value = '1';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAgregarEmpleadosEmpresa')).show();
     }
 
-    function formatearFechaHora(valor) {
-        if (!valor) {
-            return 'No disponible';
+    async function guardarAgregarEmpleados() {
+        const campo = document.getElementById('campoAgregarEmpleados');
+        const cantidad = Number.parseInt(campo?.value || '0', 10);
+        if (!cantidad || cantidad < 1) {
+            mostrarAlertaModal('alertaAgregarEmpleados', 'Ingrese una cantidad válida (mínimo 1).');
+            return;
         }
-        const fecha = new Date(valor);
-        if (Number.isNaN(fecha.getTime())) {
-            return valor;
+        const nuevoTotal = empleadosActuales + cantidad;
+        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaIdPropia}/servicios-post-radicacion`, {
+            cantidadEmpleados: nuevoTotal,
+            vehiculos: vehiculosActuales
+        });
+        if (!respuesta?.ok) {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlertaModal('alertaAgregarEmpleados', error?.message || 'No se pudo actualizar la cantidad de empleados.');
+            return;
         }
-        return fecha.toLocaleString();
+        empleadosActuales = nuevoTotal;
+        actualizarDisplayServiciosEmpresa();
+        bootstrap.Modal.getInstance(document.getElementById('modalAgregarEmpleadosEmpresa'))?.hide();
+        mostrarAlerta(`Empleados actualizados correctamente. Total: ${nuevoTotal}`);
     }
+
+    function abrirAgregarVehiculo(dentroDeServicios) {
+        agregarVehiculoEnModalServicios = !!dentroDeServicios;
+        document.getElementById('alertaAgregarVehiculo')?.classList.add('d-none');
+        document.getElementById('formAgregarVehiculo')?.reset();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAgregarVehiculoEmpresa')).show();
+    }
+
+    async function guardarAgregarVehiculo() {
+        const placa = document.getElementById('campoPlacaVehiculo')?.value.trim();
+        const tipo = document.getElementById('campoTipoVehiculo')?.value;
+        const descripcion = document.getElementById('campoDescripcionVehiculo')?.value.trim();
+
+        if (!placa || !tipo) {
+            mostrarAlertaModal('alertaAgregarVehiculo', 'La placa y el tipo son obligatorios.');
+            return;
+        }
+
+        const nuevoVehiculo = { placa, tipo, descripcion: descripcion || '' };
+
+        if (agregarVehiculoEnModalServicios) {
+            vehiculosEnEdicion.push(nuevoVehiculo);
+            renderizarTablaVehiculos('cuerpoVehiculosModalServicios', vehiculosEnEdicion, true);
+            bootstrap.Modal.getInstance(document.getElementById('modalAgregarVehiculoEmpresa'))?.hide();
+            return;
+        }
+
+        const listaActualizada = [...vehiculosActuales, nuevoVehiculo];
+        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaIdPropia}/servicios-post-radicacion`, {
+            cantidadEmpleados: empleadosActuales,
+            vehiculos: listaActualizada
+        });
+        if (!respuesta?.ok) {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlertaModal('alertaAgregarVehiculo', error?.message || 'No se pudo agregar el vehículo.');
+            return;
+        }
+        vehiculosActuales = listaActualizada;
+        actualizarDisplayServiciosEmpresa();
+        bootstrap.Modal.getInstance(document.getElementById('modalAgregarVehiculoEmpresa'))?.hide();
+        mostrarAlerta('Vehículo agregado correctamente.');
+    }
+
+    function abrirModalServicios() {
+        document.getElementById('alertaModalServicios')?.classList.add('d-none');
+        const campoEmpleados = document.getElementById('campoEmpleadosModalServicios');
+        if (campoEmpleados) campoEmpleados.value = empleadosActuales;
+        vehiculosEnEdicion = [...vehiculosActuales];
+        renderizarTablaVehiculos('cuerpoVehiculosModalServicios', vehiculosEnEdicion, true);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalServiciosEmpresa')).show();
+    }
+
+    async function guardarServiciosEmpresaModal() {
+        const cantidadEmpleados = Number.parseInt(
+            document.getElementById('campoEmpleadosModalServicios')?.value || '0', 10
+        );
+        if (isNaN(cantidadEmpleados) || cantidadEmpleados < 0) {
+            mostrarAlertaModal('alertaModalServicios', 'Ingrese una cantidad de empleados válida.');
+            return;
+        }
+        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaIdPropia}/servicios-post-radicacion`, {
+            cantidadEmpleados,
+            vehiculos: vehiculosEnEdicion
+        });
+        if (!respuesta?.ok) {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlertaModal('alertaModalServicios', error?.message || 'No se pudieron guardar los servicios.');
+            return;
+        }
+        empleadosActuales = cantidadEmpleados;
+        vehiculosActuales = [...vehiculosEnEdicion];
+        actualizarDisplayServiciosEmpresa();
+        bootstrap.Modal.getInstance(document.getElementById('modalServiciosEmpresa'))?.hide();
+        mostrarAlerta('Servicios actualizados correctamente.');
+    }
+
+    function quitarVehiculoEnEdicion(indice) {
+        vehiculosEnEdicion.splice(indice, 1);
+        renderizarTablaVehiculos('cuerpoVehiculosModalServicios', vehiculosEnEdicion, true);
+    }
+
+    function renderizarTablaVehiculos(idCuerpo, vehiculos, conEliminar) {
+        const cuerpo = document.getElementById(idCuerpo);
+        if (!cuerpo) return;
+        if (!vehiculos.length) {
+            const cols = conEliminar ? 4 : 3;
+            cuerpo.innerHTML = `<tr><td colspan="${cols}" class="text-muted text-center py-3">Sin vehículos registrados</td></tr>`;
+            return;
+        }
+        cuerpo.innerHTML = vehiculos.map((v, i) => `
+            <tr>
+                <td>${v.placa || '-'}</td>
+                <td>${v.tipo || '-'}</td>
+                <td>${v.descripcion || '-'}</td>
+                ${conEliminar ? `<td class="text-end">
+                    <button class="btn btn-sm btn-outline-danger" title="Quitar"
+                            onclick="ModuloEmpresas.quitarVehiculoEnEdicion(${i})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>` : ''}
+            </tr>`).join('');
+    }
+
+    // ── Servicios post-radicación (Admin) ──────────────────────────────────────
+
+    function poblarSelectorServiciosPost() {
+        const selector = document.getElementById('selectorEmpresaServiciosPost');
+        if (!selector) return;
+        selector.innerHTML = empresas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+    }
+
+    function parsearVehiculosDesdeTexto(texto) {
+        return texto.split('\n')
+            .map(l => l.trim())
+            .filter(Boolean)
+            .map(l => {
+                const [placa, tipo, descripcion] = l.split('|').map(v => (v || '').trim());
+                return { placa, tipo, descripcion };
+            });
+    }
+
+    function serializarVehiculosEnTexto(vehiculos) {
+        return (vehiculos || []).map(v => `${v.placa}|${v.tipo}|${v.descripcion || ''}`).join('\n');
+    }
+
+    async function cargarServiciosPostRadicacion() {
+        const selector = document.getElementById('selectorEmpresaServiciosPost');
+        const empresaId = selector?.value;
+        if (!empresaId) {
+            mostrarAlerta('Seleccione una empresa.', 'danger');
+            return;
+        }
+        const respuesta = await ApiCliente.obtener(`/api/empresas/${empresaId}/servicios-post-radicacion`);
+        if (!respuesta?.ok) {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlerta(error?.message || 'La empresa aún no está habilitada para servicios post-radicación.', 'warning');
+            return;
+        }
+        const datos = await respuesta.json();
+        document.getElementById('campoCantidadEmpleadosPost').value = datos.cantidadEmpleados ?? 0;
+        document.getElementById('campoVehiculosPost').value = serializarVehiculosEnTexto(datos.vehiculos);
+        mostrarAlerta('Servicios post-radicación cargados correctamente.');
+    }
+
+    async function guardarServiciosPostRadicacion() {
+        if (esDirectivoSoloLectura()) {
+            mostrarAlerta('El rol DIRECTIVO no puede actualizar servicios post-radicación.', 'warning');
+            return;
+        }
+        const selector = document.getElementById('selectorEmpresaServiciosPost');
+        const empresaId = selector?.value;
+        if (!empresaId) {
+            mostrarAlerta('Seleccione una empresa.', 'danger');
+            return;
+        }
+        const cantidadEmpleados = Number.parseInt(document.getElementById('campoCantidadEmpleadosPost').value || '0', 10);
+        const vehiculos = parsearVehiculosDesdeTexto(document.getElementById('campoVehiculosPost').value || '');
+        if (vehiculos.some(v => !v.placa || !v.tipo)) {
+            mostrarAlerta('Cada vehículo debe tener placa y tipo.', 'danger');
+            return;
+        }
+        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaId}/servicios-post-radicacion`, {
+            cantidadEmpleados,
+            vehiculos
+        });
+        if (!respuesta?.ok) {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlerta(error?.message || 'No se pudieron guardar los servicios post-radicación.', 'danger');
+            return;
+        }
+        mostrarAlerta('Servicios post-radicación actualizados correctamente.');
+        await cargar();
+    }
+
+    // ── Tabla de empresas ──────────────────────────────────────────────────────
 
     function renderizarTabla() {
         const cuerpo = document.getElementById('cuerpoTablaEmpresas');
         if (!cuerpo) return;
-
         if (empresas.length === 0) {
             cuerpo.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin empresas registradas</td></tr>';
             return;
         }
-
         const puedeEditar = !esDirectivoSoloLectura() && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'EMPRESA']);
         const puedeEliminar = !esDirectivoSoloLectura() && Autenticacion.tieneAcceso(['ADMINISTRADOR']);
         cuerpo.innerHTML = empresas.map(e => `
@@ -362,6 +547,8 @@ const ModuloEmpresas = (() => {
             </tr>`).join('');
     }
 
+    // ── CRUD empresa ───────────────────────────────────────────────────────────
+
     function abrirCreacion() {
         if (esDirectivoSoloLectura()) {
             mostrarAlerta('El rol DIRECTIVO tiene permisos de solo lectura para empresas.', 'warning');
@@ -385,14 +572,14 @@ const ModuloEmpresas = (() => {
         modoEdicion = true;
         idEdicion = id;
         document.getElementById('tituloModalEmpresa').textContent = 'Editar empresa';
-        document.getElementById('campoNombreEmpresa').value = empresa.nombre;
-        document.getElementById('campoRazonSocialEmpresa').value = empresa.razonSocial || '';
-        document.getElementById('campoNitEmpresa').value = empresa.nit || '';
-        document.getElementById('campoCuitEmpresa').value   = empresa.cuit;
-        document.getElementById('campoDireccionEmpresa').value = empresa.direccion || '';
+        document.getElementById('campoNombreEmpresa').value             = empresa.nombre;
+        document.getElementById('campoRazonSocialEmpresa').value        = empresa.razonSocial || '';
+        document.getElementById('campoNitEmpresa').value                = empresa.nit || '';
+        document.getElementById('campoCuitEmpresa').value               = empresa.cuit;
+        document.getElementById('campoDireccionEmpresa').value          = empresa.direccion || '';
         document.getElementById('campoActividadEconomicaEmpresa').value = empresa.actividadEconomica || '';
-        document.getElementById('campoCorreoEmpresa').value = empresa.correoElectronico;
-        document.getElementById('campoTelefonoEmpresa').value = empresa.telefono || '';
+        document.getElementById('campoCorreoEmpresa').value             = empresa.correoElectronico;
+        document.getElementById('campoTelefonoEmpresa').value           = empresa.telefono || '';
         ocultarAlertaModal('alertaModalEmpresa');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa')).show();
     }
@@ -403,25 +590,22 @@ const ModuloEmpresas = (() => {
             return;
         }
         const datos = {
-            nombre:            document.getElementById('campoNombreEmpresa').value.trim(),
-            razonSocial:       document.getElementById('campoRazonSocialEmpresa').value.trim(),
-            nit:               document.getElementById('campoNitEmpresa').value.trim(),
-            cuit:              document.getElementById('campoCuitEmpresa').value.trim(),
-            direccion:         document.getElementById('campoDireccionEmpresa').value.trim(),
+            nombre:             document.getElementById('campoNombreEmpresa').value.trim(),
+            razonSocial:        document.getElementById('campoRazonSocialEmpresa').value.trim(),
+            nit:                document.getElementById('campoNitEmpresa').value.trim(),
+            cuit:               document.getElementById('campoCuitEmpresa').value.trim(),
+            direccion:          document.getElementById('campoDireccionEmpresa').value.trim(),
             actividadEconomica: document.getElementById('campoActividadEconomicaEmpresa').value.trim(),
-            correoElectronico: document.getElementById('campoCorreoEmpresa').value.trim(),
-            telefono:          document.getElementById('campoTelefonoEmpresa').value.trim()
+            correoElectronico:  document.getElementById('campoCorreoEmpresa').value.trim(),
+            telefono:           document.getElementById('campoTelefonoEmpresa').value.trim()
         };
-
         if (!datos.nombre || !datos.razonSocial || !datos.nit || !datos.cuit || !datos.direccion || !datos.actividadEconomica || !datos.correoElectronico) {
             mostrarAlertaModal('alertaModalEmpresa', 'Todos los campos son obligatorios.');
             return;
         }
-
         const respuesta = modoEdicion
             ? await ApiCliente.actualizar(`/api/empresas/${idEdicion}`, datos)
             : await ApiCliente.crear('/api/empresas', datos);
-
         if (respuesta?.ok) {
             bootstrap.Modal.getInstance(document.getElementById('modalEmpresa'))?.hide();
             await cargar();
@@ -459,78 +643,65 @@ const ModuloEmpresas = (() => {
         }
     }
 
-    function poblarSelectorServiciosPost() {
-        const selector = document.getElementById('selectorEmpresaServiciosPost');
-        if (!selector) return;
-        selector.innerHTML = empresas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+    function editarDesdeDetalle() {
+        if (!detalleActual?.id) return;
+        bootstrap.Modal.getInstance(document.getElementById('modalDetalleEmpresaAdmin'))?.hide();
+        modoEdicion = true;
+        idEdicion = detalleActual.id;
+        document.getElementById('tituloModalEmpresa').textContent = 'Editar empresa';
+        document.getElementById('campoNombreEmpresa').value             = detalleActual.nombre || '';
+        document.getElementById('campoRazonSocialEmpresa').value        = detalleActual.razonSocial || '';
+        document.getElementById('campoNitEmpresa').value                = detalleActual.nit || '';
+        document.getElementById('campoCuitEmpresa').value               = detalleActual.cuit || '';
+        document.getElementById('campoDireccionEmpresa').value          = detalleActual.direccion || '';
+        document.getElementById('campoActividadEconomicaEmpresa').value = detalleActual.actividadEconomica || '';
+        document.getElementById('campoCorreoEmpresa').value             = detalleActual.correoElectronico || '';
+        document.getElementById('campoTelefonoEmpresa').value           = detalleActual.telefono || '';
+        ocultarAlertaModal('alertaModalEmpresa');
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa')).show();
     }
 
-    function parsearVehiculosDesdeTexto(texto) {
-        return texto.split('\n')
-            .map(l => l.trim())
-            .filter(Boolean)
-            .map(l => {
-                const [placa, tipo, descripcion] = l.split('|').map(v => (v || '').trim());
-                return { placa, tipo, descripcion };
-            });
+    function eliminarDesdeDetalle() {
+        if (!detalleActual?.id) return;
+        bootstrap.Modal.getInstance(document.getElementById('modalDetalleEmpresaAdmin'))?.hide();
+        confirmarEliminacion(detalleActual.id, detalleActual.nombre || 'esta empresa');
     }
 
-    function serializarVehiculosEnTexto(vehiculos) {
-        return (vehiculos || []).map(v => `${v.placa}|${v.tipo}|${v.descripcion || ''}`).join('\n');
+    function asegurarModalDetalleAdmin() {
+        return document.getElementById('modalDetalleEmpresaAdmin');
     }
 
-    async function cargarServiciosPostRadicacion() {
-        const selector = document.getElementById('selectorEmpresaServiciosPost');
-        const empresaId = selector?.value;
-        if (!empresaId) {
-            mostrarAlerta('Seleccione una empresa.', 'danger');
-            return;
-        }
+    // ── Utilidades ─────────────────────────────────────────────────────────────
 
-        const respuesta = await ApiCliente.obtener(`/api/empresas/${empresaId}/servicios-post-radicacion`);
-        if (!respuesta?.ok) {
-            const error = await respuesta?.json().catch(() => ({}));
-            mostrarAlerta(error?.message || 'La empresa aún no está habilitada para servicios post-radicación.', 'warning');
-            return;
-        }
-
-        const datos = await respuesta.json();
-        document.getElementById('campoCantidadEmpleadosPost').value = datos.cantidadEmpleados ?? 0;
-        document.getElementById('campoVehiculosPost').value = serializarVehiculosEnTexto(datos.vehiculos);
-        mostrarAlerta('Servicios post-radicación cargados correctamente.');
+    function formatearEstadoRadicacion(estado) {
+        const m = {
+            PENDIENTE: 'Pendiente', EN_REVISION: 'En revisión', APROBADA: 'Aprobada',
+            RADICADA: 'Radicada', RECHAZADA: 'Rechazada',
+            REQUIERE_INFORMACION_ADICIONAL: 'Requiere info. adicional', CANCELADA: 'Cancelada'
+        };
+        return m[estado] || estado || 'Sin expediente';
     }
 
-    async function guardarServiciosPostRadicacion() {
-        if (esDirectivoSoloLectura()) {
-            mostrarAlerta('El rol DIRECTIVO no puede actualizar servicios post-radicación.', 'warning');
-            return;
-        }
-        const selector = document.getElementById('selectorEmpresaServiciosPost');
-        const empresaId = selector?.value;
-        if (!empresaId) {
-            mostrarAlerta('Seleccione una empresa.', 'danger');
-            return;
-        }
+    function colorEstadoRadicacion(estado) {
+        const m = {
+            PENDIENTE: 'bg-warning text-dark', EN_REVISION: 'bg-info text-dark',
+            APROBADA: 'bg-primary', RADICADA: 'bg-success',
+            RECHAZADA: 'bg-danger', CANCELADA: 'bg-secondary',
+            REQUIERE_INFORMACION_ADICIONAL: 'bg-warning text-dark'
+        };
+        return m[estado] || 'bg-secondary';
+    }
 
-        const cantidadEmpleados = Number.parseInt(document.getElementById('campoCantidadEmpleadosPost').value || '0', 10);
-        const vehiculos = parsearVehiculosDesdeTexto(document.getElementById('campoVehiculosPost').value || '');
-        if (vehiculos.some(v => !v.placa || !v.tipo)) {
-            mostrarAlerta('Cada vehículo debe tener placa y tipo.', 'danger');
-            return;
-        }
+    function setTexto(id, valor) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = valor;
+    }
 
-        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaId}/servicios-post-radicacion`, {
-            cantidadEmpleados,
-            vehiculos
-        });
-        if (!respuesta?.ok) {
-            const error = await respuesta?.json().catch(() => ({}));
-            mostrarAlerta(error?.message || 'No se pudieron guardar los servicios post-radicación.', 'danger');
-            return;
-        }
-
-        mostrarAlerta('Servicios post-radicación actualizados correctamente.');
-        await cargar();
+    function formatearFechaHora(valor) {
+        if (!valor) return 'No disponible';
+        const fecha = new Date(valor);
+        if (Number.isNaN(fecha.getTime())) return valor;
+        return fecha.toLocaleString();
     }
 
     return {
@@ -544,7 +715,15 @@ const ModuloEmpresas = (() => {
         editarDesdeDetalle,
         eliminarDesdeDetalle,
         cargarServiciosPostRadicacion,
-        guardarServiciosPostRadicacion
+        guardarServiciosPostRadicacion,
+        // Rol EMPRESA
+        verVehiculosEmpresa,
+        abrirAgregarEmpleados,
+        guardarAgregarEmpleados,
+        abrirAgregarVehiculo,
+        guardarAgregarVehiculo,
+        abrirModalServicios,
+        guardarServiciosEmpresaModal,
+        quitarVehiculoEnEdicion
     };
 })();
-

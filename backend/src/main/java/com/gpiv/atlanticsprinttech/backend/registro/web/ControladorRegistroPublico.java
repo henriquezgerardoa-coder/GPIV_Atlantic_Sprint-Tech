@@ -1,7 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend.registro.web;
 
 import com.gpiv.atlanticsprinttech.backend.usuario.application.ServicioUsuario;
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaOperacion;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.commons.registro.dto.SolicitudRegistroPublico;
 import com.gpiv.atlanticsprinttech.commons.registro.dto.SolicitudReenvioVerificacion;
 import jakarta.servlet.http.HttpServletRequest;
