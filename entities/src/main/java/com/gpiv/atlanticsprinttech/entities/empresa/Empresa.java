@@ -1,12 +1,7 @@
 package com.gpiv.atlanticsprinttech.entities.empresa;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -43,6 +38,12 @@ public class Empresa {
 	private Integer cantidadEmpleados;
 	@Column(name = "vehiculos_asignados_json", length = 12000)
 	private String vehiculosAsignadosJson;
+	@Column(name = "representante_legal", length = 120)
+	private String representanteLegal;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "rubro_id")
+	private Rubro rubro;
+
 	protected Empresa() {
 	}
 	private Empresa(
@@ -152,6 +153,14 @@ public class Empresa {
 		return vehiculosAsignadosJson;
 	}
 
+	public String getRepresentanteLegal() {
+		return representanteLegal;
+	}
+
+	public Rubro getRubro() {
+		return rubro;
+	}
+
 	public void actualizarDatos(
 		String nombre,
 		String razonSocial,
@@ -174,6 +183,19 @@ public class Empresa {
 
 	public void actualizarDatos(String nombre, String cuit, String correoElectronico) {
 		actualizarDatos(nombre, nombre, cuit, cuit, this.direccion, this.actividadEconomica, correoElectronico, this.telefono);
+	}
+	//Requerimiento R09
+	public void actualizarDatosContacto(
+			String nuevoCorreo,
+			String nuevoTelefono,
+			String nuevoRepresentante
+	) {
+		if(nuevoCorreo != null && !nuevoCorreo.isBlank())
+			this.correoElectronico = nuevoCorreo;
+		if(nuevoTelefono != null && !nuevoTelefono.isBlank())
+			this.telefono = nuevoTelefono;
+		if(nuevoRepresentante != null && !nuevoRepresentante.isBlank())
+			this.representanteLegal = nuevoRepresentante;
 	}
 
 	public void actualizarServiciosPostRadicacion(Integer cantidadEmpleados, String vehiculosAsignadosJson) {

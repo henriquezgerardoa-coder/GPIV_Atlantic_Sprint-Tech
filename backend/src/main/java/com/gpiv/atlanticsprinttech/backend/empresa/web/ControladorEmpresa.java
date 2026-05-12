@@ -1,12 +1,8 @@
 package com.gpiv.atlanticsprinttech.backend.empresa.web;
 
 import com.gpiv.atlanticsprinttech.backend.empresa.application.ServicioEmpresa;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaEmpresa;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaEmpresaDetalleAdmin;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaEmpresaListadoAdmin;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaServiciosPostRadicacion;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.SolicitudEmpresa;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.SolicitudServiciosPostRadicacion;
+import com.gpiv.atlanticsprinttech.commons.empresa.dto.*;
+import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -88,6 +84,18 @@ public class ControladorEmpresa {
         Authentication autenticacion
     ) {
         return servicioEmpresa.actualizarServiciosPostRadicacion(id, solicitud, autenticacion.getName());
+    }
+
+    @PostMapping("/{id}/solicitudes-cambio-rubro")
+    public ResponseEntity<RespuestaOperacion> solicitarCambioRubro(
+            @PathVariable Long id,
+            @Valid @RequestBody SolicitudCambioRubroDto solicitud,
+            Authentication authentication
+            ) {
+        servicioEmpresa.solicitarAmpliacionOCambioRubro(id, solicitud, authentication.getName());
+        return ResponseEntity.accepted().body(
+                new RespuestaOperacion("Solicitud de cambio de rubro generada correctamente. Pendiente de aprobación.")
+        );
     }
 
     private Empresa crearEmpresa(SolicitudEmpresa solicitud) {

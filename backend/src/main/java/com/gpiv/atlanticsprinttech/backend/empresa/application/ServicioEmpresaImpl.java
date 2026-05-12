@@ -1,21 +1,20 @@
 package com.gpiv.atlanticsprinttech.backend.empresa.application;
 
 import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioEmpresa;
+import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioRubro;
+import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.lote.persistence.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.security.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.util.JsonUtil;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaServiciosPostRadicacion;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaEmpresaDetalleAdmin;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaEmpresaListadoAdmin;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaUsuarioEmpresaAdmin;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.RespuestaVehiculoEmpresa;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.SolicitudServiciosPostRadicacion;
+import com.gpiv.atlanticsprinttech.commons.empresa.dto.*;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.RespuestaRadicacionResumen;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
+import com.gpiv.atlanticsprinttech.entities.empresa.Rubro;
+import com.gpiv.atlanticsprinttech.entities.empresa.SolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.entities.radicacion.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.usuario.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.radicacion.RadicacionSolicitud;
@@ -23,6 +22,7 @@ import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
 import java.util.Comparator;
 import java.util.List;
 
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,6 +35,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	private final RepositorioUsuario repositorioUsuario;
 	private final ServicioContextoUsuario servicioContextoUsuario;
 	private final ObjectMapper objectMapper;
+	private final RepositorioRubro repositorioRubro;
+	private final RepositorioSolicitudCambioRubro repositorioSolicitudCambioRubro;
 
 	public ServicioEmpresaImpl(
 		RepositorioEmpresa repositorioEmpresa,
@@ -42,7 +44,9 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
 		RepositorioUsuario repositorioUsuario,
 		ServicioContextoUsuario servicioContextoUsuario,
-		ObjectMapper objectMapper
+		ObjectMapper objectMapper,
+		RepositorioRubro repositorioRubro,
+		RepositorioSolicitudCambioRubro repositorioSolicitudCambioRubro
 	) {
 		this.repositorioEmpresa = repositorioEmpresa;
 		this.repositorioLote = repositorioLote;
@@ -50,6 +54,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		this.repositorioUsuario = repositorioUsuario;
 		this.servicioContextoUsuario = servicioContextoUsuario;
 		this.objectMapper = objectMapper;
+		this.repositorioRubro = repositorioRubro;
+		this.repositorioSolicitudCambioRubro = repositorioSolicitudCambioRubro;
 	}
 
 
@@ -242,6 +248,21 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		Empresa empresa = obtenerPorIdInterno(empresaId);
 		usuario.actualizarEmpresa(empresa);
 		repositorioUsuario.save(usuario);
+	}
+
+	@Override
+	@Transactional
+	public void solicitarAmpliacionOCambioRubro(Long empresaId, SolicitudCambioRubroDto solicitud, String identificadorIngreso) {
+		validarAccesoEmpresa(empresaId, identificadorIngreso);
+		Empresa empresa = obtenerPorIdInterno(empresaId);
+
+		Rubro nuevoRubro = repositorioRubro.findById(solicitud.idNuevoRubro())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El rubro solicitado no existe"));
+		if (empresa.getRubro() != null && empresa.getRubro().getId().equals(nuevoRubro.getId())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa ya pertenece a este rubro");
+		}
+		SolicitudCambioRubro nuevaSolicitud = SolicitudCambioRubro.crear(empresa, nuevoRubro, solicitud.justificacion());
+		repositorioSolicitudCambioRubro.save(nuevaSolicitud);
 	}
 
 	private Empresa obtenerPorIdInterno(Long id) {
