@@ -416,6 +416,45 @@ const ModuloEmpresas = (() => {
         mostrarAlerta('Servicios actualizados correctamente.');
     }
 
+    // ── HU-08: Cambio de Rubro ─────────────────────────────────────────────────
+    function abrirCambioRubro() {
+        document.getElementById('formCambioRubro').reset();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCambioRubro')).show();
+    }
+
+    async function enviarCambioRubro() {
+        const idNuevoRubro = document.getElementById('selectNuevoRubro').value;
+        const justificacion = document.getElementById('textJustificacion').value;
+        const btn = document.getElementById('btnEnviarCambioRubro');
+
+        if (!idNuevoRubro || !justificacion.trim()) {
+            mostrarAlerta('Por favor, completa el nuevo rubro y la justificación.', 'warning');
+            return;
+        }
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...';
+
+            // Usamos el ApiCliente genérico de tu equipo apuntando a la ruta de tu controlador
+            const respuesta = await ApiCliente.crear(`/api/empresas/${empresaIdPropia}/solicitudes-cambio-rubro`, {
+                idNuevoRubro: parseInt(idNuevoRubro),
+                justificacion: justificacion
+            });
+
+            if (respuesta?.ok) {
+                mostrarAlerta('Solicitud de cambio de rubro enviada exitosamente.');
+                bootstrap.Modal.getInstance(document.getElementById('modalCambioRubro')).hide();
+            } else {
+                const error = await respuesta?.json().catch(() => ({}));
+                mostrarAlerta(error?.message || 'Error al enviar la solicitud.', 'danger');
+            }
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send me-1"></i>Enviar Solicitud';
+        }
+    }
+
     function quitarVehiculoEnEdicion(indice) {
         vehiculosEnEdicion.splice(indice, 1);
         renderizarTablaVehiculos('cuerpoVehiculosModalServicios', vehiculosEnEdicion, true);
@@ -724,6 +763,8 @@ const ModuloEmpresas = (() => {
         guardarAgregarVehiculo,
         abrirModalServicios,
         guardarServiciosEmpresaModal,
-        quitarVehiculoEnEdicion
+        quitarVehiculoEnEdicion,
+        abrirCambioRubro,
+        enviarCambioRubro
     };
 })();

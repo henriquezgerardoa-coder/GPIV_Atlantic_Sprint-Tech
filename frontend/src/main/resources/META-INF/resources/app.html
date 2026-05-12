@@ -680,6 +680,9 @@
                                 onclick="ModuloEmpresas.abrirModalServicios()">
                             <i class="bi bi-gear me-1"></i>Solicitar/Modificar Servicios
                         </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="ModuloEmpresas.abrirCambioRubro()">
+                            <i class="bi bi-arrow-left-right me-1"></i>Cambiar Rubro
+                        </button>
                     </div>
                 </div>
                 <div id="sinServiciosEmpresa" class="alert alert-info mb-0 d-none">
@@ -1686,6 +1689,41 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.guardarServiciosEmpresaModal()">
                     <i class="bi bi-save me-1"></i>Guardar servicios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Solicitar Cambio De Rubro (rol EMPRESA) -->
+<div class="modal fade" id="modalCambioRubro" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Solicitar Cambio de Rubro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCambioRubro">
+                    <div class="mb-3">
+                        <label for="selectNuevoRubro" class="form-label">Nuevo Rubro Solicitado <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectNuevoRubro" required>
+                            <option value="" selected disabled>Seleccione un rubro...</option>
+                            <option value="1">Tecnología y Software</option>
+                            <option value="2">Manufactura Industrial</option>
+                            <option value="3">Logística y Transporte</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="textJustificacion" class="form-label">Justificación del Cambio <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="textJustificacion" rows="3" placeholder="Explique los motivos técnicos o comerciales..." required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.enviarCambioRubro()" id="btnEnviarCambioRubro">
+                    <i class="bi bi-send me-1"></i>Enviar Solicitud
                 </button>
             </div>
         </div>
