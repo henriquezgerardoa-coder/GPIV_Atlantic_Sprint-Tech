@@ -2,7 +2,7 @@ package com.gpiv.atlanticsprinttech.backend.empresa.web;
 
 import com.gpiv.atlanticsprinttech.backend.empresa.application.ServicioEmpresa;
 import com.gpiv.atlanticsprinttech.commons.empresa.dto.*;
-import com.gpiv.atlanticsprinttech.commons.shared.dto.RespuestaOperacion;
+import com.gpiv.atlanticsprinttech.commons.compartido.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -95,7 +95,7 @@ public class ControladorEmpresa {
     @PostMapping("/{id}/solicitudes-cambio-rubro")
     public ResponseEntity<RespuestaOperacion> solicitarCambioRubro(
             @PathVariable Long id,
-            @Valid @RequestBody SolicitudCambioRubroDto solicitud,
+            @Valid @RequestBody SolicitudCambioRubro solicitud,
             Authentication authentication
     ) {
         servicioEmpresa.solicitarAmpliacionOCambioRubro(id, solicitud, authentication.getName());

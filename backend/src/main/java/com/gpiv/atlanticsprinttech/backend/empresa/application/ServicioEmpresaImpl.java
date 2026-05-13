@@ -9,14 +9,13 @@ import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuari
 import com.gpiv.atlanticsprinttech.backend.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.utilidades.ExtractorJson;
 import com.gpiv.atlanticsprinttech.commons.empresa.dto.*;
+import com.gpiv.atlanticsprinttech.commons.empresa.dto.SolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.commons.radicacion.dto.RespuestaRadicacionResumen;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.entities.empresa.Empresa;
 import com.gpiv.atlanticsprinttech.entities.empresa.Rubro;
-import com.gpiv.atlanticsprinttech.entities.empresa.SolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.entities.radicacion.EstadoRadicacion;
-import com.gpiv.atlanticsprinttech.entities.usuario.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.radicacion.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
 import java.util.Comparator;
@@ -250,18 +249,18 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		repositorioUsuario.save(usuario);
 	}
 
-	@Override
 	@Transactional
-	public void solicitarAmpliacionOCambioRubro(Long empresaId, SolicitudCambioRubroDto solicitud, String identificadorIngreso) {
+	@Override
+	public void solicitarAmpliacionOCambioRubro(Long empresaId, SolicitudCambioRubro solicitudDto, String identificadorIngreso) {
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
 		Empresa empresa = obtenerPorIdInterno(empresaId);
 
-		Rubro nuevoRubro = repositorioRubro.findById(solicitud.idNuevoRubro())
+		Rubro nuevoRubro = repositorioRubro.findById(solicitudDto.idNuevoRubro())
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El rubro solicitado no existe"));
 		if (empresa.getRubro() != null && empresa.getRubro().getId().equals(nuevoRubro.getId())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa ya pertenece a este rubro");
 		}
-		SolicitudCambioRubro nuevaSolicitud = SolicitudCambioRubro.crear(empresa, nuevoRubro, solicitud.justificacion());
+		var nuevaSolicitud = com.gpiv.atlanticsprinttech.entities.empresa.SolicitudCambioRubro.crear(empresa, nuevoRubro, solicitudDto.justificacion());
 		repositorioSolicitudCambioRubro.save(nuevaSolicitud);
 	}
 
