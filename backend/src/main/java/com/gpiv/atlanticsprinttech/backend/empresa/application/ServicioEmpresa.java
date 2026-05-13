@@ -17,5 +17,5 @@ public interface ServicioEmpresa {
 	RespuestaServiciosPostRadicacion actualizarServiciosPostRadicacion(Long empresaId, SolicitudServiciosPostRadicacion solicitud, String identificadorIngreso);
 	List<Empresa> buscar(String query);
 	void vincularEmpresaExistente(Long empresaId, String identificadorIngreso);
-	void solicitarAmpliacionOCambioRubro(Long empresaId, SolicitudCambioRubroDto solicitud, String identificadorIngreso);
+	void solicitarAmpliacionOCambioRubro(Long empresaId, SolicitudCambioRubro solicitud, String identificadorIngreso);
 }
