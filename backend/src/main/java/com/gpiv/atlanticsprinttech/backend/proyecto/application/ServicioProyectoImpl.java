@@ -127,13 +127,21 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         }
 
         ProyectoProductivo proyecto = repositorioProyecto.findByIdConDependencias(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
 
         RadicacionSolicitud radicacion = repositorioRadicacion.findByIdConEmpresa(radicacionId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Radicacion no encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Radicacion no encontrada"));
 
         try {
             proyecto.iniciarProyecto(radicacion);
+
+            List<HitoObra> hitosBase = List.of(
+                    HitoObra.crear("Instalación de faena y obrador", LocalDate.now().plusMonths(1), proyecto),
+                    HitoObra.crear("Finalización de fundaciones", LocalDate.now().plusMonths(3), proyecto),
+                    HitoObra.crear("Cierre de estructura principal", LocalDate.now().plusMonths(6), proyecto)
+            );
+            repositorioHitoObra.saveAll(hitosBase);
+
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
         }
@@ -182,6 +190,11 @@ public class ServicioProyectoImpl implements ServicioProyecto {
 
     @Override
     public DocumentoPDF adjuntarDocumento(String identificadorIngreso, Long proyectoId, String nombreArchivo, byte[] contenido) {
+
+        if (contenido.length > 20971520) {
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "El documento PDF supera los 20MB permitidos.");
+        }
+
         ProyectoProductivo proyecto = obtenerPorId(identificadorIngreso, proyectoId);
         DocumentoPDF doc;
         try {

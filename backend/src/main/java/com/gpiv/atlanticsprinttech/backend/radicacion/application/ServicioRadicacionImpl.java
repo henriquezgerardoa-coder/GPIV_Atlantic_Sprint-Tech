@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.backend.empresa.persistence.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.lote.persistence.RepositorioLote;
+import com.gpiv.atlanticsprinttech.backend.proyecto.persistence.RepositorioProyecto;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionDocumento;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.correo.application.ServicioCorreo;
 import com.gpiv.atlanticsprinttech.backend.radicacion.persistence.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.seguridad.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.entities.compartido.ExcepcionNegocio;
 import com.gpiv.atlanticsprinttech.entities.lote.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.lote.Lote;
@@ -33,6 +35,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.gpiv.atlanticsprinttech.entities.proyecto.ProyectoProductivo;
+import com.gpiv.atlanticsprinttech.entities.proyecto.EstadoProyecto;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
@@ -54,6 +60,8 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private final ServicioContextoUsuario servicioContextoUsuario;
     private final ObjectMapper objectMapper;
     private final ServicioCorreo servicioCorreo;
+    private final RepositorioProyecto repositorioProyecto;
+    private final RepositorioUsuario repositorioUsuario;
 
     public ServicioRadicacionImpl(
         RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
@@ -63,7 +71,9 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         RepositorioLote repositorioLote,
         ServicioContextoUsuario servicioContextoUsuario,
         ObjectMapper objectMapper,
-        ServicioCorreo servicioCorreo
+        ServicioCorreo servicioCorreo,
+        RepositorioProyecto repositorioProyecto,
+        RepositorioUsuario repositorioUsuario
     ) {
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
         this.repositorioRadicacionHistorial = repositorioRadicacionHistorial;
@@ -73,6 +83,8 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         this.servicioContextoUsuario = servicioContextoUsuario;
         this.objectMapper = objectMapper;
         this.servicioCorreo = servicioCorreo;
+        this.repositorioProyecto = repositorioProyecto;
+        this.repositorioUsuario = repositorioUsuario;
     }
 
     @Override
@@ -200,6 +212,29 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         EstadoRadicacion estadoAnterior = radicacion.getEstado();
         try {
             radicacion.cambiarEstado(nuevoEstado);
+            if (nuevoEstado == EstadoRadicacion.APROBADA) {
+
+                ProyectoProductivo proyecto = new ProyectoProductivo();
+                proyecto.setNombre("PROY-" + radicacion.getNumeroRadicado());
+                proyecto.setDescripcion(radicacion.getDescripcion());
+
+                if (radicacion.getRentabilidadEstimada() != null) {
+                    proyecto.setMontoInversion(BigDecimal.valueOf(radicacion.getRentabilidadEstimada()));
+                } else {
+                    proyecto.setMontoInversion(BigDecimal.ZERO);
+                }
+
+                proyecto.setEstado(EstadoProyecto.INICIADO);
+                proyecto.setFechaCreacion(LocalDateTime.now());
+                proyecto.setEmpresa(radicacion.getEmpresa());
+                proyecto.setRadicacionOrigen(radicacion);
+
+                Usuario admin = repositorioUsuario.findByNombreUsuario(identificadorIngreso)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Usuario no encontrado"));
+                proyecto.setResponsableSeguimiento(admin);
+
+                repositorioProyecto.save(proyecto);
+            }
         } catch (IllegalStateException | IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
