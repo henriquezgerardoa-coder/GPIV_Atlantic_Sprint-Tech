@@ -24,8 +24,6 @@ public class Empresa {
 	private String cuit;
 	@Column(name = "direccion", nullable = false, length = 240)
 	private String direccion;
-	@Column(name = "actividad_economica", nullable = false, length = 180)
-	private String actividadEconomica;
 	@Column(name = "correo_electronico", nullable = false, length = 120)
 	private String correoElectronico;
 	@Column(name = "telefono", length = 40)
@@ -52,24 +50,24 @@ public class Empresa {
 		String nit,
 		String cuit,
 		String direccion,
-		String actividadEconomica,
 		String correoElectronico,
 		String telefono,
 		Integer cantidadEmpleados,
-		String vehiculosAsignadosJson
+		String vehiculosAsignadosJson,
+		Rubro rubro
 	) {
 		this.nombre = nombre;
 		this.razonSocial = razonSocial;
 		this.nit = nit;
 		this.cuit = cuit;
 		this.direccion = direccion;
-		this.actividadEconomica = actividadEconomica;
 		this.correoElectronico = correoElectronico;
 		this.telefono = telefono;
 		this.fechaRegistro = LocalDateTime.now();
 		this.estado = "ACTIVA";
 		this.cantidadEmpleados = cantidadEmpleados;
 		this.vehiculosAsignadosJson = vehiculosAsignadosJson;
+		this.rubro = rubro;
 	}
 
 	public static Empresa crear(
@@ -78,9 +76,9 @@ public class Empresa {
 		String nit,
 		String cuit,
 		String direccion,
-		String actividadEconomica,
 		String correoElectronico,
-		String telefono
+		String telefono,
+		Rubro rubro
 	) {
 		return new Empresa(
 			nombre,
@@ -88,16 +86,16 @@ public class Empresa {
 			nit,
 			cuit,
 			direccion,
-			actividadEconomica,
 			correoElectronico,
 			telefono,
 			0,
-			null
-		);
+				null,
+				rubro
+        );
 	}
 
 	public static Empresa crear(String nombre, String cuit, String correoElectronico) {
-		return new Empresa(nombre, nombre, cuit, cuit, "", "", correoElectronico, null, 0, null);
+		return new Empresa(nombre, nombre, cuit, cuit, "", correoElectronico, null, 0, null, null);
 	}
 	public Long getId() {
 		return id;
@@ -119,10 +117,6 @@ public class Empresa {
 
 	public String getDireccion() {
 		return direccion;
-	}
-
-	public String getActividadEconomica() {
-		return actividadEconomica;
 	}
 
 	public String getCorreoElectronico() {
@@ -167,22 +161,22 @@ public class Empresa {
 		String nit,
 		String cuit,
 		String direccion,
-		String actividadEconomica,
 		String correoElectronico,
-		String telefono
+		String telefono,
+		Rubro rubro
 	) {
 		this.nombre = nombre;
 		this.razonSocial = razonSocial;
 		this.nit = nit;
 		this.cuit = cuit;
 		this.direccion = direccion;
-		this.actividadEconomica = actividadEconomica;
 		this.correoElectronico = correoElectronico;
 		this.telefono = telefono;
+		this.rubro = rubro;
 	}
 
 	public void actualizarDatos(String nombre, String cuit, String correoElectronico) {
-		actualizarDatos(nombre, nombre, cuit, cuit, this.direccion, this.actividadEconomica, correoElectronico, this.telefono);
+		actualizarDatos(nombre, nombre, cuit, cuit, this.direccion, correoElectronico, this.telefono, this.rubro);
 	}
 	//Requerimiento R09
 	public void actualizarDatosContacto(

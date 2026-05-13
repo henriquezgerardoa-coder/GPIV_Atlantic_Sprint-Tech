@@ -1,7 +1,9 @@
 package com.gpiv.atlanticsprinttech.commons.empresa.dto;
 
+import com.gpiv.atlanticsprinttech.entities.empresa.Rubro;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record SolicitudEmpresa(
@@ -20,9 +22,8 @@ public record SolicitudEmpresa(
 	@NotBlank(message = "La direccion es obligatoria")
 	@Size(max = 240, message = "La direccion no puede superar 240 caracteres")
 	String direccion,
-	@NotBlank(message = "La actividad economica es obligatoria")
-	@Size(max = 180, message = "La actividad economica no puede superar 180 caracteres")
-	String actividadEconomica,
+	@NotNull
+	Long idRubro,
 	@NotBlank(message = "El correo electronico es obligatorio")
 	@Email(message = "El correo electronico no es valido")
 	@Size(max = 120, message = "El correo electronico no puede superar 120 caracteres")

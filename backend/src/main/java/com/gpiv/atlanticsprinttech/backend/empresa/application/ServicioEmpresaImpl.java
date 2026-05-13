@@ -120,9 +120,9 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getNit(),
 			empresa.getCuit(),
 			empresa.getDireccion(),
-			empresa.getActividadEconomica(),
 			empresa.getCorreoElectronico(),
-			empresa.getTelefono()
+			empresa.getTelefono(),
+			empresa.getRubro()
 		);
 		return repositorioEmpresa.save(empresaActual);
 	}
@@ -170,7 +170,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getDireccion(),
 			empresa.getFechaRegistro(),
 			empresa.getEstado(),
-			empresa.getActividadEconomica(),
+			empresa.getRubro() != null ? empresa.getRubro().getNombre() : "Sin Rubro",
 			empresa.getCorreoElectronico(),
 			empresa.getCantidadEmpleadosOCero(),
 			vehiculos.size(),

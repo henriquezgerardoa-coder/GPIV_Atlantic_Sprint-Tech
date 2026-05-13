@@ -14,7 +14,7 @@ public record RespuestaEmpresaDetalleAdmin(
     String direccion,
     LocalDateTime fechaRegistro,
     String statusEmpresa,
-    String actividadEconomica,
+    String nombreRubro,
     String correoElectronico,
     Integer totalEmpleados,
     Integer totalVehiculos,
