@@ -15,11 +15,3 @@
 .DS_Store
 Thumbs.db
 
-# Variables de entorno y perfiles con credenciales
-.env
-**/application-neon.properties
-
-# Electron / desktop
-desktop/node_modules/
-desktop/dist/
-
