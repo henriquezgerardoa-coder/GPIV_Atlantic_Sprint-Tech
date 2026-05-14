@@ -1,6 +1,6 @@
 /**
- * Capa de interfaz de usuario (cliente).
- * Los recursos web se ubican en src/main/resources/META-INF/resources.
+ * Capa reservada para la interfaz de usuario (cliente).
+ * La implementacion de componentes y vistas se incorporara en esta estructura.
  */
 package com.gpiv.atlanticsprinttech.frontend;
 

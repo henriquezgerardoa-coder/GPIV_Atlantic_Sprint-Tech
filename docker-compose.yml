@@ -3,10 +3,9 @@ services:
     build: .
     container_name: gpiv_backend_container
     ports:
-      - "8090:8090"
+      - "8090:8090" # Ahora escuchará en el 8090 de tu laptop HP
     environment:
-      # Leer credenciales desde .env (ver .env.example)
-      - SPRING_DATASOURCE_URL=${NEON_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${NEON_DB_USER}
-      - DB_PASSWORD=${NEON_DB_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-shy-math-ac52y9a5-pooler.sa-east-1.aws.neon.tech/AST-GPIV-DB?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XhHCN3O0Vjyt
+      - SERVER_PORT=8090 # Le dice a Spring Boot que use el 8090

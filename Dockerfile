@@ -19,13 +19,6 @@ RUN mvn clean package -pl backend -am -DskipTests
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Ajustar la zona horaria local
-ENV TZ=America/Argentina/Buenos_Aires
-
-# Crear un usuario y grupo sin privilegios
-RUN addgroup --system spring && adduser --system spring --ingroup spring
-USER spring:spring
-
 COPY --from=build /app/backend/target/*.jar app.jar
 
 EXPOSE 8090

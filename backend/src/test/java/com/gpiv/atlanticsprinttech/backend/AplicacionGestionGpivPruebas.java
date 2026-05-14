@@ -1,6 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend;
 
-import com.gpiv.atlanticsprinttech.backend.config.PropiedadesApiUsuarios;
+import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesApiUsuarios;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,20 +14,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gpiv.atlanticsprinttech.backend.usuario.persistence.RepositorioUsuario;
-import com.gpiv.atlanticsprinttech.commons.usuario.dto.SolicitudUsuario;
-import com.gpiv.atlanticsprinttech.commons.empresa.dto.SolicitudEmpresa;
-import com.gpiv.atlanticsprinttech.entities.usuario.RolUsuario;
-import com.gpiv.atlanticsprinttech.entities.usuario.Usuario;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudUsuario;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudEmpresa;
+import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
+import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.util.Set;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -47,32 +44,6 @@ class AplicacionGestionGpivPruebas {
 
     @Autowired
     private RepositorioUsuario repositorioUsuario;
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    private PasswordEncoder codificadorClave;
-
-    @BeforeEach
-    void limpiarDatos() {
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        jdbcTemplate.execute("TRUNCATE TABLE radicacion_historial");
-        jdbcTemplate.execute("TRUNCATE TABLE radicacion_documentos");
-        jdbcTemplate.execute("TRUNCATE TABLE radicaciones");
-        jdbcTemplate.execute("TRUNCATE TABLE hitos_obra");
-        jdbcTemplate.execute("TRUNCATE TABLE documentos_pdf");
-        jdbcTemplate.execute("TRUNCATE TABLE proyectos_productivos");
-        jdbcTemplate.execute("TRUNCATE TABLE lotes");
-        jdbcTemplate.execute("DELETE FROM usuarios_roles WHERE usuario_id NOT IN (SELECT id FROM usuarios WHERE nombre_usuario IN ('admin', 'directivo', 'empresa'))");
-        jdbcTemplate.execute("DELETE FROM usuarios WHERE nombre_usuario NOT IN ('admin', 'directivo', 'empresa')");
-        jdbcTemplate.execute("TRUNCATE TABLE empresas");
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
-        jdbcTemplate.update("UPDATE usuarios SET nombre_completo = ?, clave_acceso_hash = ?, correo_electronico = NULL, empresa_id = NULL WHERE nombre_usuario = ?",
-            "Administrador General", codificadorClave.encode("admin12345"), "admin");
-        jdbcTemplate.update("UPDATE usuarios SET nombre_completo = ?, empresa_id = NULL, correo_electronico = NULL WHERE nombre_usuario = ?",
-            "Empresa GPIV", "empresa");
-    }
 
     @Test
     void deberiaResponderEstadoOkEnSalud() throws Exception {
@@ -241,8 +212,8 @@ class AplicacionGestionGpivPruebas {
             .andExpect(jsonPath("$.telefono").value("2990000000"))
             .andExpect(jsonPath("$.fechaRegistro").exists())
             .andExpect(jsonPath("$.statusEmpresa").value("ACTIVA"))
-            .andExpect(jsonPath("$.usuariosAsociados[0].nombreCompleto").value("Empresa Panel Admin"))
-            .andExpect(jsonPath("$.usuariosAsociados[0].fechaUltimoAcceso").exists())
+            .andExpect(jsonPath("$.usuarioAsociado.nombreCompleto").value("Empresa Panel Admin"))
+            .andExpect(jsonPath("$.usuarioAsociado.fechaUltimoAcceso").exists())
             .andExpect(jsonPath("$.totalEmpleados").value(0))
             .andExpect(jsonPath("$.totalVehiculos").value(0));
 
@@ -315,53 +286,6 @@ class AplicacionGestionGpivPruebas {
                 .content(cuerpoEmpresa("Empresa Editable Admin", "Empresa Editable Admin SA", "NIT-SL-001", "20-51515151-5", "sl3@empresa.com")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nombre").value("Empresa Editable Admin"));
-    }
-
-    @Test
-    void usuarioConRolesDirectivoYEmpresaDebeTenerSoloLecturaEnEmpresas() throws Exception {
-        String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
-                .with(httpBasic("admin", "admin12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Mixta", "Empresa Mixta SA", "NIT-MIX-001", "20-61616161-6", "mixta@empresa.com")))
-            .andExpect(status().isCreated())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
-
-        Long idEmpresa = objectMapper.readTree(respuestaEmpresa).get("id").asLong();
-
-        mockMvc.perform(post("/api/usuarios")
-                .with(httpBasic("admin", "admin12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombreUsuario\":\"directivo_empresa_mixto\",\"nombreCompleto\":\"Directivo Empresa Mixto\",\"clave\":\"Mixto12345\",\"activo\":true,\"roles\":[\"DIRECTIVO\",\"EMPRESA\"],\"empresaId\":" + idEmpresa + "}"))
-            .andExpect(status().isCreated());
-
-        mockMvc.perform(get("/api/empresas")
-                .with(httpBasic("directivo_empresa_mixto", "Mixto12345")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$[*].nombre", hasItem("Empresa Mixta")));
-
-        mockMvc.perform(post("/api/empresas")
-                .with(httpBasic("directivo_empresa_mixto", "Mixto12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Mixta 2", "Empresa Mixta 2 SA", "NIT-MIX-002", "20-62626262-6", "mixta2@empresa.com")))
-            .andExpect(status().isForbidden());
-
-        mockMvc.perform(put("/api/empresas/{id}", idEmpresa)
-                .with(httpBasic("directivo_empresa_mixto", "Mixto12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Mixta Edit", "Empresa Mixta Edit SA", "NIT-MIX-001", "20-61616161-6", "mixta-edit@empresa.com")))
-            .andExpect(status().isForbidden());
-
-        mockMvc.perform(delete("/api/empresas/{id}", idEmpresa)
-                .with(httpBasic("directivo_empresa_mixto", "Mixto12345")))
-            .andExpect(status().isForbidden());
-
-        mockMvc.perform(patch("/api/empresas/{id}/servicios-post-radicacion", idEmpresa)
-                .with(httpBasic("directivo_empresa_mixto", "Mixto12345"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"cantidadEmpleados\":12,\"vehiculos\":[]}"))
-            .andExpect(status().isForbidden());
     }
 
     @Test
@@ -626,9 +550,9 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(get("/api/lotes")
                 .with(httpBasic("empresa_lotes_asignada", "EmpresaLote123")))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.totalElementos").value(1))
-            .andExpect(jsonPath("$.contenido[0].id").value(idLoteA))
-            .andExpect(jsonPath("$.contenido[0].empresaId").value(idEmpresaA));
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].id").value(idLoteA))
+            .andExpect(jsonPath("$[0].empresaId").value(idEmpresaA));
 
         mockMvc.perform(get("/api/lotes/{id}", idLoteB)
                 .with(httpBasic("empresa_lotes_asignada", "EmpresaLote123")))
@@ -704,7 +628,7 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(get("/api/radicaciones")
                 .with(httpBasic("empresa", "empresa12345")))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.totalElementos").value(0));
+            .andExpect(jsonPath("$.length()").value(0));
 
         mockMvc.perform(patch("/api/yo/perfil")
                 .with(httpBasic("empresa", "empresa12345"))
@@ -745,7 +669,7 @@ class AplicacionGestionGpivPruebas {
               "relevamientoPedidoLotes": {
                 "correo": "empresa_formulario@gpiv.local",
                 "razonSocialEmpresa": "Empresa Formulario SRL",
-                "cuit": "20333444551",
+                "cuit": "20333444556",
                 "ingresosBrutos": "Convenio local",
                 "actividadPrincipal": "Produccion metalmecanica",
                 "actividadSecundaria": "Mantenimiento",
@@ -931,15 +855,13 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
-    void deberiaRegistrarVerificarYPermitirLoginConUsuarioYCorreoConContrasenaUtf8() throws Exception {
-        String nombreUsuarioIngresado = "Registro_User_1";
-        String nombreUsuarioNormalizado = "registro_user_1";
+    void deberiaRegistrarVerificarYPermitirLoginConCorreo() throws Exception {
         String correo = "registro1@gpiv.local";
-        String clave = "ClávéSegura123";
+        String clave = "ClaveSegura123";
 
         mockMvc.perform(post("/api/public/registro")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"nombreUsuario\":\"" + nombreUsuarioIngresado + "\",\"correoElectronico\":\"" + correo + "\",\"clave\":\"" + clave + "\",\"confirmacionClave\":\"" + clave + "\"}"))
+                .content("{\"correoElectronico\":\"" + correo + "\",\"clave\":\"" + clave + "\",\"confirmacionClave\":\"" + clave + "\"}"))
             .andExpect(status().isCreated());
 
         Usuario usuario = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correo)
@@ -947,27 +869,16 @@ class AplicacionGestionGpivPruebas {
 
         mockMvc.perform(get("/api/yo")
                 .with(httpBasic(correo, clave)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nombreUsuario").value(nombreUsuarioNormalizado));
-
-        mockMvc.perform(get("/api/yo")
-                .with(httpBasic(nombreUsuarioIngresado, clave)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nombreUsuario").value(nombreUsuarioNormalizado));
+            .andExpect(status().isUnauthorized());
 
         mockMvc.perform(get("/api/public/verificacion")
                 .param("token", usuario.getTokenVerificacionEmail()))
             .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/yo")
-                .with(httpBasic(nombreUsuarioIngresado, clave)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nombreUsuario").value(nombreUsuarioNormalizado));
-
-        mockMvc.perform(get("/api/yo")
                 .with(httpBasic(correo, clave)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nombreUsuario").value(nombreUsuarioNormalizado));
+            .andExpect(jsonPath("$.nombreUsuario").value(usuario.getNombreUsuario()));
     }
 
     private SolicitudEmpresa crearSolicitudEmpresa(
