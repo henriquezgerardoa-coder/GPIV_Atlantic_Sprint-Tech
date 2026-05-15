@@ -4,6 +4,7 @@ const ModuloEmpresas = (() => {
     let idEdicion = null;
     let empresaPropia = null;
     let vehiculosEmpresaPropia = [];
+    let serviciosHabilitados = false;
 
     // ─── Punto de entrada ───────────────────────────────────────────────────────
 
@@ -183,14 +184,26 @@ const ModuloEmpresas = (() => {
         renderizarPanelEmpresaPropia(empresaPropia);
         const respServ = await ApiCliente.obtener(`/api/empresas/${empresaPropia.id}/servicios-post-radicacion`);
         if (respServ?.ok) {
+            serviciosHabilitados = true;
             const servicios = await respServ.json();
             vehiculosEmpresaPropia = servicios.vehiculos || [];
             empresaPropia._cantidadEmpleados = servicios.cantidadEmpleados ?? 0;
         } else {
+            serviciosHabilitados = false;
             vehiculosEmpresaPropia = parsearVehiculosDesdeTexto(empresaPropia.vehiculosAsignadosJson || '');
             empresaPropia._cantidadEmpleados = empresaPropia.cantidadEmpleados ?? 0;
         }
+        actualizarBotonServicios();
         actualizarIndicadoresEmpresaPropia();
+    }
+
+    function actualizarBotonServicios() {
+        const btn = document.getElementById('btnServiciosPostRadicacion');
+        if (!btn) return;
+        btn.disabled = !serviciosHabilitados;
+        btn.title = serviciosHabilitados
+            ? 'Solicitar o modificar el uso de servicios post-radicación'
+            : 'Disponible cuando su radicación alcance el estado Radicada';
     }
 
     function renderizarPanelEmpresaPropia(emp) {
