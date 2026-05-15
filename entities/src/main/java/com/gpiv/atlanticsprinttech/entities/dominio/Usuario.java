@@ -167,5 +167,17 @@ public class Usuario {
     public void registrarUltimoAcceso(LocalDateTime fechaUltimoAcceso) {
         this.fechaUltimoAcceso = fechaUltimoAcceso;
     }
+
+    public boolean tieneRol(RolUsuario rol) {
+        return roles.contains(rol);
+    }
+
+    public boolean tieneRol(String nombreRol) {
+        return roles.stream().anyMatch(r -> r.name().equalsIgnoreCase(nombreRol));
+    }
+
+    public void bloquearCuenta() {
+        this.activo = false;
+    }
 }
 

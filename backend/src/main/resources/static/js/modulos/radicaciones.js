@@ -395,23 +395,51 @@ const ModuloRadicaciones = (() => {
         setTexto('detRadFechaCreacion', detalle?.fechaRadicacion || '-');
         setTexto('detRadFechaModificacion', formatearFechaEvento(detalle?.fechaUltimaActualizacion));
 
+        const wrapperObra = document.getElementById('wrapperDetRadTiempoObra');
+        const wrapperPlazo = document.getElementById('wrapperDetRadFechaPlazo');
+        if (detalle?.tiempoEstimadoObraMeses) {
+            setTexto('detRadTiempoObra', `${detalle.tiempoEstimadoObraMeses} meses`);
+            wrapperObra?.classList.remove('d-none');
+        } else {
+            wrapperObra?.classList.add('d-none');
+        }
+        if (detalle?.fechaPlazo) {
+            setTexto('detRadFechaPlazo', detalle.fechaPlazo);
+            wrapperPlazo?.classList.remove('d-none');
+        } else {
+            wrapperPlazo?.classList.add('d-none');
+        }
+
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
         if (selector) {
             selector.innerHTML = opcionesEstadoGestion(detalle?.estado);
+            toggleCamposPlazo(selector.value);
         }
         const obs = document.getElementById('campoObservacionesRadAdmin');
         if (obs) obs.value = '';
+        const campoPlazoMeses = document.getElementById('campoPlazoMeses');
+        if (campoPlazoMeses) campoPlazoMeses.value = '';
+        const campoPlazoFecha = document.getElementById('campoPlazoFecha');
+        if (campoPlazoFecha) campoPlazoFecha.value = '';
 
         const cuerpoDocs = document.getElementById('cuerpoDocumentosDetalleRadAdmin');
         if (cuerpoDocs) {
             if (!documentos?.length) {
-                cuerpoDocs.innerHTML = '<tr><td colspan="3" class="text-muted">Sin documentos</td></tr>';
+                cuerpoDocs.innerHTML = '<tr><td colspan="4" class="text-muted">Sin documentos</td></tr>';
             } else {
+                const radId = detalle?.id;
                 cuerpoDocs.innerHTML = documentos.map(d => `
                     <tr>
                         <td>${d.tipoDocumento || '-'}</td>
                         <td>${d.nombreArchivo || '-'}</td>
                         <td>${formatearFechaEvento(d.fechaSubida)}</td>
+                        <td class="text-center">
+                            <a href="/api/radicaciones/${radId}/documentos/${d.id}/descargar"
+                               class="btn btn-outline-secondary btn-sm" target="_blank" download
+                               title="Descargar">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </td>
                     </tr>
                 `).join('');
             }
@@ -434,6 +462,12 @@ const ModuloRadicaciones = (() => {
         }
     }
 
+    function toggleCamposPlazo(estado) {
+        const esAprobada = estado === 'APROBADA';
+        document.getElementById('wrapperCampoPlazoMeses')?.classList.toggle('d-none', !esAprobada);
+        document.getElementById('wrapperCampoPlazoFecha')?.classList.toggle('d-none', !esAprobada);
+    }
+
     async function confirmarCambioEstadoDetalleAdmin() {
         if (!radicacionDetalleAdmin?.id) {
             return;
@@ -450,6 +484,17 @@ const ModuloRadicaciones = (() => {
             mostrarAlerta('Debe ingresar observaciones para el estado seleccionado.', 'danger');
             return;
         }
+        let tiempoEstimadoObraMeses = null;
+        let fechaPlazo = null;
+        if (nuevoEstado === 'APROBADA') {
+            const mesesVal = document.getElementById('campoPlazoMeses')?.value;
+            fechaPlazo = document.getElementById('campoPlazoFecha')?.value || null;
+            if (!fechaPlazo) {
+                mostrarAlerta('Debe indicar la fecha plazo para aprobar el expediente.', 'danger');
+                return;
+            }
+            tiempoEstimadoObraMeses = mesesVal ? Number.parseInt(mesesVal, 10) : null;
+        }
         const confirmado = window.confirm(`Se cambiará el expediente ${radicacionDetalleAdmin.numeroRadicado} a ${formatearEstado(nuevoEstado)}. ¿Desea continuar?`);
         if (!confirmado) {
             return;
@@ -458,7 +503,9 @@ const ModuloRadicaciones = (() => {
         const comentario = observaciones || `Cambio de estado a ${formatearEstado(nuevoEstado)} por administración`;
         const respuesta = await ApiCliente.parche(`/api/radicaciones/${radicacionDetalleAdmin.id}/estado`, {
             estado: nuevoEstado,
-            comentario
+            comentario,
+            tiempoEstimadoObraMeses,
+            fechaPlazo
         });
         if (!respuesta?.ok) {
             const err = await respuesta?.json().catch(() => ({}));
@@ -863,6 +910,7 @@ const ModuloRadicaciones = (() => {
         verHistorial,
         verDetalleAdmin,
         confirmarCambioEstadoDetalleAdmin,
+        toggleCamposPlazo,
         guardarBorradorAhora,
         descartarBorrador
     };

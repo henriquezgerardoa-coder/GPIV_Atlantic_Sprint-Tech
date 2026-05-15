@@ -2,9 +2,12 @@ package com.gpiv.atlanticsprinttech.entities.dominio;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
@@ -43,6 +46,11 @@ public class Empresa {
 	private Integer cantidadEmpleados;
 	@Column(name = "vehiculos_asignados_json", length = 12000)
 	private String vehiculosAsignadosJson;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "rubro_id")
+	private Rubro rubro;
+
 	protected Empresa() {
 	}
 	private Empresa(
@@ -146,6 +154,24 @@ public class Empresa {
 
 	public String getVehiculosAsignadosJson() {
 		return vehiculosAsignadosJson;
+	}
+
+	public Rubro getRubro() {
+		return rubro;
+	}
+
+	public boolean estaActiva() {
+		return "ACTIVA".equals(status);
+	}
+
+	public void actualizarDatosContacto(String email, String tel) {
+		this.correoElectronico = email;
+		this.telefono = tel;
+	}
+
+	public void solicitarCambioRubro(Rubro nuevoRubro, String justificacion) {
+		nuevoRubro.validarCambioRubro(this);
+		this.rubro = nuevoRubro;
 	}
 
 	public void actualizarDatos(

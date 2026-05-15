@@ -10,6 +10,8 @@ public interface RepositorioRadicacionDocumento extends JpaRepository<Radicacion
 
     List<RadicacionDocumento> findByRadicacionIdOrderByFechaSubidaDesc(Long radicacionId);
 
+    java.util.Optional<RadicacionDocumento> findByIdAndRadicacionId(Long id, Long radicacionId);
+
     @Query("SELECT COALESCE(SUM(d.tamanoBytes), 0) FROM RadicacionDocumento d WHERE d.radicacion.id = :radicacionId")
     long totalTamanoPorRadicacion(@Param("radicacionId") Long radicacionId);
 }

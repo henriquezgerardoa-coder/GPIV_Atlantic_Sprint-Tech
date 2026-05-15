@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -79,7 +80,9 @@ public class ControladorRadicacion {
             autenticacion.getName(),
             id,
             solicitud.estado(),
-            solicitud.comentario()
+            solicitud.comentario(),
+            solicitud.tiempoEstimadoObraMeses(),
+            solicitud.fechaPlazo()
         );
         return crearRespuesta(actualizada);
     }
@@ -121,6 +124,20 @@ public class ControladorRadicacion {
             .toList();
     }
 
+    @GetMapping("/{id}/documentos/{docId}/descargar")
+    public ResponseEntity<byte[]> descargarDocumento(
+        @PathVariable Long id,
+        @PathVariable Long docId,
+        Authentication autenticacion
+    ) {
+        RadicacionDocumento doc = servicioRadicacion.obtenerDocumento(autenticacion.getName(), id, docId);
+        String contentDisposition = "attachment; filename=\"" + doc.getNombreArchivo().replace("\"", "") + "\"";
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(doc.getMimeType()))
+            .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+            .body(doc.getContenido());
+    }
+
     @GetMapping("/{id}/historial")
     public List<RespuestaHistorialRadicacion> listarHistorial(@PathVariable Long id, Authentication autenticacion) {
         return servicioRadicacion.listarHistorial(autenticacion.getName(), id).stream()
@@ -141,7 +158,9 @@ public class ControladorRadicacion {
             obtenerEtapaActual(radicacion.getEstado()),
             radicacion.getEstado(),
             radicacion.getFechaRadicacion(),
-            radicacion.getFechaUltimaActualizacion()
+            radicacion.getFechaUltimaActualizacion(),
+            radicacion.getTiempoEstimadoObraMeses(),
+            radicacion.getFechaPlazo()
         );
     }
 

@@ -10,7 +10,8 @@ public record RespuestaLote(
     String cuitEmpresa,
     String estadoAsignacion,
     String fechaAsignacion,
-    String numeroExpedienteReferencia
+    String numeroExpedienteReferencia,
+    String zona
 ) {
 }
 
