@@ -47,6 +47,9 @@ public class Lote {
     @Column(name = "numero_expediente_referencia", length = 40)
     private String numeroExpedienteReferencia;
 
+    @Column(name = "zona", length = 20)
+    private String zona;
+
     protected Lote() {
     }
 
@@ -91,6 +94,14 @@ public class Lote {
 
     public String getNumeroExpedienteReferencia() {
         return numeroExpedienteReferencia;
+    }
+
+    public String getZona() {
+        return zona;
+    }
+
+    public boolean esAdjudicable() {
+        return !ocupado && empresa == null && estadoAsignacion == null;
     }
 
     public void actualizarDatos(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa) {

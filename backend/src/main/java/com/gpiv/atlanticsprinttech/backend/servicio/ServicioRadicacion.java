@@ -9,6 +9,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.TipoDocumentoRadicacion;
 import java.time.LocalDate;
 import java.util.List;
 
+
 public interface ServicioRadicacion {
     List<RadicacionSolicitud> listar(String identificadorIngreso, EstadoRadicacion estado, LocalDate desde, LocalDate hasta);
 
@@ -22,7 +23,14 @@ public interface ServicioRadicacion {
         SolicitudRelevamientoPedidoLotes relevamientoPedidoLotes
     );
 
-    RadicacionSolicitud cambiarEstado(String identificadorIngreso, Long id, EstadoRadicacion estado, String comentario);
+    RadicacionSolicitud cambiarEstado(
+        String identificadorIngreso,
+        Long id,
+        EstadoRadicacion estado,
+        String comentario,
+        Integer tiempoEstimadoObraMeses,
+        LocalDate fechaPlazo
+    );
 
     void registrarObservacion(String identificadorIngreso, Long id, String comentario);
 
@@ -37,6 +45,8 @@ public interface ServicioRadicacion {
     );
 
     List<RadicacionDocumento> listarDocumentos(String identificadorIngreso, Long id);
+
+    RadicacionDocumento obtenerDocumento(String identificadorIngreso, Long radicacionId, Long docId);
 
     List<RadicacionHistorial> listarHistorial(String identificadorIngreso, Long id);
 }

@@ -16,6 +16,8 @@ public record RespuestaRadicacion(
     Integer etapaActual,
     EstadoRadicacion estado,
     LocalDate fechaRadicacion,
-    LocalDateTime fechaUltimaActualizacion
+    LocalDateTime fechaUltimaActualizacion,
+    Integer tiempoEstimadoObraMeses,
+    LocalDate fechaPlazo
 ) {
 }

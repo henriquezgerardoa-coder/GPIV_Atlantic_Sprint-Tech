@@ -184,7 +184,14 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     }
 
     @Override
-    public RadicacionSolicitud cambiarEstado(String identificadorIngreso, Long id, EstadoRadicacion estado, String comentario) {
+    public RadicacionSolicitud cambiarEstado(
+        String identificadorIngreso,
+        Long id,
+        EstadoRadicacion estado,
+        String comentario,
+        Integer tiempoEstimadoObraMeses,
+        LocalDate fechaPlazo
+    ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El rol EMPRESA no puede cambiar el estado");
@@ -192,7 +199,11 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
 
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, id);
         validarTransicionEstado(radicacion.getEstado(), estado, comentario);
+        if (estado == EstadoRadicacion.APROBADA && fechaPlazo == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de plazo al aprobar una solicitud");
+        }
         radicacion.cambiarEstado(estado);
+        radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estado, comentario, identificadorIngreso));
         return actualizada;
@@ -258,6 +269,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     public List<RadicacionDocumento> listarDocumentos(String identificadorIngreso, Long id) {
         obtenerPorId(identificadorIngreso, id);
         return repositorioRadicacionDocumento.findByRadicacionIdOrderByFechaSubidaDesc(id);
+    }
+
+    @Override
+    public RadicacionDocumento obtenerDocumento(String identificadorIngreso, Long radicacionId, Long docId) {
+        obtenerPorId(identificadorIngreso, radicacionId);
+        return repositorioRadicacionDocumento.findByIdAndRadicacionId(docId, radicacionId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Documento no encontrado"));
     }
 
     @Override

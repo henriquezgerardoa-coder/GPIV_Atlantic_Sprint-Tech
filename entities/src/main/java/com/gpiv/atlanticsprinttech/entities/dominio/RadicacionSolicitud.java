@@ -46,6 +46,24 @@ public class RadicacionSolicitud {
 	@Column(name = "relevamiento_pedido_lotes", length = 12000)
 	private String relevamientoPedidoLotesJson;
 
+	@Column(name = "proyecto_productivo", length = 120)
+	private String proyectoProductivo;
+
+	@Column(name = "rentabilidad_estimada")
+	private Double rentabilidadEstimada;
+
+	@Column(name = "empleados_previstos")
+	private Integer empleadosPrevistos;
+
+	@Column(name = "plan_ambiental", length = 500)
+	private String planAmbiental;
+
+	@Column(name = "tiempo_estimado_obra_meses")
+	private Integer tiempoEstimadoObraMeses;
+
+	@Column(name = "fecha_plazo")
+	private LocalDate fechaPlazo;
+
 	@Column(name = "fecha_radicacion", nullable = false)
 	private LocalDate fechaRadicacion;
 
@@ -122,6 +140,30 @@ public class RadicacionSolicitud {
 		return relevamientoPedidoLotesJson;
 	}
 
+	public String getProyectoProductivo() {
+		return proyectoProductivo;
+	}
+
+	public Double getRentabilidadEstimada() {
+		return rentabilidadEstimada;
+	}
+
+	public Integer getEmpleadosPrevistos() {
+		return empleadosPrevistos;
+	}
+
+	public String getPlanAmbiental() {
+		return planAmbiental;
+	}
+
+	public Integer getTiempoEstimadoObraMeses() {
+		return tiempoEstimadoObraMeses;
+	}
+
+	public LocalDate getFechaPlazo() {
+		return fechaPlazo;
+	}
+
 	public LocalDate getFechaRadicacion() {
 		return fechaRadicacion;
 	}
@@ -136,6 +178,30 @@ public class RadicacionSolicitud {
 
 	public void cambiarEstado(EstadoRadicacion estado) {
 		this.estado = estado;
+	}
+
+	public void establecerDatosProyecto(
+		String proyectoProductivo,
+		Double rentabilidadEstimada,
+		Integer empleadosPrevistos,
+		String planAmbiental
+	) {
+		this.proyectoProductivo = proyectoProductivo;
+		this.rentabilidadEstimada = rentabilidadEstimada;
+		this.empleadosPrevistos = empleadosPrevistos;
+		this.planAmbiental = planAmbiental;
+	}
+
+	public void establecerDatosPlazo(Integer tiempoEstimadoObraMeses, LocalDate fechaPlazo) {
+		this.tiempoEstimadoObraMeses = tiempoEstimadoObraMeses;
+		this.fechaPlazo = fechaPlazo;
+	}
+
+	/** Valida que el CUIT de la empresa cumpla el formato XX-XXXXXXXX-X. */
+	public boolean validarCuit() {
+		String cuit = empresa.getCuit();
+		if (cuit == null || cuit.isBlank()) return false;
+		return cuit.matches("\\d{2}-\\d{8}-\\d");
 	}
 }
 

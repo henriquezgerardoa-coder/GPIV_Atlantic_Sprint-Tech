@@ -95,7 +95,8 @@ public class ControladorLote {
             cuitEmpresa,
             estadoAsignacion,
             fechaAsignacion,
-            lote.getNumeroExpedienteReferencia()
+            lote.getNumeroExpedienteReferencia(),
+            lote.getZona()
         );
     }
 }
