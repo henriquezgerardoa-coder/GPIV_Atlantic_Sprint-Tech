@@ -256,6 +256,9 @@
             </button>
         </div>
 
+        <div id="alertaCambioEstadoEmpresaRad" class="d-none mb-3"></div>
+        <div id="alertaNuevasSolicitudesAdmin" class="d-none mb-3"></div>
+
         <ul class="nav nav-tabs mb-3" id="tabsRadicaciones" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="tab-rad-a" data-bs-toggle="tab" data-bs-target="#panel-rad-a" type="button" role="tab" aria-controls="panel-rad-a" aria-selected="true">A) Solicitud</button>
@@ -540,30 +543,124 @@
             </div>
         </div>
 
-        <!-- Tabla detallada por estado -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0 text-muted"><i class="bi bi-table me-2"></i>Detalle de radicaciones por estado</h6>
+        <!-- Tabs de informes -->
+        <ul class="nav nav-tabs mb-3" id="tabsInformes" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-inf-resumen" data-bs-toggle="tab" data-bs-target="#panel-inf-resumen" type="button" role="tab">Resumen</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-inf-empresas" data-bs-toggle="tab" data-bs-target="#panel-inf-empresas" type="button" role="tab">Por Empresas</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-inf-lotes" data-bs-toggle="tab" data-bs-target="#panel-inf-lotes" type="button" role="tab">Por Lotes</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Panel Resumen -->
+            <div class="tab-pane fade show active" id="panel-inf-resumen" role="tabpanel">
+                <!-- Tabla detallada por estado -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 text-muted"><i class="bi bi-table me-2"></i>Detalle de radicaciones por estado</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Estado</th>
+                                        <th>Cantidad</th>
+                                        <th style="min-width:120px;">Distribución</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaEstadosRadicacion">
+                                    <tr><td colspan="4" class="text-center py-3 text-muted">Sin datos</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3">Estado</th>
-                                <th>Cantidad</th>
-                                <th style="min-width:120px;">Distribución</th>
-                                <th>%</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cuerpoTablaEstadosRadicacion">
-                            <tr><td colspan="4" class="text-center py-3 text-muted">Sin datos</td></tr>
-                        </tbody>
-                    </table>
+
+            <!-- Panel Por Empresas -->
+            <div class="tab-pane fade" id="panel-inf-empresas" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-muted"><i class="bi bi-building me-2"></i>Informe por empresa</h6>
+                        <button class="btn btn-outline-primary btn-sm" onclick="ModuloEstadisticas.abrirInformeEmpresas()">
+                            <i class="bi bi-eye me-1"></i>Ver informe completo
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-0">Lista todas las empresas con sus lotes asignados, estado de expediente y datos de contacto.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Por Lotes -->
+            <div class="tab-pane fade" id="panel-inf-lotes" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-muted"><i class="bi bi-map me-2"></i>Informe por lote</h6>
+                        <button class="btn btn-outline-primary btn-sm" onclick="ModuloEstadisticas.abrirInformeLotes()">
+                            <i class="bi bi-eye me-1"></i>Ver informe completo
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-0">Estado de cada lote: libre, pre-asignado con fecha límite, o asignado con empresa y radicación.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Modal Informe Empresas -->
+    <div class="modal fade modal-xl" id="modalInformeEmpresas" tabindex="-1" aria-labelledby="modalInformeEmpresasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalInformeEmpresasLabel"><i class="bi bi-building me-2"></i>Informe por Empresa</h5>
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="ModuloEstadisticas.imprimirInformeEmpresas()">
+                            <i class="bi bi-printer me-1"></i>Imprimir / PDF
+                        </button>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+                <div class="modal-body" id="cuerpoModalInformeEmpresas">
+                    <div class="text-center py-4">
+                        <span class="spinner-border text-primary"></span>
+                        <p class="text-muted mt-2">Cargando informe...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Informe Lotes -->
+    <div class="modal fade modal-xl" id="modalInformeLotes" tabindex="-1" aria-labelledby="modalInformeLotesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalInformeLotesLabel"><i class="bi bi-map me-2"></i>Informe por Lote</h5>
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="ModuloEstadisticas.imprimirInformeLotes()">
+                            <i class="bi bi-printer me-1"></i>Imprimir / PDF
+                        </button>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+                <div class="modal-body" id="cuerpoModalInformeLotes">
+                    <div class="text-center py-4">
+                        <span class="spinner-border text-primary"></span>
+                        <p class="text-muted mt-2">Cargando informe...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ── SECCIÓN: EMPRESAS ──────────────────────── -->
     <section id="seccion-empresas" class="seccion-contenido d-none">
@@ -572,7 +669,7 @@
                 <h4 class="fw-bold mb-1"><i class="bi bi-building text-primary me-2"></i>Empresas</h4>
                 <p class="text-muted small mb-0">Gestión de empresas registradas en el parque</p>
             </div>
-            <button class="btn btn-primary" onclick="ModuloEmpresas.abrirCreacion()" id="btnNuevaEmpresa">
+            <button class="btn btn-primary d-none" onclick="ModuloEmpresas.abrirCreacion()" id="btnNuevaEmpresa">
                 <i class="bi bi-plus-lg me-1"></i>Nueva empresa
             </button>
         </div>
