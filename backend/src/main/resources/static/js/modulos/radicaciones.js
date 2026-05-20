@@ -12,6 +12,8 @@ const ModuloRadicaciones = (() => {
     const CLAVE_FILTROS_HISTORIAL_RADICACION = 'gpiv.radicaciones.filtros.historial.v1';
     const CLAVE_INDICADOR_RESTAURACION_HISTORIAL = 'gpiv.radicaciones.indicador.restauracion.v1';
     const CLAVE_FECHA_RESTAURACION_HISTORIAL = 'gpiv.radicaciones.indicador.restauracion.fecha.v1';
+    const CLAVE_ESTADOS_VISTOS_EMPRESA = 'gpiv.radicaciones.estados-vistos.v1';
+    const CLAVE_VISTOS_ADMIN = 'gpiv.radicaciones.admin-vistos.v1';
     const ESTADOS_FILTRO_HISTORIAL_VALIDOS = new Set([
         'PENDIENTE',
         'EN_REVISION',
@@ -55,6 +57,7 @@ const ModuloRadicaciones = (() => {
         ajustarVistaEmpresaPostSolicitud();
         renderizarTabla();
         poblarSelectorRadicaciones();
+        mostrarAlertasCambioEstado();
         if (historialRadicacionSeleccionadaId && radicaciones.some(r => r.id === historialRadicacionSeleccionadaId)) {
             await verHistorial(historialRadicacionSeleccionadaId, null, true, true);
         } else {
@@ -72,17 +75,25 @@ const ModuloRadicaciones = (() => {
         }
 
         const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
-        cuerpo.innerHTML = radicaciones.map(r => `
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !esGestor;
+        cuerpo.innerHTML = radicaciones.map(r => {
+            const colorEstado = colorBadgeEstado(r.estado);
+            const accion = esGestor
+                ? `<button class="btn btn-sm btn-outline-dark" onclick="event.stopPropagation(); ModuloRadicaciones.verDetalleAdmin(${r.id})">Detalle</button>`
+                : esEmpresa
+                    ? `<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); ModuloRadicaciones.verDetalleEmpresa(${r.id})">Ver</button>`
+                    : '<span class="text-muted small">-</span>';
+            return `
             <tr role="button" title="Seleccionar expediente" onclick="ModuloRadicaciones.seleccionarExpediente(${r.id}, '${r.numeroRadicado}')">
                 <td class="ps-3 fw-semibold">${r.numeroRadicado}</td>
                 <td>${r.tipoSolicitud}</td>
                 <td>${r.usoEstimativo || '-'}</td>
-                <td><span class="badge bg-secondary">${formatearEstado(r.estado)}</span></td>
+                <td><span class="badge bg-${colorEstado}">${formatearEstado(r.estado)}</span></td>
                 <td>${r.fechaRadicacion || '-'}</td>
                 <td>${(r.fechaUltimaActualizacion || '').replace('T', ' ').slice(0, 16)}</td>
-                <td class="text-center">${esGestor ? `<button class="btn btn-sm btn-outline-dark" onclick="event.stopPropagation(); ModuloRadicaciones.verDetalleAdmin(${r.id})">Detalle</button>` : '<span class="text-muted small">-</span>'}</td>
-            </tr>
-        `).join('');
+                <td class="text-center">${accion}</td>
+            </tr>`;
+        }).join('');
     }
 
 
@@ -392,6 +403,11 @@ const ModuloRadicaciones = (() => {
         radicacionDetalleAdmin = detalle;
         renderizarDetalleAdmin(detalle, documentos, historial);
         contenido?.classList.remove('d-none');
+
+        if (detalle?.estado === 'PENDIENTE') {
+            await autoTransicionarARevision(detalle);
+            await cargar();
+        }
     }
 
     function renderizarDetalleAdmin(detalle, documentos, historial) {
@@ -907,6 +923,241 @@ const ModuloRadicaciones = (() => {
         return m[estado] || estado;
     }
 
+    function colorBadgeEstado(estado) {
+        const m = {
+            PENDIENTE: 'warning text-dark',
+            EN_REVISION: 'info text-dark',
+            APROBADA: 'success',
+            RADICADA: 'primary',
+            RECHAZADA: 'danger',
+            REQUIERE_INFORMACION_ADICIONAL: 'secondary',
+            CANCELADA: 'dark'
+        };
+        return m[estado] || 'secondary';
+    }
+
+    // ─── Alerta de cambios de estado ────────────────────────────────────────────
+
+    function mostrarAlertasCambioEstado() {
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esAdmin = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !esEmpresa;
+        if (esEmpresa) mostrarAlertasCambioEstadoEmpresa();
+        if (esAdmin) mostrarAlertasNuevasSolicitudesAdmin();
+    }
+
+    function mostrarAlertasCambioEstadoEmpresa() {
+        const contenedor = document.getElementById('alertaCambioEstadoEmpresaRad');
+        if (!contenedor) return;
+        let vistos = {};
+        try { vistos = JSON.parse(localStorage.getItem(CLAVE_ESTADOS_VISTOS_EMPRESA) || '{}'); } catch (_) {}
+
+        const cambiados = radicaciones.filter(r => vistos[r.id] && vistos[r.id] !== r.estado);
+        const nuevoMap = {};
+        radicaciones.forEach(r => { nuevoMap[r.id] = r.estado; });
+        localStorage.setItem(CLAVE_ESTADOS_VISTOS_EMPRESA, JSON.stringify(nuevoMap));
+
+        if (cambiados.length === 0) {
+            contenedor.classList.add('d-none');
+            return;
+        }
+        contenedor.innerHTML = cambiados.map(r =>
+            `<div class="alert alert-warning alert-dismissible fade show py-2 mb-1" role="alert">
+                <i class="bi bi-bell-fill me-1"></i>
+                <strong>${r.numeroRadicado}</strong> cambió de estado a
+                <span class="badge bg-${colorBadgeEstado(r.estado)}">${formatearEstado(r.estado)}</span>
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+             </div>`
+        ).join('');
+        contenedor.classList.remove('d-none');
+    }
+
+    function mostrarAlertasNuevasSolicitudesAdmin() {
+        const contenedor = document.getElementById('alertaNuevasSolicitudesAdmin');
+        if (!contenedor) return;
+        let vistos = {};
+        try { vistos = JSON.parse(localStorage.getItem(CLAVE_VISTOS_ADMIN) || '{}'); } catch (_) {}
+
+        const nuevas = radicaciones.filter(r => r.estado === 'PENDIENTE' && !vistos[r.id]);
+        const conDocs = radicaciones.filter(r =>
+            r.estado === 'REQUIERE_INFORMACION_ADICIONAL' && vistos[r.id] === 'REQUIERE_INFORMACION_ADICIONAL_DOC_PENDIENTE');
+
+        if (nuevas.length === 0 && conDocs.length === 0) {
+            contenedor.classList.add('d-none');
+            return;
+        }
+        let html = '';
+        if (nuevas.length > 0) {
+            const nombres = nuevas.map(r => `<strong>${r.numeroRadicado}</strong> (${r.nombreEmpresa || ''})`).join(', ');
+            html += `<div class="alert alert-primary alert-dismissible fade show py-2 mb-1" role="alert">
+                <i class="bi bi-bell-fill me-1"></i>
+                Nueva${nuevas.length > 1 ? 's' : ''} solicitud${nuevas.length > 1 ? 'es' : ''}: ${nombres}
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+             </div>`;
+        }
+        contenedor.innerHTML = html;
+        contenedor.classList.remove('d-none');
+
+        const nuevoMap = {};
+        radicaciones.forEach(r => { nuevoMap[r.id] = r.estado; });
+        localStorage.setItem(CLAVE_VISTOS_ADMIN, JSON.stringify(nuevoMap));
+    }
+
+    // ─── Detalle para rol EMPRESA ────────────────────────────────────────────────
+
+    async function verDetalleEmpresa(id) {
+        const modalEl = asegurarModalDetalleEmpresa();
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        const spinner = document.getElementById('spinnerDetalleEmpresaRad');
+        const contenido = document.getElementById('contenidoDetalleEmpresaRad');
+        spinner?.classList.remove('d-none');
+        contenido?.classList.add('d-none');
+        modal.show();
+
+        const [respDetalle, respDocs, respHist] = await Promise.all([
+            ApiCliente.obtener(`/api/radicaciones/${id}`),
+            ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
+            ApiCliente.obtener(`/api/radicaciones/${id}/historial`)
+        ]);
+        spinner?.classList.add('d-none');
+        if (!respDetalle?.ok) {
+            mostrarAlerta('No se pudo cargar el detalle.', 'danger');
+            modal.hide();
+            return;
+        }
+        const detalle = await respDetalle.json();
+        const documentos = respDocs?.ok ? await respDocs.json() : [];
+        const historial = respHist?.ok ? await respHist.json() : [];
+        renderizarDetalleEmpresa(detalle, documentos, historial);
+        contenido?.classList.remove('d-none');
+    }
+
+    function asegurarModalDetalleEmpresa() {
+        let m = document.getElementById('modalDetalleRadicacionEmpresa');
+        if (m) return m;
+        document.body.insertAdjacentHTML('beforeend', `
+        <div class="modal fade" id="modalDetalleRadicacionEmpresa" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Detalle de mi solicitud</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="spinnerDetalleEmpresaRad" class="text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</div>
+                        <div id="contenidoDetalleEmpresaRad" class="d-none">
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6"><strong>N° expediente:</strong> <span id="detEmpRadNumero">-</span></div>
+                                <div class="col-md-6"><strong>Estado:</strong> <span id="detEmpRadEstadoBadge">-</span></div>
+                                <div class="col-md-6"><strong>Tipo:</strong> <span id="detEmpRadTipo">-</span></div>
+                                <div class="col-md-6"><strong>Fecha:</strong> <span id="detEmpRadFecha">-</span></div>
+                                <div class="col-12"><strong>Descripción:</strong> <span id="detEmpRadDescripcion">-</span></div>
+                                <div class="col-md-6 d-none" id="wrapperDetEmpRadPlazo"><strong>Fecha plazo aprobación:</strong> <span id="detEmpRadFechaPlazo">-</span></div>
+                                <div class="col-md-6 d-none" id="wrapperDetEmpRadMeses"><strong>Tiempo estimado obra:</strong> <span id="detEmpRadMeses">-</span></div>
+                            </div>
+                            <div id="alertaRequiereDocEmpresa" class="alert alert-warning d-none">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                <strong>Se requiere documentación adicional.</strong>
+                                <button class="btn btn-warning btn-sm ms-2" onclick="ModuloRadicaciones.abrirSubirDocDesdeDetalle()">
+                                    <i class="bi bi-upload me-1"></i>Adjuntar documentación
+                                </button>
+                            </div>
+                            <h6 class="text-muted mt-2">Documentos adjuntos</h6>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Tipo</th><th>Archivo</th><th>Fecha</th><th></th></tr></thead>
+                                    <tbody id="cuerpoDocumentosDetalleEmpresaRad"><tr><td colspan="4" class="text-muted">Sin documentos</td></tr></tbody>
+                                </table>
+                            </div>
+                            <h6 class="text-muted">Historial</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Fecha</th><th>Estado</th><th>Observación</th></tr></thead>
+                                    <tbody id="cuerpoHistorialDetalleEmpresaRad"><tr><td colspan="3" class="text-muted">Sin historial</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>`);
+        return document.getElementById('modalDetalleRadicacionEmpresa');
+    }
+
+    function renderizarDetalleEmpresa(detalle, documentos, historial) {
+        document.getElementById('detEmpRadNumero').textContent = detalle?.numeroRadicado || '-';
+        const badgeEl = document.getElementById('detEmpRadEstadoBadge');
+        if (badgeEl) badgeEl.innerHTML = `<span class="badge bg-${colorBadgeEstado(detalle?.estado)}">${formatearEstado(detalle?.estado)}</span>`;
+        document.getElementById('detEmpRadTipo').textContent = detalle?.tipoSolicitud || '-';
+        document.getElementById('detEmpRadFecha').textContent = detalle?.fechaRadicacion || '-';
+        document.getElementById('detEmpRadDescripcion').textContent = detalle?.descripcion || '-';
+
+        const wPlazo = document.getElementById('wrapperDetEmpRadPlazo');
+        const wMeses = document.getElementById('wrapperDetEmpRadMeses');
+        if (detalle?.fechaPlazo) {
+            document.getElementById('detEmpRadFechaPlazo').textContent = detalle.fechaPlazo;
+            wPlazo?.classList.remove('d-none');
+        } else { wPlazo?.classList.add('d-none'); }
+        if (detalle?.tiempoEstimadoObraMeses) {
+            document.getElementById('detEmpRadMeses').textContent = `${detalle.tiempoEstimadoObraMeses} meses`;
+            wMeses?.classList.remove('d-none');
+        } else { wMeses?.classList.add('d-none'); }
+
+        const alertaDoc = document.getElementById('alertaRequiereDocEmpresa');
+        if (alertaDoc) {
+            const requiere = detalle?.estado === 'REQUIERE_INFORMACION_ADICIONAL';
+            alertaDoc.classList.toggle('d-none', !requiere);
+            if (requiere) {
+                alertaDoc.dataset.radicacionId = detalle?.id;
+            }
+        }
+
+        const cuerpoDocs = document.getElementById('cuerpoDocumentosDetalleEmpresaRad');
+        if (cuerpoDocs) {
+            cuerpoDocs.innerHTML = documentos?.length
+                ? documentos.map(d => `<tr>
+                    <td>${d.tipoDocumento || '-'}</td>
+                    <td>${d.nombreArchivo || '-'}</td>
+                    <td>${formatearFechaEvento(d.fechaSubida)}</td>
+                    <td><a href="/api/radicaciones/${detalle.id}/documentos/${d.id}/descargar" class="btn btn-outline-secondary btn-sm" target="_blank" download><i class="bi bi-download"></i></a></td>
+                </tr>`).join('')
+                : '<tr><td colspan="4" class="text-muted">Sin documentos</td></tr>';
+        }
+
+        const cuerpoHist = document.getElementById('cuerpoHistorialDetalleEmpresaRad');
+        if (cuerpoHist) {
+            cuerpoHist.innerHTML = historial?.length
+                ? historial.map(h => `<tr>
+                    <td>${formatearFechaEvento(h.fechaEvento)}</td>
+                    <td><span class="badge bg-${colorBadgeEstado(h.estado)}">${formatearEstado(h.estado)}</span></td>
+                    <td>${h.comentario || '-'}</td>
+                </tr>`).join('')
+                : '<tr><td colspan="3" class="text-muted">Sin historial</td></tr>';
+        }
+    }
+
+    function abrirSubirDocDesdeDetalle() {
+        bootstrap.Modal.getInstance(document.getElementById('modalDetalleRadicacionEmpresa'))?.hide();
+        const tabD = document.getElementById('tab-rad-d');
+        if (tabD && window.bootstrap?.Tab) {
+            window.bootstrap.Tab.getOrCreateInstance(tabD).show();
+        }
+        mostrarAlerta('Complete el formulario para adjuntar documentación a su solicitud.', 'info');
+    }
+
+    // ─── Auto-transición PENDIENTE → EN_REVISION al abrir (ADMIN) ──────────────
+
+    async function autoTransicionarARevision(detalle) {
+        if (detalle?.estado !== 'PENDIENTE') return;
+        const comentario = 'Solicitud abierta por administración — pasa automáticamente a revisión';
+        await ApiCliente.parche(`/api/radicaciones/${detalle.id}/estado`, {
+            estado: 'EN_REVISION',
+            comentario
+        });
+    }
+
     return {
         cargar,
         crear,
@@ -920,7 +1171,10 @@ const ModuloRadicaciones = (() => {
         toggleCamposPlazo,
         guardarBorradorAhora,
         descartarBorrador,
-        abrirModalNuevaSolicitud
+        abrirModalNuevaSolicitud,
+        verDetalleEmpresa,
+        abrirSubirDocDesdeDetalle,
+        mostrarAlertasCambioEstado
     };
 })();
 

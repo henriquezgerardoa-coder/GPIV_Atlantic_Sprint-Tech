@@ -2,6 +2,9 @@ package com.gpiv.atlanticsprinttech.backend.controlador;
 
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +31,24 @@ public class ControladorEstadisticas {
     @GetMapping("/resumen")
     public RespuestaEstadisticas obtenerResumen() {
         return servicioEstadisticas.obtenerResumen();
+    }
+
+    /**
+     * Informe por empresa con lotes asignados y estado del expediente.
+     * GET /api/estadisticas/informes/empresas
+     */
+    @GetMapping("/informes/empresas")
+    public List<RespuestaInformeEmpresa> informeEmpresas() {
+        return servicioEstadisticas.obtenerInformeEmpresas();
+    }
+
+    /**
+     * Informe por lotes con estado de asignación y detalles de empresa.
+     * GET /api/estadisticas/informes/lotes
+     */
+    @GetMapping("/informes/lotes")
+    public List<RespuestaInformeLote> informeLotes() {
+        return servicioEstadisticas.obtenerInformeLotes();
     }
 }
 
