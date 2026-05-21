@@ -208,17 +208,13 @@ const ModuloEmpresas = (() => {
 
     function renderizarPanelEmpresaPropia(emp) {
         setTexto('empNombrePropio', emp.nombre || '-');
+        setTexto('empRazonSocialPropio', emp.razonSocial || '-');
         setTexto('empCuitPropio', emp.cuit || '-');
-        setTexto('empStatusPropio', emp.status || '-');
+        setTexto('empNitPropio', emp.nit || '-');
         setTexto('empActividadPropia', emp.actividadEconomica || '-');
         setTexto('empDireccionPropia', emp.direccion || '-');
         setTexto('empCorreoPropio', emp.correoElectronico || '-');
         setTexto('empTelefonoPropio', emp.telefono || '-');
-        const badge = document.getElementById('empStatusBadgePropio');
-        if (badge) {
-            badge.textContent = emp.status || '-';
-            badge.className = `badge ${emp.status === 'ACTIVA' ? 'bg-success' : 'bg-secondary'}`;
-        }
     }
 
     function actualizarIndicadoresEmpresaPropia() {
