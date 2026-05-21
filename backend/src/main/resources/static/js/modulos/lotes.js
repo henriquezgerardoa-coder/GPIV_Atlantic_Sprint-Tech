@@ -123,6 +123,7 @@ const ModuloLotes = (() => {
         document.getElementById('campoSuperficieLote').value         = lote.superficieMetrosCuadrados;
         document.getElementById('campoOcupadoLote').checked          = lote.ocupado;
         document.getElementById('selectorEmpresaLote').value         = lote.empresaId ?? '';
+        document.getElementById('selectorZonaLote').value            = lote.zona || '';
         document.getElementById('selectorEstadoAsignacionLote').value = lote.estadoAsignacion || '';
         document.getElementById('campoExpedienteReferenciaLote').value = lote.numeroExpedienteReferencia || '';
         ocultarAlertaModal('alertaModalLote');
@@ -190,6 +191,7 @@ const ModuloLotes = (() => {
             superficieMetrosCuadrados: superficie,
             ocupado:                  document.getElementById('campoOcupadoLote').checked,
             empresaId,
+            zona:                     document.getElementById('selectorZonaLote').value || null,
             estadoAsignacion:         document.getElementById('selectorEstadoAsignacionLote').value || null,
             numeroExpedienteReferencia: document.getElementById('campoExpedienteReferenciaLote').value.trim() || null
         };

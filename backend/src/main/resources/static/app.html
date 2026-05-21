@@ -1082,8 +1082,11 @@
                         <div class="col-md-4"><strong>Estado actual:</strong> <span id="detRadEstado">-</span></div>
                         <div class="col-md-4"><strong>Fecha creación:</strong> <span id="detRadFechaCreacion">-</span></div>
                         <div class="col-md-4"><strong>Última modificación:</strong> <span id="detRadFechaModificacion">-</span></div>
-                        <div class="col-md-4 d-none" id="wrapperDetRadTiempoObra"><strong>Tiempo estimado obra:</strong> <span id="detRadTiempoObra">-</span></div>
-                        <div class="col-md-4 d-none" id="wrapperDetRadFechaPlazo"><strong>Fecha plazo:</strong> <span id="detRadFechaPlazo">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadFechaAprobacion"><strong>Fecha de aprobación:</strong> <span id="detRadFechaAprobacion">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadTiempoSolicitado"><strong>Tiempo radicación solicitado:</strong> <span id="detRadTiempoSolicitado">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadFechaVencimientoSolicitada"><strong>Vencimiento solicitado:</strong> <span id="detRadFechaVencimientoSolicitada">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadTiempoObra"><strong>Tiempo estimado obra (admin):</strong> <span id="detRadTiempoObra">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadFechaPlazo"><strong>Fecha plazo (admin):</strong> <span id="detRadFechaPlazo">-</span></div>
                     </div>
 
                     <div class="card border-0 bg-light mb-3">
@@ -1263,6 +1266,14 @@
                             <input class="form-check-input" type="checkbox" id="campoOcupadoLote">
                             <label class="form-check-label fw-semibold" for="campoOcupadoLote">Lote ocupado</label>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="selectorZonaLote" class="form-label fw-semibold">Zona</label>
+                        <select class="form-select" id="selectorZonaLote">
+                            <option value="">Sin zona</option>
+                            <option value="PARQUE_VIEJO">Parque Viejo</option>
+                            <option value="PARQUE_NUEVO">Parque Nuevo</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="selectorEstadoAsignacionLote" class="form-label fw-semibold">Estado de asignación</label>

@@ -1,5 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDocumentoRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaHistorialRadicacion;
@@ -36,9 +38,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class ControladorRadicacion {
 
     private final ServicioRadicacion servicioRadicacion;
+    private final ObjectMapper objectMapper;
 
-    public ControladorRadicacion(ServicioRadicacion servicioRadicacion) {
+    public ControladorRadicacion(ServicioRadicacion servicioRadicacion, ObjectMapper objectMapper) {
         this.servicioRadicacion = servicioRadicacion;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping
@@ -160,8 +164,21 @@ public class ControladorRadicacion {
             radicacion.getFechaRadicacion(),
             radicacion.getFechaUltimaActualizacion(),
             radicacion.getTiempoEstimadoObraMeses(),
-            radicacion.getFechaPlazo()
+            radicacion.getFechaPlazo(),
+            radicacion.getFechaAprobacion(),
+            extraerTiempoSolicitadoMeses(radicacion.getRelevamientoPedidoLotesJson())
         );
+    }
+
+    private Integer extraerTiempoSolicitadoMeses(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            JsonNode nodo = objectMapper.readTree(json);
+            JsonNode campo = nodo.get("tiempoRadicacionMeses");
+            return (campo != null && !campo.isNull()) ? campo.asInt() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private Integer obtenerEtapaActual(EstadoRadicacion estado) {

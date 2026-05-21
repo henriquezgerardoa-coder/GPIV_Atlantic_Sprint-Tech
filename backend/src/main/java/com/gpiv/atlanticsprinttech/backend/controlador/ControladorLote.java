@@ -50,6 +50,7 @@ public class ControladorLote {
             solicitud.empresaId(),
             solicitud.estadoAsignacion(),
             solicitud.numeroExpedienteReferencia(),
+            solicitud.zona(),
             autenticacion.getName()
         );
         return ResponseEntity.created(URI.create("/api/lotes/" + loteCreado.getId()))
@@ -66,6 +67,7 @@ public class ControladorLote {
             solicitud.empresaId(),
             solicitud.estadoAsignacion(),
             solicitud.numeroExpedienteReferencia(),
+            solicitud.zona(),
             autenticacion.getName()
         );
         return crearRespuesta(loteActualizado);

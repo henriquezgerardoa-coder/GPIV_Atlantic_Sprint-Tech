@@ -528,10 +528,11 @@ const ModuloEmpresas = (() => {
                 <td>${e.cuit}</td>
                 <td>${e.correoElectronico}</td>
                 <td class="text-center">
+                    <button class="btn btn-sm btn-outline-secondary me-1" title="Detalle" onclick="ModuloEmpresas.verDetalleAdmin(${e.id})"><i class="bi bi-eye"></i></button>
                     ${puedeEditar ? `
                     <button class="btn btn-sm btn-outline-primary me-1" title="Editar" onclick="ModuloEmpresas.abrirEdicion(${e.id})"><i class="bi bi-pencil"></i></button>
                     ${puedeEliminar ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="ModuloEmpresas.confirmarEliminacion(${e.id}, '${e.nombre.replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
-                    ` : '<span class="text-muted small">Sin permisos</span>'}
+                    ` : ''}
                 </td>
             </tr>`).join('');
     }

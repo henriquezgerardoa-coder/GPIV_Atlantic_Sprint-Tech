@@ -22,7 +22,10 @@ public record SolicitudLote(
     String estadoAsignacion,
 
     @Size(max = 40, message = "El numero de expediente no puede superar 40 caracteres")
-    String numeroExpedienteReferencia
+    String numeroExpedienteReferencia,
+
+    @Size(max = 20, message = "La zona no puede superar 20 caracteres")
+    String zona
 ) {
 }
 
