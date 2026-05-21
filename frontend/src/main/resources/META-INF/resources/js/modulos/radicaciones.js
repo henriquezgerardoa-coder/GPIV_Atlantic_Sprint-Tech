@@ -240,19 +240,17 @@ const ModuloRadicaciones = (() => {
     }
 
     function ajustarVistaRadicacionesPorRol() {
-        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
-        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']) && !esEmpresa;
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !esEmpresa;
         const tabA = document.getElementById('tab-rad-a')?.closest('.nav-item');
         const tabD = document.getElementById('tab-rad-d')?.closest('.nav-item');
 
         if (esGestor) {
-            // Solicitud es exclusiva de EMPRESA.
+            // Solicitud y documentación son exclusivas de EMPRESA.
             tabA?.classList.add('d-none');
-
-            // Documentación (HU-05) habilitada para EMPRESA, ADMIN y SECRETARIO.
-            const puedeAdjuntar = Autenticacion.tieneAcceso(['EMPRESA', 'ADMINISTRADOR', 'SECRETARIO']);
-            tabD?.classList.toggle('d-none', !puedeAdjuntar);
-
+            tabD?.classList.add('d-none');
+            document.getElementById('btnNuevaSolicitudRad')?.classList.add('d-none');
+            document.getElementById('btnNuevaSolicitudRadListado')?.classList.add('d-none');
             const tabB = document.getElementById('tab-rad-b');
             if (tabB && window.bootstrap?.Tab) {
                 window.bootstrap.Tab.getOrCreateInstance(tabB).show();
@@ -263,6 +261,14 @@ const ModuloRadicaciones = (() => {
         // Para EMPRESA se mantiene el comportamiento normal.
         tabA?.classList.remove('d-none');
         tabD?.classList.remove('d-none');
+        document.getElementById('btnNuevaSolicitudRad')?.classList.remove('d-none');
+        document.getElementById('btnNuevaSolicitudRadListado')?.classList.remove('d-none');
+    }
+
+    function abrirModalNuevaSolicitud() {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('modalNuevaSolicitudRadicacion')
+        ).show();
     }
 
     async function crear() {
@@ -432,13 +438,8 @@ const ModuloRadicaciones = (() => {
                         <td>${d.tipoDocumento || '-'}</td>
                         <td>${d.nombreArchivo || '-'}</td>
                         <td>${formatearFechaEvento(d.fechaSubida)}</td>
-                        <td class="text-end">
-                            <a href="/api/radicaciones/${detalle.id}/documentos/${d.id}" target="_blank" class="btn btn-sm btn-link text-decoration-none">
-                                <i class="bi bi-file-earmark-pdf"></i> Ver
-                            </a>
-                        </td>
                     </tr>`).join('')
-                : '<tr><td colspan="4" class="text-muted">Sin documentos</td></tr>';
+                : '<tr><td colspan="3" class="text-muted">Sin documentos</td></tr>';
         }
 
         const cuerpoHist = document.getElementById('cuerpoHistorialDetalleRadAdmin');
@@ -1014,7 +1015,8 @@ const ModuloRadicaciones = (() => {
         mostrarFormAsignacionLote,
         confirmarAsignacionLote,
         guardarBorradorAhora,
-        descartarBorrador
+        descartarBorrador,
+        abrirModalNuevaSolicitud
     };
 })();
 

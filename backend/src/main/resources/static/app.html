@@ -706,11 +706,17 @@
                             <h5 class="fw-bold mb-1" id="empNombrePropio">-</h5>
                             <span class="badge" id="empStatusBadgePropio">-</span>
                         </div>
-                        <button class="btn btn-outline-secondary btn-sm" id="btnServiciosPostRadicacion"
-                                onclick="ModuloEmpresas.abrirServiciosModal()"
-                                disabled title="Disponible cuando su radicación alcance el estado Radicada">
-                            <i class="bi bi-tools me-1"></i>Servicios post-radicación
-                        </button>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-outline-primary btn-sm"
+                                    onclick="ModuloEmpresas.editarEmpresaPropia()">
+                                <i class="bi bi-pencil me-1"></i>Editar datos
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btnServiciosPostRadicacion"
+                                    onclick="ModuloEmpresas.abrirServiciosModal()"
+                                    disabled title="Disponible cuando su radicación alcance el estado Radicada">
+                                <i class="bi bi-tools me-1"></i>Servicios post-radicación
+                            </button>
+                        </div>
                     </div>
                     <div class="row g-2 text-muted small">
                         <div class="col-md-4">
