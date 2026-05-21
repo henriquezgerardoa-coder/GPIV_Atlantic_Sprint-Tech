@@ -69,6 +69,7 @@ public class ServicioLoteImpl implements ServicioLote {
         Long empresaId,
         String estadoAsignacion,
         String numeroExpedienteReferencia,
+        String zona,
         String identificadorIngreso
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
@@ -78,7 +79,7 @@ public class ServicioLoteImpl implements ServicioLote {
         }
         Empresa empresa = obtenerEmpresaOpcional(empresaObjetivo);
         validarCodigoDisponible(empresaObjetivo, codigo, null);
-        Lote lote = Lote.crear(codigo, superficieMetrosCuadrados, ocupado, empresa);
+        Lote lote = Lote.crear(codigo, superficieMetrosCuadrados, ocupado, empresa, normalizarTexto(zona));
         lote.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
         Lote guardado = repositorioLote.save(lote);
         servicioAuditLog.registrarEvento(
@@ -100,6 +101,7 @@ public class ServicioLoteImpl implements ServicioLote {
         Long empresaId,
         String estadoAsignacion,
         String numeroExpedienteReferencia,
+        String zona,
         String identificadorIngreso
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
@@ -111,7 +113,7 @@ public class ServicioLoteImpl implements ServicioLote {
         }
         Empresa empresa = obtenerEmpresaOpcional(empresaObjetivo);
         validarCodigoDisponible(empresaObjetivo, codigo, loteActual);
-        loteActual.actualizarDatos(codigo, superficieMetrosCuadrados, ocupado, empresa);
+        loteActual.actualizarDatos(codigo, superficieMetrosCuadrados, ocupado, empresa, normalizarTexto(zona));
         loteActual.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
         Lote guardado = repositorioLote.save(loteActual);
         servicioAuditLog.registrarEvento(

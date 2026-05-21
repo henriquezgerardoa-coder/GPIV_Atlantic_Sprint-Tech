@@ -418,8 +418,34 @@ const ModuloRadicaciones = (() => {
         setTexto('detRadFechaCreacion', detalle?.fechaRadicacion || '-');
         setTexto('detRadFechaModificacion', formatearFechaEvento(detalle?.fechaUltimaActualizacion));
 
+        const wrapperAprobacion = document.getElementById('wrapperDetRadFechaAprobacion');
+        const wrapperTiempoSolicitado = document.getElementById('wrapperDetRadTiempoSolicitado');
+        const wrapperVencimientoSolicitada = document.getElementById('wrapperDetRadFechaVencimientoSolicitada');
         const wrapperObra = document.getElementById('wrapperDetRadTiempoObra');
         const wrapperPlazo = document.getElementById('wrapperDetRadFechaPlazo');
+
+        if (detalle?.fechaAprobacion) {
+            setTexto('detRadFechaAprobacion', detalle.fechaAprobacion);
+            wrapperAprobacion?.classList.remove('d-none');
+        } else {
+            wrapperAprobacion?.classList.add('d-none');
+        }
+
+        if (detalle?.tiempoSolicitadoMeses) {
+            setTexto('detRadTiempoSolicitado', `${detalle.tiempoSolicitadoMeses} meses`);
+            wrapperTiempoSolicitado?.classList.remove('d-none');
+            if (detalle?.fechaAprobacion) {
+                const fechaVenc = calcularFechaVencimiento(detalle.fechaAprobacion, detalle.tiempoSolicitadoMeses);
+                setTexto('detRadFechaVencimientoSolicitada', fechaVenc);
+                wrapperVencimientoSolicitada?.classList.remove('d-none');
+            } else {
+                wrapperVencimientoSolicitada?.classList.add('d-none');
+            }
+        } else {
+            wrapperTiempoSolicitado?.classList.add('d-none');
+            wrapperVencimientoSolicitada?.classList.add('d-none');
+        }
+
         if (detalle?.tiempoEstimadoObraMeses) {
             setTexto('detRadTiempoObra', `${detalle.tiempoEstimadoObraMeses} meses`);
             wrapperObra?.classList.remove('d-none');
@@ -569,6 +595,13 @@ const ModuloRadicaciones = (() => {
     function setTexto(id, texto) {
         const el = document.getElementById(id);
         if (el) el.textContent = texto || '-';
+    }
+
+    function calcularFechaVencimiento(fechaBase, meses) {
+        if (!fechaBase || !meses) return '-';
+        const d = new Date(fechaBase + 'T00:00:00');
+        d.setMonth(d.getMonth() + meses);
+        return d.toISOString().slice(0, 10);
     }
 
     function irADocumentacion(idRadicacion) {

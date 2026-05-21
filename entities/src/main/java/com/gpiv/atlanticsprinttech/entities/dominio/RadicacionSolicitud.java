@@ -64,6 +64,9 @@ public class RadicacionSolicitud {
 	@Column(name = "fecha_plazo")
 	private LocalDate fechaPlazo;
 
+	@Column(name = "fecha_aprobacion")
+	private LocalDate fechaAprobacion;
+
 	@Column(name = "fecha_radicacion", nullable = false)
 	private LocalDate fechaRadicacion;
 
@@ -178,6 +181,13 @@ public class RadicacionSolicitud {
 
 	public void cambiarEstado(EstadoRadicacion estado) {
 		this.estado = estado;
+		if (estado == EstadoRadicacion.APROBADA && this.fechaAprobacion == null) {
+			this.fechaAprobacion = LocalDate.now();
+		}
+	}
+
+	public LocalDate getFechaAprobacion() {
+		return fechaAprobacion;
 	}
 
 	public void establecerDatosProyecto(

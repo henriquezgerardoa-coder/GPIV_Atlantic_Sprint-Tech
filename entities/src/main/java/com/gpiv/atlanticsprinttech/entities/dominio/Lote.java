@@ -53,15 +53,16 @@ public class Lote {
     protected Lote() {
     }
 
-    private Lote(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa) {
+    private Lote(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa, String zona) {
         this.codigo = codigo;
         this.superficieMetrosCuadrados = superficieMetrosCuadrados;
         this.ocupado = ocupado;
         this.empresa = empresa;
+        this.zona = zona;
     }
 
-    public static Lote crear(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa) {
-        return new Lote(codigo, superficieMetrosCuadrados, ocupado, empresa);
+    public static Lote crear(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa, String zona) {
+        return new Lote(codigo, superficieMetrosCuadrados, ocupado, empresa, zona);
     }
 
     public Long getId() {
@@ -104,11 +105,12 @@ public class Lote {
         return !ocupado && empresa == null && estadoAsignacion == null;
     }
 
-    public void actualizarDatos(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa) {
+    public void actualizarDatos(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa, String zona) {
         this.codigo = codigo;
         this.superficieMetrosCuadrados = superficieMetrosCuadrados;
         this.ocupado = ocupado;
         this.empresa = empresa;
+        this.zona = zona;
 
         if (this.empresa == null) {
             this.fechaAsignacion = null;

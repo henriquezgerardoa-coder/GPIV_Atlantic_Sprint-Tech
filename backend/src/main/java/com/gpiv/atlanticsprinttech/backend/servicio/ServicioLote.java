@@ -16,6 +16,7 @@ public interface ServicioLote {
         Long empresaId,
         String estadoAsignacion,
         String numeroExpedienteReferencia,
+        String zona,
         String identificadorIngreso
     );
 
@@ -27,6 +28,7 @@ public interface ServicioLote {
         Long empresaId,
         String estadoAsignacion,
         String numeroExpedienteReferencia,
+        String zona,
         String identificadorIngreso
     );
 

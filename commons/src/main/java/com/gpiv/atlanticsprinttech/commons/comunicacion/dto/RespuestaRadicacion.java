@@ -18,6 +18,8 @@ public record RespuestaRadicacion(
     LocalDate fechaRadicacion,
     LocalDateTime fechaUltimaActualizacion,
     Integer tiempoEstimadoObraMeses,
-    LocalDate fechaPlazo
+    LocalDate fechaPlazo,
+    LocalDate fechaAprobacion,
+    Integer tiempoSolicitadoMeses
 ) {
 }
