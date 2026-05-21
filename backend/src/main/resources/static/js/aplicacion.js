@@ -5,41 +5,61 @@
 const ConfiguracionInicial = (() => {
     let _empresaSeleccionadaId = null;
     let _modal = null;
+    let _todasLasEmpresas = [];
 
     function mostrar() {
         _modal = new bootstrap.Modal(document.getElementById('modalConfiguracionInicial'));
         _modal.show();
-        document.getElementById('campoBusquedaEmpresaCI')
-            .addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); buscarEmpresa(); } });
+        document.getElementById('tabsConfigInicial').addEventListener('shown.bs.tab', e => {
+            if (e.target.dataset.bsTarget === '#panel-empresa-existente-ci') {
+                _cargarEmpresas();
+            }
+        });
     }
 
-    async function buscarEmpresa() {
-        const q = document.getElementById('campoBusquedaEmpresaCI').value.trim();
-        if (!q) return;
+    async function _cargarEmpresas() {
+        _empresaSeleccionadaId = null;
+        _todasLasEmpresas = [];
+        document.getElementById('campoBusquedaEmpresaCI').value = '';
         const contenedor = document.getElementById('resultadosBusquedaEmpresaCI');
-        contenedor.innerHTML = '<p class="text-muted small text-center"><span class="spinner-border spinner-border-sm me-2"></span>Buscando...</p>';
-        const respuesta = await ApiCliente.obtener('/api/empresas/buscar?q=' + encodeURIComponent(q));
+        contenedor.innerHTML = '<p class="text-muted small text-center"><span class="spinner-border spinner-border-sm me-2"></span>Cargando empresas...</p>';
+        const respuesta = await ApiCliente.obtener('/api/empresas');
         if (!respuesta?.ok) {
-            contenedor.innerHTML = '<p class="text-danger small">Error al buscar. Intente nuevamente.</p>';
+            contenedor.innerHTML = '<p class="text-danger small">Error al cargar las empresas. Intente nuevamente.</p>';
             return;
         }
-        const empresas = await respuesta.json();
+        _todasLasEmpresas = await respuesta.json();
+        _renderizarEmpresas(_todasLasEmpresas);
+    }
+
+    function _renderizarEmpresas(empresas) {
+        const contenedor = document.getElementById('resultadosBusquedaEmpresaCI');
         if (!empresas.length) {
-            contenedor.innerHTML = '<p class="text-muted small text-center">No se encontraron empresas con ese criterio.</p>';
+            contenedor.innerHTML = '<p class="text-muted small text-center">No hay empresas registradas.</p>';
             return;
         }
         contenedor.innerHTML = '<div class="list-group">' + empresas.map(e => `
-            <div class="list-group-item d-flex justify-content-between align-items-center" id="itemEmpresaCI-${e.id}">
+            <div class="list-group-item d-flex justify-content-between align-items-center${_empresaSeleccionadaId === e.id ? ' active' : ''}" id="itemEmpresaCI-${e.id}">
                 <div>
                     <strong>${e.nombre}</strong>
                     <small class="d-block text-muted">${e.razonSocial} — CUIT: ${e.cuit}</small>
                 </div>
                 <button type="button" class="btn btn-outline-primary btn-sm flex-shrink-0 ms-2"
-                        onclick="ConfiguracionInicial.seleccionarEmpresa(${e.id}, '${e.nombre.replace(/'/g, "\\'")}')">
+                        onclick="ConfiguracionInicial.seleccionarEmpresa(${e.id})">
                     Seleccionar
                 </button>
             </div>`).join('') + '</div>';
-        _empresaSeleccionadaId = null;
+    }
+
+    function filtrarEmpresas() {
+        const q = document.getElementById('campoBusquedaEmpresaCI').value.trim().toLowerCase();
+        const filtradas = q
+            ? _todasLasEmpresas.filter(e =>
+                e.nombre.toLowerCase().includes(q) ||
+                e.razonSocial.toLowerCase().includes(q) ||
+                e.cuit.toLowerCase().includes(q))
+            : _todasLasEmpresas;
+        _renderizarEmpresas(filtradas);
     }
 
     function seleccionarEmpresa(id) {
@@ -91,7 +111,7 @@ const ConfiguracionInicial = (() => {
 
     async function _vincularEmpresaExistente() {
         if (!_empresaSeleccionadaId) {
-            mostrarAlertaModal('alertaConfiguracionInicial', 'Seleccioná una empresa de los resultados de búsqueda.');
+            mostrarAlertaModal('alertaConfiguracionInicial', 'Seleccioná una empresa de la lista.');
             return;
         }
         const btn = document.getElementById('btnConfirmarConfiguracionInicial');
@@ -118,7 +138,7 @@ const ConfiguracionInicial = (() => {
         navegarA('empresas');
     }
 
-    return { mostrar, buscarEmpresa, seleccionarEmpresa, confirmar };
+    return { mostrar, filtrarEmpresas, seleccionarEmpresa, confirmar };
 })();
 
 /* ═══════════════════════════════════════════════════
