@@ -249,6 +249,8 @@ const ModuloRadicaciones = (() => {
             // Solicitud y documentación son exclusivas de EMPRESA.
             tabA?.classList.add('d-none');
             tabD?.classList.add('d-none');
+            document.getElementById('btnNuevaSolicitudRad')?.classList.add('d-none');
+            document.getElementById('btnNuevaSolicitudRadListado')?.classList.add('d-none');
             const tabB = document.getElementById('tab-rad-b');
             if (tabB && window.bootstrap?.Tab) {
                 window.bootstrap.Tab.getOrCreateInstance(tabB).show();
@@ -259,6 +261,14 @@ const ModuloRadicaciones = (() => {
         // Para EMPRESA se mantiene el comportamiento normal.
         tabA?.classList.remove('d-none');
         tabD?.classList.remove('d-none');
+        document.getElementById('btnNuevaSolicitudRad')?.classList.remove('d-none');
+        document.getElementById('btnNuevaSolicitudRadListado')?.classList.remove('d-none');
+    }
+
+    function abrirModalNuevaSolicitud() {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('modalNuevaSolicitudRadicacion')
+        ).show();
     }
 
     async function crear() {
@@ -1005,7 +1015,8 @@ const ModuloRadicaciones = (() => {
         mostrarFormAsignacionLote,
         confirmarAsignacionLote,
         guardarBorradorAhora,
-        descartarBorrador
+        descartarBorrador,
+        abrirModalNuevaSolicitud
     };
 })();
 
