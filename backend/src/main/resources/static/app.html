@@ -1552,6 +1552,102 @@
     </div>
 </div>
 
+<!-- Modal: Configuración inicial (primer ingreso EMPRESA sin empresa) -->
+<div class="modal fade" id="modalConfiguracionInicial" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false"
+     aria-labelledby="tituloModalConfigInicial" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="tituloModalConfigInicial">
+                    <i class="bi bi-building-add me-2"></i>Configuración inicial — Datos de empresa
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">
+                    Para continuar, asociá tu cuenta a una empresa. Podés registrar una nueva o vincular una ya existente.
+                </p>
+                <div id="alertaConfiguracionInicial" class="alert alert-danger alerta-modal d-none mb-3"></div>
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3" id="tabsConfigInicial" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab"
+                                data-bs-target="#panel-nueva-empresa-ci" type="button" role="tab">
+                            <i class="bi bi-plus-circle me-1"></i>Nueva empresa
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab"
+                                data-bs-target="#panel-empresa-existente-ci" type="button" role="tab">
+                            <i class="bi bi-search me-1"></i>Empresa existente
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab: Nueva empresa -->
+                    <div class="tab-pane fade show active" id="panel-nueva-empresa-ci" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Nombre comercial <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="ciNombre" placeholder="Ej: Metalúrgica del Sur">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Razón social <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="ciRazonSocial" placeholder="Ej: Metalúrgica del Sur S.R.L.">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">CUIT <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="ciCuit" placeholder="Ej: 30-12345678-9">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">NIT <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="ciNit" placeholder="Número de identificación tributaria">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-semibold">Actividad económica <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="ciActividad" placeholder="Ej: Fabricación de productos metálicos">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-semibold">Dirección <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" id="ciDireccion" placeholder="Calle, número, ciudad">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control form-control-sm" id="ciCorreo" placeholder="empresa@dominio.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Teléfono</label>
+                                <input type="text" class="form-control form-control-sm" id="ciTelefono" placeholder="Opcional">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Empresa existente -->
+                    <div class="tab-pane fade" id="panel-empresa-existente-ci" role="tabpanel">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control form-control-sm" id="campoBusquedaEmpresaCI"
+                                   placeholder="Buscar por nombre, razón social o CUIT...">
+                            <button class="btn btn-outline-secondary btn-sm" type="button"
+                                    onclick="ConfiguracionInicial.buscarEmpresa()">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <div id="resultadosBusquedaEmpresaCI" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnConfirmarConfiguracionInicial"
+                        onclick="ConfiguracionInicial.confirmar()">
+                    <i class="bi bi-check-lg me-1"></i>Confirmar y continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ══════════════════════════════════════════════════
      SCRIPTS
 ══════════════════════════════════════════════════ -->
@@ -1563,6 +1659,7 @@
 <script src="js/modulos/radicaciones.js"></script>
 <script src="js/modulos/estadisticas.js"></script>
 <script src="js/modulos/usuarios.js"></script>
+<script src="js/modulos/audit-log.js"></script>
 <script src="js/aplicacion.js"></script>
 </body>
 </html>
