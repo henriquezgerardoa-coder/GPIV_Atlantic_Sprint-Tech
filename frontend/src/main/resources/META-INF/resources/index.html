@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="img/favicon.png">
     <link rel="shortcut icon" href="img/favicon.ico">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/estilos.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 </head>
 <body>
@@ -19,9 +19,9 @@
         <span class="logo-texto">ENREPAVI</span>
     </div>
     <div class="nav-links">
-        <a href="#nosotros">Nosotros</a>
-        <a class="btn-outline" href="/ingreso.html" data-auth-modal="/ingreso.html">Acceso Usuario</a>
-        <a class="btn-filled" href="/registro.html" data-auth-modal="/registro.html">Crear Cuenta</a>
+        <a href="#nosotros" class="nav-enlace-simple">Nosotros</a>
+        <a class="btn-glass btn-sm" href="/ingreso.html" data-auth-modal="/ingreso.html">Acceso Usuario</a>
+        <a class="btn-solid btn-sm" href="/registro.html" data-auth-modal="/registro.html">Crear Cuenta</a>
     </div>
 </nav>
 
@@ -31,9 +31,12 @@
         <h1>Potencia tu<br><span>Emprendimiento</span></h1>
         <p>Infraestructura de vanguardia y ubicación estratégica<br><span>para el crecimiento de tu empresa.</p>
         <div class="hero-btns">
-            <a class="btn-main" href="/registro.html" data-auth-modal="/registro.html">Iniciar Radicación</a>
-            <a class="btn-outline-white" href="/ingreso.html" data-auth-modal="/ingreso.html">Acceso Usuario</a>
-            <a class="btn-outline-white" href="/registro.html" data-auth-modal="/registro.html">Crear Cuenta</a>
+            <a class="btn-solid btn-lg" href="/registro.html" data-auth-modal="/registro.html">
+                <i></i>Iniciar Radicación
+            </a>
+            <a class="btn-glass btn-lg" href="/ingreso.html" data-auth-modal="/ingreso.html">
+                Conocer Requisitos
+            </a>
         </div>
     </div>
 </header>
@@ -50,22 +53,73 @@
 </div>
 
 <section id="nosotros" class="nosotros">
-    <h2>Nosotros</h2>
-    <p>ENREPAVI - Ente para la Reconversión del Parque Industrial<br><span><br><span>Somos el organismo rector encargado de planificar, desarrollar y gestionar el parque industrial de la ciudad.<br><span><br><span>Nuestro objetivo principal es fomentar la inversión, la radicación de industrias y mejorar la infraestructura logística.<br><span><br><span>Buscamos modernizar el parque hacia un perfil más logístico y de servicios, preparándonos para el cambio económico regional.<span></p>
+    <div class="container-nosotros">
+        <div class="nosotros-principal">
+            <div class="nosotros-texto">
+                <span class="subtitulo-seccion">NUESTRA IDENTIDAD</span>
+                <h2>¿Qué es ENREPAVI?</h2>
+                <p class="texto-destacado">
+                    Ente para la Reconversión del Parque Industrial de Viedma.
+                </p>
+                <p>
+                    Somos el organismo rector encargado de planificar, desarrollar y gestionar de manera estratégica el espacio industrial de nuestra ciudad.
+                    Trabajamos activamente para fomentar la inversión privada, potenciar la radicación de industrias clave y optimizar la infraestructura existente.
+                </p>
+                <p>
+                    Nuestra visión está enfocada en la modernización constante, transformando el parque hacia un perfil logístico y tecnológico avanzado, preparado para liderar los cambios económicos de la región.
+                </p>
+            </div>
+
+            <div class="nosotros-badge-industrial">
+                <div class="badge-contenido">
+                    <i class="bi bi-building-check"></i>
+                    <h3>Infraestructura para el Desarrollo</h3>
+                    <p>Un espacio planificado estratégicamente en Viedma para la expansión de tu empresa.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="nosotros-pilares">
+            <div class="pilar-card">
+                <div class="pilar-icono"><i class="bi bi-graph-up-arrow"></i></div>
+                <h4>Fomento de Inversión</h4>
+                <p>Creamos condiciones óptimas y atractivas para la radicación de capitales locales y nacionales.</p>
+            </div>
+
+            <div class="pilar-card">
+                <div class="pilar-icono"><i class="bi bi-truck"></i></div>
+                <h4>Perfil Logístico</h4>
+                <p>Modernizamos los accesos y servicios para convertir el parque en un nodo logístico regional clave.</p>
+            </div>
+
+            <div class="pilar-card">
+                <div class="pilar-icono"><i class="bi bi-lightning-charge"></i></div>
+                <h4>Infraestructura</h4>
+                <p>Planificamos y mejoramos los servicios esenciales para optimizar el rendimiento de tu planta.</p>
+            </div>
+        </div>
+    </div>
 </section>
 
 <footer class="footer-contacto">
-    <div class="footer-info">
-        <span><i class="bi bi-geo-alt-fill"></i> Ruta 1 S/N Ex Tomatera, Viedma, Río Negro</span>
-        <span><i class="bi bi-telephone-fill"></i> (02920) 433087</span>
+    <div class="footer-principal">
+        <div class="footer-info">
+            <span><i class="bi bi-geo-alt-fill"></i> Ruta 1 S/N Ex Tomatera, Viedma, Río Negro</span>
+            <span><i class="bi bi-telephone-fill"></i> (02920) 433087</span>
+        </div>
+
+        <div class="footer-redes">
+            <a href="https://www.instagram.com/enrepavi?igsh=MWVoZm5ha3c2NHRkZQ==" target="_blank" rel="noopener" aria-label="Instagram ENREPAVI">
+                <i class="bi bi-instagram"></i>
+            </a>
+            <a href="https://www.facebook.com/share/1avtMJBanM/" target="_blank" rel="noopener" aria-label="Facebook ENREPAVI">
+                <i class="bi bi-facebook"></i>
+            </a>
+        </div>
     </div>
-    <div class="footer-redes">
-        <a href="https://www.instagram.com/enrepavi?igsh=MWVoZm5ha3c2NHRkZQ==" target="_blank" rel="noopener" aria-label="Instagram ENREPAVI">
-            <i class="bi bi-instagram"></i>
-        </a>
-        <a href="https://www.facebook.com/share/1avtMJBanM/" target="_blank" rel="noopener" aria-label="Facebook ENREPAVI">
-            <i class="bi bi-facebook"></i>
-        </a>
+
+    <div class="footer-inferior">
+        <p>&copy; 2026 ENREPAVI. Todos los derechos reservados. Plataforma de Gestión del Parque Industrial de Viedma.</p>
     </div>
 </footer>
 

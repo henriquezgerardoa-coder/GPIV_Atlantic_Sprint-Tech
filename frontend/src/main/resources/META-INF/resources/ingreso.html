@@ -10,17 +10,17 @@
 </head>
 <body class="pagina-ingreso min-vh-100 d-flex align-items-center">
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-11 col-sm-9 col-md-6 col-lg-4">
+<div class="container iframe-form-container">
+    <div class="row justify-content-center w-100 m-0">
+        <div class="col-12 p-0">
 
-            <div class="text-center mb-4">
+            <div class="text-center mb-4 d-none d-md-block">
                 <img src="img/logo.png" alt="Logo ENREPAVI" class="img-fluid mb-2" style="max-height: 200px;">
                 <p class="text-white-50 mb-3 fs-5">Ente para la Reconversión del Parque Industial de Viedma</p>
             </div>
 
-            <div class="card border-0 shadow-lg rounded-4">
-                <div class="card-body p-5">
+            <div class="card border-0">
+                <div class="card-body">
                     <h5 class="text-center text-muted mb-4">Iniciar Sesión</h5>
 
                     <div id="mensajeContexto" class="alert d-none" role="status" aria-live="polite"></div>
@@ -43,7 +43,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="claveAcceso" class="form-label fw-semibold">Contraseña</label>
+                            <label for="claveAccesso" class="form-label fw-semibold">Contraseña</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">
                                     <i class="bi bi-lock text-muted"></i>
@@ -68,7 +68,7 @@
     </div>
 </div>
 
-<footer class="footer-auth mt-4">
+<footer class="footer-auth mt-4 d-none d-md-block">
     <div class="footer-auth__info">
         <span><i class="bi bi-geo-alt-fill"></i> Ruta 1 S/N Ex Tomatera, Viedma, Río Negro</span>
         <span><i class="bi bi-telephone-fill"></i> (02920) 433087</span>
@@ -83,7 +83,7 @@
     </div>
 </footer>
 
-<p class="text-center text-white-50 mt-2 mb-3 small">
+<p class="text-center text-white-50 mt-2 mb-3 small d-none d-md-block">
     Atlantic Sprint-Tech &copy; 2026
 </p>
 
@@ -92,4 +92,3 @@
 <script src="js/ingreso.js"></script>
 </body>
 </html>
-
