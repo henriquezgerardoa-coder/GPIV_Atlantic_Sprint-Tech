@@ -27,7 +27,7 @@ const ApiCliente = (() => {
         });
         if (respuesta.status === 401) {
             sessionStorage.clear();
-            window.location.href = '/index.html';
+            window.location.href = '/ingreso.html';
             return null;
         }
         return respuesta;
@@ -46,4 +46,3 @@ const ApiCliente = (() => {
         })
     };
 })();
-

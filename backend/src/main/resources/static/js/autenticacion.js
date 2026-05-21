@@ -37,4 +37,3 @@ const Autenticacion = (() => {
 
     return { obtenerSesion, cerrarSesion, esAdministrador, tieneRol, tieneAcceso, verificarYRedirigir };
 })();
-

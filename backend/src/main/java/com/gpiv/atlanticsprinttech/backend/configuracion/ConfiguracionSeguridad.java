@@ -26,8 +26,8 @@ public class ConfiguracionSeguridad {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(autorizacion -> autorizacion
-                .requestMatchers("/", "/index.html", "/app.html", "/css/**", "/js/**",
-                    "/registro.html", "/verificar.html", "/favicon.ico", "/error").permitAll()
+                .requestMatchers("/", "/index.html", "/ingreso.html", "/app.html", "/css/**", "/js/**",
+                    "/img/**", "/registro.html", "/verificar.html", "/favicon.ico", "/error").permitAll()
                 .requestMatchers("/salud", "/health").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/public/registro").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/public/verificacion").permitAll()

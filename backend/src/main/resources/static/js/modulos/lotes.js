@@ -5,9 +5,10 @@ const ModuloLotes = (() => {
     let idEdicion   = null;
 
     const ETIQUETA_ESTADO_ASIGNACION = {
-        RESERVADO: 'Reservado',
-        PREADJUDICADO: 'Preadjudicado',
-        ADJUDICADO_RADICADA: 'Adjudicado-radicada'
+        DISPONIBLE:                'Libre',
+        PREADJUDICADO_A_SOLICITUD: 'Preadjudicado a solicitud',
+        ASIGNADO_A_EMPRESA:        'Asignado a empresa',
+        ADJUDICADO_RADICADA:       'Adjudicado - Radicada'
     };
 
     const ETIQUETA_ZONA = {
@@ -15,55 +16,73 @@ const ModuloLotes = (() => {
         PARQUE_NUEVO: 'Parque Nuevo'
     };
 
-    function formatearZona(zona) {
-        return ETIQUETA_ZONA[zona] || zona || '-';
-    }
-
     async function cargar() {
         const [respLotes, respEmpresas] = await Promise.all([
-            ApiCliente.obtener('/api/lotes'),
+            ApiCliente.obtener('/api/lotes?tamanio=500'),
             ApiCliente.obtener('/api/empresas')
         ]);
         if (!respLotes?.ok) { mostrarAlerta('Error al cargar lotes.', 'danger'); return; }
-        lotes    = await respLotes.json();
+        const lotesData = await respLotes.json();
+        lotes    = lotesData.contenido ?? lotesData;
         empresas = respEmpresas?.ok ? await respEmpresas.json() : [];
         poblarSelectorEmpresa();
-        poblarFiltroSuperficie();
+        resetearFiltros();
         renderizarTabla();
     }
 
     function poblarSelectorEmpresa() {
         const selector = document.getElementById('selectorEmpresaLote');
         if (!selector) return;
-        selector.innerHTML = '<option value="">-- Seleccione empresa --</option>' +
+        selector.innerHTML = '<option value="" selected>Sin asignar</option>' +
             empresas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
     }
 
-    function poblarFiltroSuperficie() {
-        const filtro = document.getElementById('filtroSuperficieLote');
-        if (!filtro) return;
-        const superficies = [...new Set(lotes.map(l => l.superficieMetrosCuadrados))].sort((a, b) => a - b);
-        const valorActual = filtro.value;
-        filtro.innerHTML = '<option value="">Todas</option>' +
-            superficies.map(s => `<option value="${s}">${s.toLocaleString('es-AR')} m²</option>`).join('');
-        filtro.value = valorActual;
+    function resetearFiltros() {
+        ['filtroZonaLote', 'filtroSuperficieLote', 'filtroEstadoOcupacionLote'].forEach(grupoId => {
+            const grupo = document.getElementById(grupoId);
+            if (!grupo) return;
+            grupo.querySelectorAll('button').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === 0);
+            });
+        });
+    }
+
+    function leerFiltroActivo(grupoId, attr) {
+        const grupo = document.getElementById(grupoId);
+        if (!grupo) return '';
+        const activo = grupo.querySelector('button.active');
+        return activo ? (activo.dataset[attr] ?? '') : '';
+    }
+
+    function filtrar(boton) {
+        if (boton) {
+            boton.closest('.btn-group').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            boton.classList.add('active');
+        }
+        renderizarTabla();
     }
 
     function renderizarTabla() {
         const cuerpo = document.getElementById('cuerpoTablaLotes');
         if (!cuerpo) return;
 
-        const filtroZona       = document.getElementById('filtroZonaLote')?.value || '';
-        const filtroSuperficie = document.getElementById('filtroSuperficieLote')?.value || '';
-        const filtroEstado     = document.getElementById('filtroEstadoLote')?.value || '';
+        const zona      = leerFiltroActivo('filtroZonaLote', 'zona');
+        const sup       = leerFiltroActivo('filtroSuperficieLote', 'sup');
+        const ocupacion = leerFiltroActivo('filtroEstadoOcupacionLote', 'ocupacion');
 
-        let filtrados = lotes;
-        if (filtroZona)       filtrados = filtrados.filter(l => l.zona === filtroZona);
-        if (filtroSuperficie) filtrados = filtrados.filter(l => l.superficieMetrosCuadrados === parseFloat(filtroSuperficie));
-        if (filtroEstado)     filtrados = filtrados.filter(l => filtroEstado === 'ocupado' ? l.ocupado : !l.ocupado);
+        let filtrados = lotes.filter(l => {
+            if (zona && l.zona !== zona) return false;
+            if (sup && l.superficieMetrosCuadrados !== parseFloat(sup)) return false;
+            if (ocupacion === 'libre'   &&  l.ocupado) return false;
+            if (ocupacion === 'ocupado' && !l.ocupado) return false;
+            return true;
+        });
 
-        const badge = document.getElementById('badgeTotalLotesFiltrados');
-        if (badge) badge.textContent = `${filtrados.length} lotes`;
+        const badge = document.getElementById('badgeLotesFiltrados');
+        if (badge) {
+            const hayFiltro = zona || sup || ocupacion;
+            badge.textContent = hayFiltro ? `${filtrados.length} de ${lotes.length}` : `Total: ${lotes.length}`;
+        }
 
         if (filtrados.length === 0) {
             cuerpo.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin lotes para los filtros seleccionados</td></tr>';
@@ -75,8 +94,11 @@ const ModuloLotes = (() => {
             <tr>
                 <td class="text-muted">${l.id}</td>
                 <td class="fw-semibold">${l.codigo}</td>
-                <td><span class="badge text-bg-light border">${formatearZona(l.zona)}</span></td>
-                <td>${l.nombreEmpresa || 'Sin asignar'}</td>
+                <td>${l.zona ? `<span class="badge text-bg-light border">${ETIQUETA_ZONA[l.zona] ?? l.zona}</span>` : '<span class="text-muted">—</span>'}</td>
+                <td>${l.empresaId
+                    ? `<span class="fw-semibold">${l.nombreEmpresa}</span>`
+                    : '<span class="text-muted fst-italic"><i class="bi bi-dash-circle me-1"></i>Sin asignar</span>'
+                }</td>
                 <td>${l.superficieMetrosCuadrados.toLocaleString('es-AR')} m²</td>
                 <td class="text-center">
                     <span class="badge rounded-pill ${l.ocupado ? 'bg-danger' : 'bg-success'}">
@@ -97,12 +119,10 @@ const ModuloLotes = (() => {
                     <button class="btn btn-sm btn-outline-danger" title="Eliminar"
                             onclick="ModuloLotes.confirmarEliminacion(${l.id}, '${l.codigo.replace(/'/g, "\\'")}')">
                         <i class="bi bi-trash"></i>
-                    </button>` : ''}
+                    </button>` : '<span class="text-muted small">Sin permisos</span>'}
                 </td>
             </tr>`).join('');
     }
-
-    function filtrar() { renderizarTabla(); }
 
     function abrirCreacion() {
         modoEdicion = false;
@@ -118,14 +138,14 @@ const ModuloLotes = (() => {
         if (!lote) return;
         modoEdicion = true;
         idEdicion   = id;
-        document.getElementById('tituloModalLote').textContent        = 'Editar lote';
-        document.getElementById('campoCodigoLote').value             = lote.codigo;
-        document.getElementById('campoSuperficieLote').value         = lote.superficieMetrosCuadrados;
-        document.getElementById('campoOcupadoLote').checked          = lote.ocupado;
-        document.getElementById('selectorEmpresaLote').value         = lote.empresaId ?? '';
-        document.getElementById('selectorZonaLote').value            = lote.zona || '';
-        document.getElementById('selectorEstadoAsignacionLote').value = lote.estadoAsignacion || '';
-        document.getElementById('campoExpedienteReferenciaLote').value = lote.numeroExpedienteReferencia || '';
+        document.getElementById('tituloModalLote').textContent              = 'Editar lote';
+        document.getElementById('campoCodigoLote').value                    = lote.codigo;
+        document.getElementById('campoSuperficieLote').value                = lote.superficieMetrosCuadrados;
+        document.getElementById('campoOcupadoLote').checked                 = lote.ocupado;
+        document.getElementById('selectorEmpresaLote').value                = lote.empresaId ?? '';
+        document.getElementById('selectorEstadoAsignacionLote').value       = lote.estadoAsignacion || '';
+        document.getElementById('campoExpedienteReferenciaLote').value      = lote.numeroExpedienteReferencia || '';
+        document.getElementById('selectorZonaLote').value                   = lote.zona || '';
         ocultarAlertaModal('alertaModalLote');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalLote')).show();
     }
@@ -139,19 +159,14 @@ const ModuloLotes = (() => {
         const contenido = document.getElementById('contenidoDetalleLote');
 
         if (estadoCarga) estadoCarga.classList.remove('d-none');
-        if (error) {
-            error.classList.add('d-none');
-            error.textContent = '';
-        }
+        if (error) { error.classList.add('d-none'); error.textContent = ''; }
         if (contenido) contenido.classList.add('d-none');
 
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
 
         try {
             const respuesta = await ApiCliente.obtener(`/api/lotes/${id}`);
-            if (!respuesta?.ok) {
-                throw new Error('No se pudo cargar el detalle del lote.');
-            }
+            if (!respuesta?.ok) throw new Error('No se pudo cargar el detalle del lote.');
             const detalle = await respuesta.json();
             renderizarDetalle(detalle);
             if (contenido) contenido.classList.remove('d-none');
@@ -169,16 +184,18 @@ const ModuloLotes = (() => {
         const estado = detalle?.estadoAsignacion || '';
         const textoEstado = ETIQUETA_ESTADO_ASIGNACION[estado] || 'Sin estado';
 
-        document.getElementById('detLoteCodigo').textContent = detalle?.codigo || '-';
-        document.getElementById('detLoteZona').textContent = formatearZona(detalle?.zona);
+        document.getElementById('detLoteCodigo').textContent     = detalle?.codigo || '-';
         document.getElementById('detLoteSuperficie').textContent = `${(detalle?.superficieMetrosCuadrados || 0).toLocaleString('es-AR')} m²`;
-        document.getElementById('detLoteOcupado').textContent = detalle?.ocupado ? 'Ocupado' : 'Libre';
+        document.getElementById('detLoteOcupado').textContent    = detalle?.ocupado ? 'Ocupado' : 'Libre';
+        document.getElementById('detLoteZona').textContent       = (detalle?.zona && ETIQUETA_ZONA[detalle.zona]) || '-';
 
-        document.getElementById('detLoteEmpresa').textContent = detalle?.nombreEmpresa || 'Sin asignar';
-        document.getElementById('detLoteEmpresaCuit').textContent = detalle?.cuitEmpresa || '-';
-        document.getElementById('detLoteFechaAsignacion').textContent = detalle?.fechaAsignacion || '-';
+        document.getElementById('detLoteEmpresa').innerHTML = detalle?.empresaId
+            ? `<span class="fw-semibold">${detalle.nombreEmpresa}</span>`
+            : '<span class="text-muted fst-italic"><i class="bi bi-dash-circle me-1"></i>Sin asignar</span>';
+        document.getElementById('detLoteEmpresaCuit').textContent      = detalle?.cuitEmpresa || '-';
+        document.getElementById('detLoteFechaAsignacion').textContent  = detalle?.fechaAsignacion || '-';
         document.getElementById('detLoteEstadoAsignacion').textContent = textoEstado;
-        document.getElementById('detLoteExpediente').textContent = detalle?.numeroExpedienteReferencia || '-';
+        document.getElementById('detLoteExpediente').textContent       = detalle?.numeroExpedienteReferencia || '-';
     }
 
     async function guardar() {
@@ -187,13 +204,13 @@ const ModuloLotes = (() => {
         const superficie = parseFloat(document.getElementById('campoSuperficieLote').value);
 
         const datos = {
-            codigo:                   document.getElementById('campoCodigoLote').value.trim(),
-            superficieMetrosCuadrados: superficie,
-            ocupado:                  document.getElementById('campoOcupadoLote').checked,
+            codigo:                     document.getElementById('campoCodigoLote').value.trim(),
+            superficieMetrosCuadrados:  superficie,
+            ocupado:                    document.getElementById('campoOcupadoLote').checked,
             empresaId,
-            zona:                     document.getElementById('selectorZonaLote').value || null,
-            estadoAsignacion:         document.getElementById('selectorEstadoAsignacionLote').value || null,
-            numeroExpedienteReferencia: document.getElementById('campoExpedienteReferenciaLote').value.trim() || null
+            estadoAsignacion:           document.getElementById('selectorEstadoAsignacionLote').value || null,
+            numeroExpedienteReferencia: document.getElementById('campoExpedienteReferenciaLote').value.trim() || null,
+            zona:                       document.getElementById('selectorZonaLote').value || null
         };
 
         if (!datos.codigo || isNaN(superficie) || superficie <= 0) {
@@ -235,4 +252,3 @@ const ModuloLotes = (() => {
 
     return { cargar, filtrar, abrirCreacion, abrirEdicion, abrirDetalle, guardar, confirmarEliminacion, eliminar };
 })();
-

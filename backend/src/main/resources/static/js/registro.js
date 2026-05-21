@@ -1,6 +1,7 @@
 const formularioRegistro = document.getElementById('formularioRegistro');
 const formularioReenvio = document.getElementById('formularioReenvio');
 const mensajeRegistro = document.getElementById('mensajeRegistro');
+const campoNombreUsuario = document.getElementById('nombreUsuario');
 const campoCorreo = document.getElementById('correoElectronico');
 const campoClave = document.getElementById('clave');
 const campoConfirmacion = document.getElementById('confirmacionClave');
@@ -18,6 +19,7 @@ const panelPostRegistro = document.getElementById('panelPostRegistro');
 const enlaceIngresoRegistro = document.getElementById('enlaceIngresoRegistro');
 
 const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const regexNombreUsuario = /^[a-zA-Z0-9._-]{3,60}$/;
 const regexClave = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/;
 
 function mostrarMensaje(texto, tipo) {
@@ -31,9 +33,10 @@ function limpiarMensaje() {
     mensajeRegistro.classList.add('d-none');
 }
 
-function mostrarPanelPostRegistro(correoElectronico) {
+function mostrarPanelPostRegistro(correoElectronico, nombreUsuario) {
     panelPostRegistro.classList.remove('d-none');
-    enlaceIngresoRegistro.href = '/index.html?registro=ok&correo=' + encodeURIComponent(correoElectronico);
+    enlaceIngresoRegistro.href = '/ingreso.html?registro=ok&usuario=' + encodeURIComponent(nombreUsuario)
+        + '&correo=' + encodeURIComponent(correoElectronico);
 }
 
 function ocultarPanelPostRegistro() {
@@ -69,7 +72,7 @@ async function manejarRespuesta(respuesta) {
         return mensajeServidor;
     }
     if (respuesta.status === 409) {
-        return 'Ese correo ya se encuentra registrado.';
+        return 'El nombre de usuario o correo ya se encuentra registrado.';
     }
     if (respuesta.status === 429) {
         return 'Demasiados intentos. Intenta nuevamente en unos minutos.';
@@ -139,6 +142,13 @@ function validarCorreo() {
     return valido;
 }
 
+function validarNombreUsuario() {
+    const valor = campoNombreUsuario.value.trim();
+    const valido = regexNombreUsuario.test(valor);
+    marcarCampo(campoNombreUsuario, valido);
+    return valido;
+}
+
 function validarClave() {
     const valor = campoClave.value;
     actualizarFortalezaClave(valor);
@@ -159,6 +169,7 @@ function alternarVisibilidad(campo, boton) {
     boton.innerHTML = `<i class="bi ${esPassword ? 'bi-eye-slash' : 'bi-eye'}"></i>`;
 }
 
+campoNombreUsuario.addEventListener('blur', validarNombreUsuario);
 campoCorreo.addEventListener('blur', validarCorreo);
 campoClave.addEventListener('input', () => {
     validarClave();
@@ -177,7 +188,11 @@ botonToggleConfirmacion.addEventListener('click', () => alternarVisibilidad(camp
 
 (() => {
     const parametros = new URLSearchParams(window.location.search);
+    const usuario = parametros.get('usuario');
     const correo = parametros.get('correo');
+    if (usuario && regexNombreUsuario.test(usuario)) {
+        campoNombreUsuario.value = usuario;
+    }
     if (correo && regexCorreo.test(correo)) {
         campoCorreo.value = correo;
         campoCorreoReenvio.value = correo;
@@ -189,16 +204,18 @@ actualizarFortalezaClave('');
 formularioRegistro.addEventListener('submit', async (evento) => {
     evento.preventDefault();
 
+    const nombreUsuario = campoNombreUsuario.value.trim();
     const correoElectronico = campoCorreo.value.trim();
     const clave = campoClave.value;
     const confirmacionClave = campoConfirmacion.value;
     const btnRegistrar = document.getElementById('btnRegistrar');
 
+    const nombreUsuarioValido = validarNombreUsuario();
     const correoValido = validarCorreo();
     const claveValida = validarClave();
     const confirmacionValida = validarConfirmacion();
 
-    if (!correoValido || !claveValida || !confirmacionValida) {
+    if (!nombreUsuarioValido || !correoValido || !claveValida || !confirmacionValida) {
         ocultarPanelPostRegistro();
         mostrarMensaje('Revisa los campos marcados para continuar.', 'warning');
         return;
@@ -212,18 +229,18 @@ formularioRegistro.addEventListener('submit', async (evento) => {
         const respuesta = await fetch('/api/public/registro', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ correoElectronico, clave, confirmacionClave })
+            body: JSON.stringify({ nombreUsuario, correoElectronico, clave, confirmacionClave })
         });
 
         const mensaje = await manejarRespuesta(respuesta);
         if (respuesta.ok) {
             formularioRegistro.reset();
-            [campoCorreo, campoClave, campoConfirmacion].forEach((campo) => {
+            [campoNombreUsuario, campoCorreo, campoClave, campoConfirmacion].forEach((campo) => {
                 campo.classList.remove('is-valid', 'is-invalid');
             });
             campoCorreoReenvio.value = correoElectronico;
             actualizarFortalezaClave('');
-            mostrarPanelPostRegistro(correoElectronico);
+            mostrarPanelPostRegistro(correoElectronico, nombreUsuario);
             mostrarMensaje(mensaje, 'success');
             return;
         }
@@ -264,7 +281,7 @@ formularioReenvio.addEventListener('submit', async (evento) => {
         });
         const mensaje = await manejarRespuesta(respuesta);
         if (respuesta.ok) {
-            mostrarPanelPostRegistro(correoElectronico);
+            mostrarPanelPostRegistro(correoElectronico, campoNombreUsuario.value.trim());
         }
         mostrarMensaje(mensaje, respuesta.ok ? 'success' : 'warning');
     } catch (_) {
@@ -274,4 +291,3 @@ formularioReenvio.addEventListener('submit', async (evento) => {
         btnReenviar.textContent = 'Reenviar';
     }
 });
-
