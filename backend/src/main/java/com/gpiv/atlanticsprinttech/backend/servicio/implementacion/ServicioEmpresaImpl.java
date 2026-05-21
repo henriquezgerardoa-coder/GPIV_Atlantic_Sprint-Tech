@@ -4,8 +4,12 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaServiciosPostRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaDetalleAdmin;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaListadoAdmin;
@@ -34,6 +38,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
 	private final RepositorioUsuario repositorioUsuario;
 	private final ServicioContextoUsuario servicioContextoUsuario;
+	private final ServicioAuditLog servicioAuditLog;
 	private final ObjectMapper objectMapper;
 
 	public ServicioEmpresaImpl(
@@ -42,6 +47,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
 		RepositorioUsuario repositorioUsuario,
 		ServicioContextoUsuario servicioContextoUsuario,
+		ServicioAuditLog servicioAuditLog,
 		ObjectMapper objectMapper
 	) {
 		this.repositorioEmpresa = repositorioEmpresa;
@@ -49,6 +55,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
 		this.repositorioUsuario = repositorioUsuario;
 		this.servicioContextoUsuario = servicioContextoUsuario;
+		this.servicioAuditLog = servicioAuditLog;
 		this.objectMapper = objectMapper;
 	}
 	@Override
@@ -86,6 +93,13 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			usuario.actualizarEmpresa(guardada);
 			repositorioUsuario.save(usuario);
 		}
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "CREACION_EMPRESA", "Empresa",
+			guardada.getCuit(),
+			null,
+			guardada.getNombre() + " | CUIT=" + guardada.getCuit(),
+			obtenerIpActual()
+		);
 		return guardada;
 	}
 	@Override
@@ -107,6 +121,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		Empresa empresaActual = obtenerPorIdInterno(id);
 		validarCuitDisponible(empresa.getCuit(), empresaActual.getCuit());
 		validarNitDisponible(empresa.getNit(), empresaActual.getNit());
+		String anteriorDatos = empresaActual.getNombre() + " | CUIT=" + empresaActual.getCuit();
 		empresaActual.actualizarDatos(
 			empresa.getNombre(),
 			empresa.getRazonSocial(),
@@ -117,7 +132,15 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getCorreoElectronico(),
 			empresa.getTelefono()
 		);
-		return repositorioEmpresa.save(empresaActual);
+		Empresa guardada = repositorioEmpresa.save(empresaActual);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "ACTUALIZACION_EMPRESA", "Empresa",
+			guardada.getCuit(),
+			anteriorDatos,
+			guardada.getNombre() + " | CUIT=" + guardada.getCuit(),
+			obtenerIpActual()
+		);
+		return guardada;
 	}
 	@Override
 	public void eliminar(Long id, String identificadorIngreso) {
@@ -130,7 +153,16 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		if (repositorioLote.existsByEmpresaId(id)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar la empresa porque tiene lotes asociados");
 		}
+		String datosEmpresa = empresaActual.getNombre() + " | CUIT=" + empresaActual.getCuit();
+		String cuit = empresaActual.getCuit();
 		repositorioEmpresa.delete(empresaActual);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "ELIMINACION_EMPRESA", "Empresa",
+			cuit,
+			datosEmpresa,
+			null,
+			obtenerIpActual()
+		);
 	}
 
 	@Override
@@ -212,13 +244,32 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		validarVehiculos(vehiculos);
 
 		Empresa empresa = obtenerPorIdInterno(empresaId);
+		List<RespuestaVehiculoEmpresa> vehiculosAnteriores = leerVehiculos(empresa.getVehiculosAsignadosJson());
+		String anteriorServicios = "empleados=" + empresa.getCantidadEmpleados() + " | vehiculos=" + vehiculosAnteriores.size();
 		empresa.actualizarServiciosPostRadicacion(solicitud.cantidadEmpleados(), serializarVehiculos(vehiculos));
 		Empresa guardada = repositorioEmpresa.save(empresa);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "ACTUALIZACION_SERVICIOS_EMPRESA", "Empresa",
+			guardada.getCuit(),
+			anteriorServicios,
+			"empleados=" + guardada.getCantidadEmpleados() + " | vehiculos=" + vehiculos.size(),
+			obtenerIpActual()
+		);
 		return new RespuestaServiciosPostRadicacion(
 			guardada.getId(),
 			guardada.getCantidadEmpleados(),
 			leerVehiculos(guardada.getVehiculosAsignadosJson())
 		);
+	}
+
+	private String obtenerIpActual() {
+		var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		if (attrs == null) return "desconocida";
+		HttpServletRequest request = attrs.getRequest();
+		String forwarded = request.getHeader("X-Forwarded-For");
+		return (forwarded != null && !forwarded.isBlank())
+			? forwarded.split(",")[0].trim()
+			: request.getRemoteAddr();
 	}
 
 	private Empresa obtenerPorIdInterno(Long id) {

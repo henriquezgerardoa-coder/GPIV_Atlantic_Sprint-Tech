@@ -2,16 +2,20 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -21,15 +25,18 @@ public class ServicioLoteImpl implements ServicioLote {
     private final RepositorioLote repositorioLote;
     private final RepositorioEmpresa repositorioEmpresa;
     private final ServicioContextoUsuario servicioContextoUsuario;
+    private final ServicioAuditLog servicioAuditLog;
 
     public ServicioLoteImpl(
         RepositorioLote repositorioLote,
         RepositorioEmpresa repositorioEmpresa,
-        ServicioContextoUsuario servicioContextoUsuario
+        ServicioContextoUsuario servicioContextoUsuario,
+        ServicioAuditLog servicioAuditLog
     ) {
         this.repositorioLote = repositorioLote;
         this.repositorioEmpresa = repositorioEmpresa;
         this.servicioContextoUsuario = servicioContextoUsuario;
+        this.servicioAuditLog = servicioAuditLog;
     }
 
     @Override
@@ -74,6 +81,13 @@ public class ServicioLoteImpl implements ServicioLote {
         Lote lote = Lote.crear(codigo, superficieMetrosCuadrados, ocupado, empresa);
         lote.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
         Lote guardado = repositorioLote.save(lote);
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "CREACION_LOTE", "Lote",
+            guardado.getCodigo(),
+            null,
+            guardado.getCodigo() + " | " + guardado.getSuperficieMetrosCuadrados() + "m2 | ocupado=" + guardado.isOcupado(),
+            obtenerIpActual()
+        );
         return repositorioLote.findByIdConEmpresa(guardado.getId()).orElse(guardado);
     }
 
@@ -90,6 +104,7 @@ public class ServicioLoteImpl implements ServicioLote {
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         Lote loteActual = obtenerPorId(id, identificadorIngreso);
+        String anteriorLote = loteActual.getCodigo() + " | " + loteActual.getSuperficieMetrosCuadrados() + "m2 | ocupado=" + loteActual.isOcupado();
         Long empresaObjetivo = empresaId;
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             empresaObjetivo = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
@@ -99,13 +114,39 @@ public class ServicioLoteImpl implements ServicioLote {
         loteActual.actualizarDatos(codigo, superficieMetrosCuadrados, ocupado, empresa);
         loteActual.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
         Lote guardado = repositorioLote.save(loteActual);
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "ACTUALIZACION_LOTE", "Lote",
+            guardado.getCodigo(),
+            anteriorLote,
+            guardado.getCodigo() + " | " + guardado.getSuperficieMetrosCuadrados() + "m2 | ocupado=" + guardado.isOcupado(),
+            obtenerIpActual()
+        );
         return repositorioLote.findByIdConEmpresa(guardado.getId()).orElse(guardado);
     }
 
     @Override
     public void eliminar(Long id, String identificadorIngreso) {
         Lote loteActual = obtenerPorId(id, identificadorIngreso);
+        String codigoLote = loteActual.getCodigo();
+        String datosLote = codigoLote + " | " + loteActual.getSuperficieMetrosCuadrados() + "m2 | ocupado=" + loteActual.isOcupado();
         repositorioLote.delete(loteActual);
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "ELIMINACION_LOTE", "Lote",
+            codigoLote,
+            datosLote,
+            null,
+            obtenerIpActual()
+        );
+    }
+
+    private String obtenerIpActual() {
+        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return "desconocida";
+        HttpServletRequest request = attrs.getRequest();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        return (forwarded != null && !forwarded.isBlank())
+            ? forwarded.split(",")[0].trim()
+            : request.getRemoteAddr();
     }
 
     private Empresa obtenerEmpresa(Long empresaId) {
