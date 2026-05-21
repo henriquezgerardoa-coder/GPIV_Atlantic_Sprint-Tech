@@ -25,6 +25,9 @@ public class ConfiguracionSeguridad {
     public SecurityFilterChain filtroSeguridad(HttpSecurity http, FiltroLimitacionIngreso filtroLimitacionIngreso) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+            )
             .authorizeHttpRequests(autorizacion -> autorizacion
                 .requestMatchers("/", "/index.html", "/ingreso.html", "/app.html", "/css/**", "/js/**",
                     "/img/**", "/registro.html", "/verificar.html", "/favicon.ico", "/error").permitAll()
