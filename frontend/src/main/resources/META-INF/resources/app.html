@@ -1650,15 +1650,13 @@
 
                     <!-- Tab: Empresa existente -->
                     <div class="tab-pane fade" id="panel-empresa-existente-ci" role="tabpanel">
-                        <div class="input-group mb-3">
+                        <div class="mb-3">
                             <input type="text" class="form-control form-control-sm" id="campoBusquedaEmpresaCI"
-                                   placeholder="Buscar por nombre, razón social o CUIT...">
-                            <button class="btn btn-outline-secondary btn-sm" type="button"
-                                    onclick="ConfiguracionInicial.buscarEmpresa()">
-                                <i class="bi bi-search"></i>
-                            </button>
+                                   placeholder="Filtrar por nombre, razón social o CUIT..."
+                                   oninput="ConfiguracionInicial.filtrarEmpresas()">
                         </div>
-                        <div id="resultadosBusquedaEmpresaCI" class="mt-2"></div>
+                        <div id="resultadosBusquedaEmpresaCI" class="mt-2"
+                             style="max-height: 280px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </div>
