@@ -3,12 +3,18 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesRegistroPublico;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCorreoVerificacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.RegistroIntentosEnMemoria;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -34,6 +40,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     private final ServicioCorreoVerificacion servicioCorreoVerificacion;
     private final PropiedadesRegistroPublico propiedadesRegistroPublico;
     private final RegistroIntentosEnMemoria registroIntentosEnMemoria;
+    private final ServicioAuditLog servicioAuditLog;
 
     public ServicioUsuarioImpl(
         RepositorioUsuario repositorioUsuario,
@@ -41,7 +48,8 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         PasswordEncoder codificadorClave,
         ServicioCorreoVerificacion servicioCorreoVerificacion,
         PropiedadesRegistroPublico propiedadesRegistroPublico,
-        RegistroIntentosEnMemoria registroIntentosEnMemoria
+        RegistroIntentosEnMemoria registroIntentosEnMemoria,
+        ServicioAuditLog servicioAuditLog
     ) {
         this.repositorioUsuario = repositorioUsuario;
         this.repositorioEmpresa = repositorioEmpresa;
@@ -49,6 +57,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         this.servicioCorreoVerificacion = servicioCorreoVerificacion;
         this.propiedadesRegistroPublico = propiedadesRegistroPublico;
         this.registroIntentosEnMemoria = registroIntentosEnMemoria;
+        this.servicioAuditLog = servicioAuditLog;
     }
     @Override
     public List<Usuario> listar() {
@@ -75,27 +84,59 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             rolesNormalizados
         );
         usuario.actualizarEmpresa(empresa);
-        return repositorioUsuario.save(usuario);
+        Usuario guardado = repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            obtenerUsuarioActual(), "CREACION_USUARIO", "Usuario",
+            guardado.getNombreUsuario(),
+            null,
+            "roles=" + rolesNormalizados + " | activo=" + activo,
+            obtenerIpActual()
+        );
+        return guardado;
     }
     @Override
     public Usuario actualizar(Long id, String nombreCompleto, boolean activo, Set<RolUsuario> roles, Long empresaId) {
         Set<RolUsuario> rolesNormalizados = normalizarRoles(roles);
         validarRoles(rolesNormalizados);
         Usuario usuario = obtenerPorId(id);
+        String anteriorEstado = "activo=" + usuario.isActivo() + " | roles=" + usuario.getRoles();
         Empresa empresa = resolverEmpresaParaUsuario(rolesNormalizados, empresaId);
         usuario.actualizarDatos(nombreCompleto, activo, rolesNormalizados, empresa);
-        return repositorioUsuario.save(usuario);
+        Usuario guardado = repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            obtenerUsuarioActual(), "ACTUALIZACION_USUARIO", "Usuario",
+            guardado.getNombreUsuario(),
+            anteriorEstado,
+            "activo=" + activo + " | roles=" + rolesNormalizados,
+            obtenerIpActual()
+        );
+        return guardado;
     }
     @Override
     public void eliminar(Long id) {
         Usuario usuario = obtenerPorId(id);
+        String nombreUsuario = usuario.getNombreUsuario();
+        String datos = usuario.getNombreCompleto() + " | roles=" + usuario.getRoles();
         repositorioUsuario.delete(usuario);
+        servicioAuditLog.registrarEvento(
+            obtenerUsuarioActual(), "ELIMINACION_USUARIO", "Usuario",
+            nombreUsuario,
+            datos,
+            null,
+            obtenerIpActual()
+        );
     }
     @Override
     public void restablecerClave(Long id, String claveNueva) {
         Usuario usuario = obtenerPorId(id);
         usuario.actualizarClaveAccesoHash(codificadorClave.encode(claveNueva));
         repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            obtenerUsuarioActual(), "RESTABLECIMIENTO_CLAVE", "Usuario",
+            usuario.getNombreUsuario(),
+            null, null,
+            obtenerIpActual()
+        );
     }
     @Override
     public void cambiarClavePropia(String nombreUsuario, String claveActual, String claveNueva) {
@@ -106,6 +147,12 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         }
         usuario.actualizarClaveAccesoHash(codificadorClave.encode(claveNueva));
         repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            nombreUsuario, "CAMBIO_CLAVE_PROPIA", "Usuario",
+            nombreUsuario,
+            null, null,
+            obtenerIpActual()
+        );
     }
 
     @Override
@@ -123,8 +170,17 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo electronico ya esta registrado");
         }
 
+        String anteriorPerfil = usuario.getNombreCompleto() + " | " + usuario.getCorreoElectronico();
         usuario.actualizarPerfilPersonal(nombreNormalizado, correoNormalizado);
-        return repositorioUsuario.save(usuario);
+        Usuario guardado = repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "ACTUALIZACION_PERFIL", "Usuario",
+            guardado.getNombreUsuario(),
+            anteriorPerfil,
+            nombreNormalizado + " | " + correoNormalizado,
+            obtenerIpActual()
+        );
+        return guardado;
     }
 
     @Override
@@ -157,6 +213,13 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         renovarTokenVerificacion(usuario);
         repositorioUsuario.save(usuario);
         enviarCorreoVerificacion(usuario);
+        servicioAuditLog.registrarEvento(
+            correoNormalizado, "REGISTRO_PUBLICO", "Usuario",
+            correoNormalizado,
+            null,
+            "EMPRESA | pendiente verificacion",
+            ipCliente
+        );
     }
 
     @Override
@@ -168,6 +231,13 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         }
         usuario.marcarEmailVerificado(LocalDateTime.now());
         repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            usuario.getNombreUsuario(), "VERIFICACION_EMAIL", "Usuario",
+            usuario.getNombreUsuario(),
+            "email_no_verificado",
+            "email_verificado",
+            obtenerIpActual()
+        );
     }
 
     @Override
@@ -188,6 +258,21 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         renovarTokenVerificacion(usuario);
         repositorioUsuario.save(usuario);
         enviarCorreoVerificacion(usuario);
+    }
+
+    private String obtenerUsuarioActual() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "sistema";
+    }
+
+    private String obtenerIpActual() {
+        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return "desconocida";
+        HttpServletRequest request = attrs.getRequest();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        return (forwarded != null && !forwarded.isBlank())
+            ? forwarded.split(",")[0].trim()
+            : request.getRemoteAddr();
     }
 
     private void validarRoles(Set<RolUsuario> roles) {

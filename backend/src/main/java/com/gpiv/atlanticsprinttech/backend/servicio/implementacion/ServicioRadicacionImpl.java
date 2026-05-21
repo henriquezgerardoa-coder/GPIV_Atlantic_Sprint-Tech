@@ -6,8 +6,12 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionDocumento;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamientoPedidoLotes;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
@@ -59,6 +63,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private final RepositorioRadicacionDocumento repositorioRadicacionDocumento;
     private final RepositorioEmpresa repositorioEmpresa;
     private final ServicioContextoUsuario servicioContextoUsuario;
+    private final ServicioAuditLog servicioAuditLog;
     private final ObjectMapper objectMapper;
 
     public ServicioRadicacionImpl(
@@ -67,6 +72,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         RepositorioRadicacionDocumento repositorioRadicacionDocumento,
         RepositorioEmpresa repositorioEmpresa,
         ServicioContextoUsuario servicioContextoUsuario,
+        ServicioAuditLog servicioAuditLog,
         ObjectMapper objectMapper
     ) {
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
@@ -74,6 +80,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         this.repositorioRadicacionDocumento = repositorioRadicacionDocumento;
         this.repositorioEmpresa = repositorioEmpresa;
         this.servicioContextoUsuario = servicioContextoUsuario;
+        this.servicioAuditLog = servicioAuditLog;
         this.objectMapper = objectMapper;
     }
 
@@ -133,6 +140,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         );
         RadicacionSolicitud guardada = repositorioRadicacionSolicitud.save(nueva);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(guardada, guardada.getEstado(), "Solicitud creada", identificadorIngreso));
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "CREACION", "RadicacionSolicitud",
+            guardada.getNumeroRadicado(),
+            null,
+            guardada.getTipoSolicitud() + " | " + guardada.getEstado().name(),
+            obtenerIpActual()
+        );
         return guardada;
     }
 
@@ -202,10 +216,18 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         if (estado == EstadoRadicacion.APROBADA && fechaPlazo == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de plazo al aprobar una solicitud");
         }
+        EstadoRadicacion estadoAnterior = radicacion.getEstado();
         radicacion.cambiarEstado(estado);
         radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estado, comentario, identificadorIngreso));
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "CAMBIO_ESTADO", "RadicacionSolicitud",
+            actualizada.getNumeroRadicado(),
+            estadoAnterior.name(),
+            estado.name(),
+            obtenerIpActual()
+        );
         return actualizada;
     }
 
@@ -228,6 +250,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     public void registrarObservacion(String identificadorIngreso, Long id, String comentario) {
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, id);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(radicacion, radicacion.getEstado(), comentario, identificadorIngreso));
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "OBSERVACION", "RadicacionSolicitud",
+            radicacion.getNumeroRadicado(),
+            null,
+            comentario,
+            obtenerIpActual()
+        );
     }
 
     @Override
@@ -262,6 +291,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
                 identificadorIngreso
             )
         );
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "ADJUNTO_DOCUMENTO", "RadicacionDocumento",
+            radicacion.getNumeroRadicado(),
+            null,
+            nombreArchivo + " (" + tipoDocumento.name() + ")",
+            obtenerIpActual()
+        );
         return guardado;
     }
 
@@ -292,6 +328,16 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             candidato = prefijo + sufijo;
         } while (repositorioRadicacionSolicitud.existsByNumeroRadicado(candidato));
         return candidato;
+    }
+
+    private String obtenerIpActual() {
+        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return "desconocida";
+        HttpServletRequest request = attrs.getRequest();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        return (forwarded != null && !forwarded.isBlank())
+            ? forwarded.split(",")[0].trim()
+            : request.getRemoteAddr();
     }
 
     private void validarArchivo(Long radicacionId, String nombreArchivo, String mimeType, byte[] contenido) {

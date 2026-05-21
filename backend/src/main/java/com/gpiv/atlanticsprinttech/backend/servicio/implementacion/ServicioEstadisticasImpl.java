@@ -3,7 +3,13 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEstadisticas;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
@@ -19,9 +25,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Implementacion de estadisticas del parque industrial (R-14: lectura de informes para DIRECTIVO).
- */
+// R-14: lectura de informes para DIRECTIVO. El acceso a informes completos queda registrado en audit_log.
 @Service
 @Transactional(readOnly = true)
 public class ServicioEstadisticasImpl implements ServicioEstadisticas {
@@ -29,15 +33,18 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
     private final RepositorioEmpresa repositorioEmpresa;
     private final RepositorioLote repositorioLote;
     private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
+    private final ServicioAuditLog servicioAuditLog;
 
     public ServicioEstadisticasImpl(
         RepositorioEmpresa repositorioEmpresa,
         RepositorioLote repositorioLote,
-        RepositorioRadicacionSolicitud repositorioRadicacionSolicitud
+        RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
+        ServicioAuditLog servicioAuditLog
     ) {
         this.repositorioEmpresa = repositorioEmpresa;
         this.repositorioLote = repositorioLote;
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
+        this.servicioAuditLog = servicioAuditLog;
     }
 
     @Override
@@ -77,6 +84,13 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
 
     @Override
     public List<RespuestaInformeEmpresa> obtenerInformeEmpresas() {
+        servicioAuditLog.registrarEvento(
+            obtenerUsuarioActual(), "ACCESO_INFORME", "Empresa",
+            "informe-empresas",
+            null,
+            "consulta de informe completo de empresas",
+            obtenerIpActual()
+        );
         List<Empresa> empresas = repositorioEmpresa.findAll();
         List<RespuestaInformeEmpresa> resultado = new ArrayList<>();
         for (Empresa emp : empresas) {
@@ -117,6 +131,13 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
 
     @Override
     public List<RespuestaInformeLote> obtenerInformeLotes() {
+        servicioAuditLog.registrarEvento(
+            obtenerUsuarioActual(), "ACCESO_INFORME", "Lote",
+            "informe-lotes",
+            null,
+            "consulta de informe completo de lotes",
+            obtenerIpActual()
+        );
         List<Lote> lotes = repositorioLote.findAllConEmpresa();
         List<RespuestaInformeLote> resultado = new ArrayList<>();
         for (Lote l : lotes) {
@@ -145,5 +166,20 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             ));
         }
         return resultado;
+    }
+
+    private String obtenerUsuarioActual() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "sistema";
+    }
+
+    private String obtenerIpActual() {
+        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return "desconocida";
+        HttpServletRequest request = attrs.getRequest();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        return (forwarded != null && !forwarded.isBlank())
+            ? forwarded.split(",")[0].trim()
+            : request.getRemoteAddr();
     }
 }

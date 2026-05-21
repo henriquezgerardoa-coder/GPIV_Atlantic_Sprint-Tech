@@ -50,6 +50,7 @@ public class ConfiguracionSeguridad {
                 // R-14: informes/estadisticas solo para ADMINISTRADOR y DIRECTIVO (lectura legislativa).
                 // El rol EMPRESA no accede a estadisticas globales.
                 .requestMatchers("/api/estadisticas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
+                .requestMatchers(HttpMethod.GET, "/api/audit-log/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
                 .requestMatchers(HttpMethod.GET, "/api/radicaciones/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "EMPRESA")
                 .requestMatchers(HttpMethod.POST, "/api/radicaciones").hasRole("EMPRESA")
                 .requestMatchers(HttpMethod.POST, "/api/radicaciones/*/documentos").hasRole("EMPRESA")
