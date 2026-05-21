@@ -29,7 +29,7 @@ const Autenticacion = (() => {
 
     function verificarYRedirigir() {
         if (!sessionStorage.getItem('credencial')) {
-            window.location.href = '/ingreso.html';
+            window.location.href = '/index.html';
             return false;
         }
         return true;
