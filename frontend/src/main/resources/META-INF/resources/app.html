@@ -1091,24 +1091,48 @@
                     </div>
 
                     <!-- Sección asignación de lote -->
-                    <div class="card border-0 bg-light mb-3" id="wrapperAsignacionLote">
+                    <div class="card border-0 bg-light mb-3 d-none" id="bloqueAsignacionLoteRad">
                         <div class="card-body">
-                            <h6 class="text-muted mb-2">Lote asignado</h6>
-                            <div class="row g-2 align-items-end">
-                                <div class="col-md-4">
-                                    <span class="fw-semibold" id="detRadLoteAsignado">Sin asignar</span>
+                            <h6 class="text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>Lote asignado</h6>
+
+                            <!-- Con lote asignado -->
+                            <div id="loteAsignadoRad" class="d-none">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <span class="text-muted small">Código:</span>
+                                        <span class="fw-semibold ms-1" id="detRadLoteCodigo">-</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="text-muted small">Superficie:</span>
+                                        <span class="fw-semibold ms-1" id="detRadLoteSuperficie">-</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-5" id="wrapperSelectorLote">
-                                    <label for="selectorLoteAsignacion" class="form-label small">Asignar lote</label>
-                                    <select id="selectorLoteAsignacion" class="form-select form-select-sm">
-                                        <option value="">-- Seleccione un lote --</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3" id="wrapperBotonAsignarLote">
-                                    <button type="button" class="btn btn-sm btn-outline-primary w-100"
-                                            onclick="ModuloRadicaciones.asignarLote()">
-                                        <i class="bi bi-geo-alt me-1"></i>Asignar
-                                    </button>
+                            </div>
+
+                            <!-- Sin lote asignado -->
+                            <div id="sinLoteAsignadoRad" class="d-none">
+                                <p class="text-muted small mb-2">Sin lote asignado.</p>
+                                <button type="button" class="btn btn-sm btn-outline-primary d-none"
+                                        id="btnMostrarFormLoteRad"
+                                        onclick="ModuloRadicaciones.mostrarFormAsignacionLote()">
+                                    <i class="bi bi-geo-alt me-1"></i>Asignar lote
+                                </button>
+                                <div id="formAsignacionLoteRad" class="d-none mt-2">
+                                    <div id="alertaAsignacionLoteRad" class="alert alert-danger d-none mb-2"></div>
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-8">
+                                            <label for="selectorLoteDisponibleRad" class="form-label small">Lote disponible</label>
+                                            <select id="selectorLoteDisponibleRad" class="form-select form-select-sm">
+                                                <option value="">Seleccionar lote...</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button type="button" class="btn btn-sm btn-primary w-100"
+                                                    onclick="ModuloRadicaciones.confirmarAsignacionLote()">
+                                                <i class="bi bi-check-lg me-1"></i>Confirmar
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
