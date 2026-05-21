@@ -149,7 +149,24 @@ public class ControladorRadicacion {
             .toList();
     }
 
+    @PatchMapping("/{id}/lote")
+    public RespuestaRadicacion asignarLote(
+        @PathVariable Long id,
+        @RequestBody java.util.Map<String, Long> cuerpo,
+        Authentication autenticacion
+    ) {
+        Long loteId = cuerpo.get("loteId");
+        if (loteId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST, "Debe indicar el loteId");
+        }
+        return crearRespuesta(servicioRadicacion.asignarLote(autenticacion.getName(), id, loteId));
+    }
+
     private RespuestaRadicacion crearRespuesta(RadicacionSolicitud radicacion) {
+        Long loteId = radicacion.getLote() != null ? radicacion.getLote().getId() : null;
+        String codigoLote = radicacion.getLote() != null ? radicacion.getLote().getCodigo() : null;
+        String json = radicacion.getRelevamientoPedidoLotesJson();
         return new RespuestaRadicacion(
             radicacion.getId(),
             radicacion.getNumeroRadicado(),
@@ -158,7 +175,7 @@ public class ControladorRadicacion {
             radicacion.getTipoSolicitud(),
             radicacion.getDescripcion(),
             radicacion.getUsoEstimativo(),
-            radicacion.getRelevamientoPedidoLotesJson() != null,
+            json != null,
             obtenerEtapaActual(radicacion.getEstado()),
             radicacion.getEstado(),
             radicacion.getFechaRadicacion(),
@@ -166,16 +183,19 @@ public class ControladorRadicacion {
             radicacion.getTiempoEstimadoObraMeses(),
             radicacion.getFechaPlazo(),
             radicacion.getFechaAprobacion(),
-            extraerTiempoSolicitadoMeses(radicacion.getRelevamientoPedidoLotesJson())
+            extraerCampoEntero(json, "tiempoRadicacionMeses"),
+            loteId,
+            codigoLote,
+            extraerCampoEntero(json, "necesidadMetrosCuadrados")
         );
     }
 
-    private Integer extraerTiempoSolicitadoMeses(String json) {
+    private Integer extraerCampoEntero(String json, String campo) {
         if (json == null || json.isBlank()) return null;
         try {
             JsonNode nodo = objectMapper.readTree(json);
-            JsonNode campo = nodo.get("tiempoRadicacionMeses");
-            return (campo != null && !campo.isNull()) ? campo.asInt() : null;
+            JsonNode valor = nodo.get(campo);
+            return (valor != null && !valor.isNull()) ? valor.asInt() : null;
         } catch (Exception e) {
             return null;
         }

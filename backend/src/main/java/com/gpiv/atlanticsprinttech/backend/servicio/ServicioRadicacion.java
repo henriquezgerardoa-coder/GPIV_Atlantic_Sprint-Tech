@@ -49,4 +49,6 @@ public interface ServicioRadicacion {
     RadicacionDocumento obtenerDocumento(String identificadorIngreso, Long radicacionId, Long docId);
 
     List<RadicacionHistorial> listarHistorial(String identificadorIngreso, Long id);
+
+    RadicacionSolicitud asignarLote(String identificadorIngreso, Long radicacionId, Long loteId);
 }

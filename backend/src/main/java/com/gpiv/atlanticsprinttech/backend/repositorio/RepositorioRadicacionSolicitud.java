@@ -16,6 +16,7 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
     @Query("""
         SELECT r FROM RadicacionSolicitud r
         JOIN FETCH r.empresa e
+        LEFT JOIN FETCH r.lote
         WHERE (:empresaId IS NULL OR e.id = :empresaId)
           AND (:estado IS NULL OR r.estado = :estado)
           AND (:desde IS NULL OR r.fechaRadicacion >= :desde)
@@ -29,10 +30,10 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
         @Param("hasta") LocalDate hasta
     );
 
-    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa WHERE r.id = :id")
+    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa LEFT JOIN FETCH r.lote WHERE r.id = :id")
     Optional<RadicacionSolicitud> findByIdConEmpresa(@Param("id") Long id);
 
-    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa WHERE r.id = :id AND r.empresa.id = :empresaId")
+    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa LEFT JOIN FETCH r.lote WHERE r.id = :id AND r.empresa.id = :empresaId")
     Optional<RadicacionSolicitud> findByIdAndEmpresaIdConEmpresa(@Param("id") Long id, @Param("empresaId") Long empresaId);
 
     boolean existsByEmpresaIdAndEstado(Long empresaId, EstadoRadicacion estado);

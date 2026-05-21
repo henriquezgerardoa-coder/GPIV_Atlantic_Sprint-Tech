@@ -384,10 +384,11 @@ const ModuloRadicaciones = (() => {
         contenido?.classList.add('d-none');
         modal.show();
 
-        const [respDetalle, respDocs, respHist] = await Promise.all([
+        const [respDetalle, respDocs, respHist, respLotes] = await Promise.all([
             ApiCliente.obtener(`/api/radicaciones/${id}`),
             ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
-            ApiCliente.obtener(`/api/radicaciones/${id}/historial`)
+            ApiCliente.obtener(`/api/radicaciones/${id}/historial`),
+            ApiCliente.obtener('/api/lotes')
         ]);
         estadoCarga?.classList.add('d-none');
         if (!respDetalle?.ok) {
@@ -400,8 +401,9 @@ const ModuloRadicaciones = (() => {
         const detalle = await respDetalle.json();
         const documentos = respDocs?.ok ? await respDocs.json() : [];
         const historial = respHist?.ok ? await respHist.json() : [];
+        const lotesDisponibles = respLotes?.ok ? await respLotes.json() : [];
         radicacionDetalleAdmin = detalle;
-        renderizarDetalleAdmin(detalle, documentos, historial);
+        renderizarDetalleAdmin(detalle, documentos, historial, lotesDisponibles);
         contenido?.classList.remove('d-none');
 
         if (detalle?.estado === 'PENDIENTE') {
@@ -410,7 +412,7 @@ const ModuloRadicaciones = (() => {
         }
     }
 
-    function renderizarDetalleAdmin(detalle, documentos, historial) {
+    function renderizarDetalleAdmin(detalle, documentos, historial, lotesDisponibles = []) {
         setTexto('detRadNumero', detalle?.numeroRadicado || '-');
         setTexto('detRadSolicitante', detalle?.nombreEmpresa || '-');
         setTexto('detRadTipo', detalle?.tipoSolicitud || '-');
@@ -457,6 +459,44 @@ const ModuloRadicaciones = (() => {
             wrapperPlazo?.classList.remove('d-none');
         } else {
             wrapperPlazo?.classList.add('d-none');
+        }
+
+        const wrapperSupSolicitada = document.getElementById('wrapperDetRadSuperficieSolicitada');
+        if (detalle?.superficieSolicitadaM2) {
+            setTexto('detRadSuperficieSolicitada', `${detalle.superficieSolicitadaM2.toLocaleString('es-AR')} m²`);
+            wrapperSupSolicitada?.classList.remove('d-none');
+        } else {
+            wrapperSupSolicitada?.classList.add('d-none');
+        }
+
+        const esPedidoLotes = detalle?.tipoSolicitud === 'PEDIDO_LOTES';
+        const puedeAsignar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const estadoActivo = !['RECHAZADA', 'CANCELADA'].includes(detalle?.estado);
+        const wrapperAsignacion = document.getElementById('wrapperAsignacionLote');
+        if (wrapperAsignacion) {
+            wrapperAsignacion.classList.toggle('d-none', !esPedidoLotes);
+        }
+
+        setTexto('detRadLoteAsignado', detalle?.codigoLote || 'Sin asignar');
+
+        const wrapperSelector = document.getElementById('wrapperSelectorLote');
+        const wrapperBoton = document.getElementById('wrapperBotonAsignarLote');
+        const mostrarAsignacion = puedeAsignar && estadoActivo && esPedidoLotes;
+        wrapperSelector?.classList.toggle('d-none', !mostrarAsignacion);
+        wrapperBoton?.classList.toggle('d-none', !mostrarAsignacion);
+
+        if (mostrarAsignacion) {
+            const selector = document.getElementById('selectorLoteAsignacion');
+            if (selector) {
+                const lotesFiltrados = lotesDisponibles.filter(l => !l.ocupado);
+                selector.innerHTML = '<option value="">-- Seleccione un lote --</option>' +
+                    lotesFiltrados.map(l => {
+                        const sup = l.superficieMetrosCuadrados?.toLocaleString('es-AR') || '-';
+                        const zona = l.zona ? ` | ${l.zona.replace('_', ' ')}` : '';
+                        const seleccionado = l.id === detalle?.loteId ? 'selected' : '';
+                        return `<option value="${l.id}" ${seleccionado}>${l.codigo} — ${sup} m²${zona}</option>`;
+                    }).join('');
+            }
         }
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
@@ -563,6 +603,24 @@ const ModuloRadicaciones = (() => {
         }
 
         mostrarAlerta('Estado del expediente actualizado correctamente.');
+        bootstrap.Modal.getInstance(document.getElementById('modalDetalleRadicacionAdmin'))?.hide();
+        await cargar();
+    }
+
+    async function asignarLote() {
+        if (!radicacionDetalleAdmin?.id) return;
+        const loteId = parseInt(document.getElementById('selectorLoteAsignacion')?.value, 10);
+        if (!loteId) {
+            mostrarAlerta('Seleccione un lote para asignar.', 'danger');
+            return;
+        }
+        const respuesta = await ApiCliente.parche(`/api/radicaciones/${radicacionDetalleAdmin.id}/lote`, { loteId });
+        if (!respuesta?.ok) {
+            const err = await respuesta?.json().catch(() => ({}));
+            mostrarAlerta(err?.message || 'No se pudo asignar el lote.', 'danger');
+            return;
+        }
+        mostrarAlerta('Lote asignado correctamente.');
         bootstrap.Modal.getInstance(document.getElementById('modalDetalleRadicacionAdmin'))?.hide();
         await cargar();
     }
@@ -1201,6 +1259,7 @@ const ModuloRadicaciones = (() => {
         verHistorial,
         verDetalleAdmin,
         confirmarCambioEstadoDetalleAdmin,
+        asignarLote,
         toggleCamposPlazo,
         guardarBorradorAhora,
         descartarBorrador,
