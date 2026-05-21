@@ -184,7 +184,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     }
 
     @Override
-    public void registrarPublico(String correoElectronico, String clave, String confirmacionClave, String ipCliente) {
+    public void registrarPublico(String nombreUsuario, String correoElectronico, String clave, String confirmacionClave, String ipCliente) {
         Duration ventana = obtenerVentanaLimites();
         String claveIntento = "registro:" + ipCliente + ":" + normalizarCorreo(correoElectronico);
         if (registroIntentosEnMemoria.excedeLimite(claveIntento, propiedadesRegistroPublico.getLimites().getMaxIntentosRegistro(), ventana)) {
@@ -197,27 +197,31 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La confirmacion de contrasena no coincide");
         }
         validarPoliticaClave(clave);
+        if (repositorioUsuario.existsByNombreUsuario(nombreUsuario)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El nombre de usuario ya esta registrado");
+        }
         if (repositorioUsuario.existsByCorreoElectronicoIgnoreCase(correoNormalizado)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo electronico ya esta registrado");
         }
 
-        String nombreBase = generarNombreBase(correoNormalizado);
-        String nombreUsuarioUnico = generarNombreUsuarioUnico(nombreBase);
         Usuario usuario = Usuario.crearPendienteVerificacion(
-            nombreUsuarioUnico,
-            "Usuario " + nombreUsuarioUnico,
+            nombreUsuario,
+            nombreUsuario,
             correoNormalizado,
             codificadorClave.encode(clave),
             EnumSet.of(RolUsuario.EMPRESA)
         );
         renovarTokenVerificacion(usuario);
+        if (!propiedadesRegistroPublico.getMail().isHabilitado()) {
+            usuario.marcarEmailVerificado(LocalDateTime.now());
+        }
         repositorioUsuario.save(usuario);
         enviarCorreoVerificacion(usuario);
         servicioAuditLog.registrarEvento(
             correoNormalizado, "REGISTRO_PUBLICO", "Usuario",
-            correoNormalizado,
+            nombreUsuario,
             null,
-            "EMPRESA | pendiente verificacion",
+            "EMPRESA | " + (!propiedadesRegistroPublico.getMail().isHabilitado() ? "auto-verificado" : "pendiente verificacion"),
             ipCliente
         );
     }
@@ -329,28 +333,6 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         return repositorioUsuario.findByNombreUsuario(identificadorIngreso)
             .or(() -> repositorioUsuario.findByCorreoElectronicoIgnoreCase(normalizado))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
-    }
-
-    private String generarNombreBase(String correoElectronico) {
-        String local = correoElectronico.split("@")[0];
-        String base = local.replaceAll("[^a-zA-Z0-9._-]", "").toLowerCase(Locale.ROOT);
-        if (base.isBlank()) {
-            return "usuario";
-        }
-        return base.length() > 50 ? base.substring(0, 50) : base;
-    }
-
-    private String generarNombreUsuarioUnico(String nombreBase) {
-        String candidato = nombreBase;
-        int sufijo = 1;
-        while (repositorioUsuario.existsByNombreUsuario(candidato)) {
-            candidato = nombreBase + sufijo;
-            if (candidato.length() > 60) {
-                candidato = candidato.substring(0, 60);
-            }
-            sufijo++;
-        }
-        return candidato;
     }
 
     private void renovarTokenVerificacion(Usuario usuario) {
