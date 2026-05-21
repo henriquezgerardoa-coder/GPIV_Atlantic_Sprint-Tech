@@ -617,14 +617,17 @@ body.auth-modal-open {
 .auth-modal__dialog {
     position: relative;
     width: 100%;
-    max-width: 460px;
-    max-height: 90vh;
+    max-width: 480px;
+    max-height: 88vh;
     background: #ffffff;
     border-radius: 18px;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     transform: translateY(12px) scale(0.98);
     transition: transform 220ms ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .auth-modal--open .auth-modal__dialog {
@@ -684,10 +687,11 @@ body.auth-modal-open {
 .auth-modal__frame {
     display: block;
     width: 100%;
-    height: 520px;
+    height: 0;
     border: none;
     opacity: 0;
     transition: opacity 180ms ease;
+    flex-shrink: 0;
 }
 
 .auth-modal__frame--ready {
@@ -696,6 +700,30 @@ body.auth-modal-open {
 
 .auth-modal__dialog:has(.auth-modal__frame--ready) .auth-modal__loading {
     display: none;
+}
+
+/* ── Páginas auth cuando se cargan dentro del modal iframe ── */
+html.en-modal body.pagina-ingreso {
+    background: #ffffff !important;
+    min-height: 0 !important;
+    display: block !important;
+    padding-bottom: 0 !important;
+}
+
+html.en-modal .encabezado-auth,
+html.en-modal footer.footer-auth,
+html.en-modal body > p.small {
+    display: none !important;
+}
+
+html.en-modal .container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.25rem !important;
+}
+
+html.en-modal .card {
+    box-shadow: none !important;
+    border: 1px solid #e8ecf3 !important;
 }
 
 /* ── Sección Nosotros ── */

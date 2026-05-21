@@ -12,6 +12,14 @@
     }
 
     frame.addEventListener('load', () => {
+        if (frame.src === 'about:blank') return;
+        try {
+            const alturaContenido = frame.contentDocument.documentElement.scrollHeight;
+            const alturaMaxima = Math.floor(window.innerHeight * 0.80);
+            frame.style.height = Math.min(alturaContenido, alturaMaxima) + 'px';
+        } catch (_) {
+            frame.style.height = '520px';
+        }
         frame.classList.add('auth-modal__frame--ready');
     });
 
