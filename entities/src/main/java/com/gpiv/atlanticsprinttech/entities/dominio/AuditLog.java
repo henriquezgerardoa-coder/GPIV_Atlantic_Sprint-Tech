@@ -81,14 +81,12 @@ public class AuditLog {
             idReferencia, valorAnterior, valorNuevo, direccionIp);
     }
 
-    /** Filtra en memoria; para consultas DB usar RepositorioAuditLog. */
     public static List<AuditLog> filtrarPorEntidad(List<AuditLog> logs, String entidad) {
         return logs.stream()
             .filter(l -> entidad.equals(l.entidadAfectada))
             .toList();
     }
 
-    /** Filtra en memoria; para consultas DB usar RepositorioAuditLog. */
     public static List<AuditLog> filtrarPorUsuario(List<AuditLog> logs, String usuario) {
         return logs.stream()
             .filter(l -> usuario.equals(l.usuarioResponsable))
