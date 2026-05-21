@@ -340,10 +340,8 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         Lote lote = repositorioLote.findByIdConEmpresa(loteId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lote no encontrado"));
         String codigoAnterior = radicacion.getLote() != null ? radicacion.getLote().getCodigo() : null;
-        if (lote.getEmpresa() == null) {
-            lote.actualizarDatos(lote.getCodigo(), lote.getSuperficieMetrosCuadrados(), lote.isOcupado(), radicacion.getEmpresa(), lote.getZona());
-        }
-        lote.actualizarAsignacion(EstadoAsignacionLote.PREADJUDICADO, lote.getNumeroExpedienteReferencia());
+        lote.actualizarDatos(lote.getCodigo(), lote.getSuperficieMetrosCuadrados(), true, radicacion.getEmpresa(), lote.getZona());
+        lote.actualizarAsignacion(EstadoAsignacionLote.PREADJUDICADO, radicacion.getNumeroRadicado());
         repositorioLote.save(lote);
         radicacion.asignarLote(lote);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);

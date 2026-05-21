@@ -596,7 +596,7 @@ const ModuloRadicaciones = (() => {
         }
         alerta?.classList.add('d-none');
 
-        const respuesta = await ApiCliente.crear(`/api/radicaciones/${radicacionDetalleAdmin.id}/lote`, { loteId: parseInt(loteId, 10) });
+        const respuesta = await ApiCliente.parche(`/api/radicaciones/${radicacionDetalleAdmin.id}/lote`, { loteId: parseInt(loteId, 10) });
         if (!respuesta?.ok) {
             const err = await respuesta?.json().catch(() => ({}));
             alerta.textContent = err?.mensaje || err?.message || 'No se pudo reservar el lote.';
