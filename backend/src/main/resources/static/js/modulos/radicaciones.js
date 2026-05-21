@@ -400,8 +400,9 @@ const ModuloRadicaciones = (() => {
         const documentos = respDocs?.ok ? await respDocs.json() : [];
         const historial = respHist?.ok ? await respHist.json() : [];
         const loteAsignado = respLoteAsignado?.ok ? await respLoteAsignado.json() : null;
-        const respLotesJson = respLotesDisp?.ok ? await respLotesDisp.json() : {};
-        lotesDisponibles = (respLotesJson.contenido || []).filter(l => l.estadoAsignacion === 'DISPONIBLE');
+        const respLotesJson = respLotesDisp?.ok ? await respLotesDisp.json() : [];
+        const todosLosLotes = Array.isArray(respLotesJson) ? respLotesJson : (respLotesJson.contenido || []);
+        lotesDisponibles = todosLosLotes.filter(l => !l.estadoAsignacion);
         radicacionDetalleAdmin = detalle;
         renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado);
         contenido?.classList.remove('d-none');
