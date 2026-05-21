@@ -50,7 +50,7 @@
             actualizarVista('success', cuerpo.mensaje || 'Correo verificado con exito. Ya puedes iniciar sesion.', {
                 tituloTexto: 'Correo verificado',
                 textoAccion: 'Ir a iniciar sesion',
-                hrefAccion: '/index.html?verificacion=ok',
+                hrefAccion: '/ingreso.html?verificacion=ok',
                 iconoHtml: '<i class="bi bi-check-circle-fill"></i>'
             });
             ayuda.textContent = 'Tu cuenta ya esta activa. Continúa al ingreso para acceder al sistema.';
@@ -71,10 +71,9 @@
         actualizarVista('danger', 'No se pudo contactar al servidor para verificar el token.', {
             tituloTexto: 'Conexion no disponible',
             textoAccion: 'Intentar mas tarde',
-            hrefAccion: '/index.html',
+            hrefAccion: '/ingreso.html',
             iconoHtml: '<i class="bi bi-wifi-off"></i>'
         });
         ayuda.textContent = 'Verifica tu conexion y vuelve a intentarlo en unos minutos.';
     }
 })();
-
