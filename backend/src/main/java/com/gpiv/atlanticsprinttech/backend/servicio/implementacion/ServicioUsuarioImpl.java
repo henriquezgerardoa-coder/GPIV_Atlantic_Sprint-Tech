@@ -211,12 +211,15 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             codificadorClave.encode(clave),
             EnumSet.of(RolUsuario.EMPRESA)
         );
+        boolean mailHabilitado = propiedadesRegistroPublico.getMail().isHabilitado();
         renovarTokenVerificacion(usuario);
-        if (!propiedadesRegistroPublico.getMail().isHabilitado()) {
+        if (!mailHabilitado) {
             usuario.marcarEmailVerificado(LocalDateTime.now());
         }
         repositorioUsuario.save(usuario);
-        enviarCorreoVerificacion(usuario);
+        if (mailHabilitado) {
+            enviarCorreoVerificacion(usuario);
+        }
         servicioAuditLog.registrarEvento(
             correoNormalizado, "REGISTRO_PUBLICO", "Usuario",
             nombreUsuario,
