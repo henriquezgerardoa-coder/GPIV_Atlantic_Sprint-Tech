@@ -382,12 +382,13 @@ const ModuloRadicaciones = (() => {
         contenido?.classList.add('d-none');
         modal.show();
 
-        const [respDetalle, respDocs, respHist, respLoteAsignado, respLotesDisp] = await Promise.all([
+        const [respDetalle, respDocs, respHist, respLoteAsignado, respLotesDisp, respRelevamiento] = await Promise.all([
             ApiCliente.obtener(`/api/radicaciones/${id}`),
             ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
             ApiCliente.obtener(`/api/radicaciones/${id}/historial`),
             ApiCliente.obtener(`/api/radicaciones/${id}/lote`),
-            ApiCliente.obtener('/api/lotes')
+            ApiCliente.obtener('/api/lotes'),
+            ApiCliente.obtener(`/api/radicaciones/${id}/relevamiento`)
         ]);
         estadoCarga?.classList.add('d-none');
         if (!respDetalle?.ok) {
@@ -404,12 +405,14 @@ const ModuloRadicaciones = (() => {
         const respLotesJson = respLotesDisp?.ok ? await respLotesDisp.json() : [];
         const todosLosLotes = Array.isArray(respLotesJson) ? respLotesJson : (respLotesJson.contenido || []);
         lotesDisponibles = todosLosLotes.filter(l => !l.estadoAsignacion);
+        const relevamiento = (respRelevamiento?.ok && respRelevamiento.status !== 204)
+            ? await respRelevamiento.json().catch(() => null) : null;
         radicacionDetalleAdmin = detalle;
-        renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado);
+        renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento);
         contenido?.classList.remove('d-none');
     }
 
-    function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado) {
+    function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null) {
         const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
 
         setTexto('detRadNumero', detalle?.numeroRadicado || '-');
@@ -436,6 +439,9 @@ const ModuloRadicaciones = (() => {
         // Sección de lote
         renderizarSeccionLote(loteAsignado, detalle?.necesidadMetrosCuadrados);
 
+        // Relevamiento
+        renderizarRelevamiento(relevamiento);
+
         const cuerpoDocs = document.getElementById('cuerpoDocumentosDetalleRadAdmin');
         if (cuerpoDocs) {
             cuerpoDocs.innerHTML = documentos?.length
@@ -461,6 +467,60 @@ const ModuloRadicaciones = (() => {
                     </tr>`).join('')
                 : '<tr><td colspan="5" class="text-muted">Sin historial</td></tr>';
         }
+    }
+
+    function renderizarRelevamiento(rel) {
+        const bloque = document.getElementById('bloqueRelevamientoDetalleRad');
+        const contenido = document.getElementById('contenidoRelevamientoDetalleRad');
+        if (!bloque || !contenido) return;
+        if (!rel) { bloque.classList.add('d-none'); return; }
+        bloque.classList.remove('d-none');
+
+        const campo = (etiqueta, valor) => valor != null && valor !== ''
+            ? `<div class="col-md-4"><span class="text-muted">${etiqueta}:</span> <span class="fw-semibold">${valor}</span></div>`
+            : '';
+        const bool = v => v === true ? 'Sí' : v === false ? 'No' : '-';
+
+        contenido.innerHTML = [
+            campo('Razón social', rel.razonSocialEmpresa),
+            campo('CUIT', rel.cuit),
+            campo('Correo', rel.correo),
+            campo('Ingresos brutos', rel.ingresosBrutos),
+            campo('Actividad principal', rel.actividadPrincipal),
+            campo('Actividad secundaria', rel.actividadSecundaria),
+            campo('Tipo empresa', rel.tipoEmpresa),
+            campo('Objeto del proyecto', rel.objetoProyecto),
+            campo('Dirección', rel.direccion),
+            campo('Referente', rel.personaReferente),
+            campo('Teléfono', rel.telefono),
+            campo('Correo contacto', rel.correoElectronico),
+            campo('Rubro', rel.rubro),
+            campo('Detalle rubro', rel.rubroOtro),
+            campo('Descripción servicio/bien', rel.descripcionServicioBienOfrecido),
+            campo('Emplazamiento', rel.emplazamientoActual),
+            campo('Personal jerárquico', rel.personalJerarquico),
+            campo('Personal producción', rel.personalProduccion),
+            campo('Personal administrativo', rel.personalAdministrativo),
+            campo('Tiempo radicación', rel.tiempoRadicacionMeses != null ? `${rel.tiempoRadicacionMeses} meses` : null),
+            campo('Necesidad m²', rel.necesidadMetrosCuadrados != null ? `${rel.necesidadMetrosCuadrados} m²` : null),
+            campo('Personal a ocupar', rel.personalAOcupar),
+            campo('Sup. trabajo', rel.superficieCubiertaTrabajo != null ? `${rel.superficieCubiertaTrabajo} m²` : null),
+            campo('Sup. depósito', rel.superficieCubiertaDeposito != null ? `${rel.superficieCubiertaDeposito} m²` : null),
+            campo('Sup. expansión', rel.superficieFuturaExpansion != null ? `${rel.superficieFuturaExpansion} m²` : null),
+            campo('Sup. estacionamiento', rel.superficieEstacionamiento != null ? `${rel.superficieEstacionamiento} m²` : null),
+            campo('Tiene planos', bool(rel.tienePlanos)),
+            campo('Tensión', rel.tensionAlimentacion),
+            campo('Potencia (kW)', rel.potenciaInstaladaKw),
+            campo('Agua (lts/mes)', rel.aguaLtsMes),
+            campo('Requiere gas', bool(rel.requiereGas)),
+            campo('Tratamiento en planta', bool(rel.tratamientoEnPlanta)),
+            campo('Balanza pública', bool(rel.necesitaBalanzaPublica)),
+            campo('Comedor unitario', bool(rel.necesitaComedorUnitario)),
+            campo('SUM/coworking', bool(rel.necesitaSalonCoworking)),
+            rel.materiasPrimas ? `<div class="col-12"><span class="text-muted">Materias primas:</span> <span class="fw-semibold">${rel.materiasPrimas}</span></div>` : '',
+            rel.destinoProduccion ? `<div class="col-12"><span class="text-muted">Destino producción:</span> <span class="fw-semibold">${rel.destinoProduccion}</span></div>` : '',
+            rel.tipoResiduosEfluentes ? `<div class="col-12"><span class="text-muted">Residuos/efluentes:</span> <span class="fw-semibold">${rel.tipoResiduosEfluentes}</span></div>` : '',
+        ].join('');
     }
 
     function renderizarSeccionLote(loteAsignado, necesidadM2) {
