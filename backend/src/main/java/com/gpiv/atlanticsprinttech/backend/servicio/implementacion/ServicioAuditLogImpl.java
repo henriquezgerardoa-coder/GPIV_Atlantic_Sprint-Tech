@@ -39,13 +39,13 @@ public class ServicioAuditLogImpl implements ServicioAuditLog {
     @Override
     @Transactional(readOnly = true)
     public List<AuditLog> filtrarPorEntidad(String entidad) {
-        return repositorioAuditLog.findByEntidadAfectadaOrderByFechaHoraDesc(entidad);
+        return AuditLog.filtrarPorEntidad(repositorioAuditLog.findAllByOrderByFechaHoraDesc(), entidad);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AuditLog> filtrarPorUsuario(String usuario) {
-        return repositorioAuditLog.findByUsuarioResponsableOrderByFechaHoraDesc(usuario);
+        return AuditLog.filtrarPorUsuario(repositorioAuditLog.findAllByOrderByFechaHoraDesc(), usuario);
     }
 
     @Override
