@@ -3,6 +3,7 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionDocumento;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
@@ -14,7 +15,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamientoPedidoLotes;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
+import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
+import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionHistorial;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
@@ -62,6 +65,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private final RepositorioRadicacionHistorial repositorioRadicacionHistorial;
     private final RepositorioRadicacionDocumento repositorioRadicacionDocumento;
     private final RepositorioEmpresa repositorioEmpresa;
+    private final RepositorioLote repositorioLote;
     private final ServicioContextoUsuario servicioContextoUsuario;
     private final ServicioAuditLog servicioAuditLog;
     private final ObjectMapper objectMapper;
@@ -71,6 +75,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         RepositorioRadicacionHistorial repositorioRadicacionHistorial,
         RepositorioRadicacionDocumento repositorioRadicacionDocumento,
         RepositorioEmpresa repositorioEmpresa,
+        RepositorioLote repositorioLote,
         ServicioContextoUsuario servicioContextoUsuario,
         ServicioAuditLog servicioAuditLog,
         ObjectMapper objectMapper
@@ -79,6 +84,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         this.repositorioRadicacionHistorial = repositorioRadicacionHistorial;
         this.repositorioRadicacionDocumento = repositorioRadicacionDocumento;
         this.repositorioEmpresa = repositorioEmpresa;
+        this.repositorioLote = repositorioLote;
         this.servicioContextoUsuario = servicioContextoUsuario;
         this.servicioAuditLog = servicioAuditLog;
         this.objectMapper = objectMapper;
@@ -318,6 +324,41 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     public List<RadicacionHistorial> listarHistorial(String identificadorIngreso, Long id) {
         obtenerPorId(identificadorIngreso, id);
         return repositorioRadicacionHistorial.findByRadicacionIdOrderByFechaEventoDesc(id);
+    }
+
+    @Override
+    public RadicacionSolicitud asignarLote(String identificadorIngreso, Long radicacionId, Long loteId) {
+        Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El rol EMPRESA no puede asignar lotes");
+        }
+        RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, radicacionId);
+        EstadoRadicacion estadoActual = radicacion.getEstado();
+        if (estadoActual == EstadoRadicacion.RECHAZADA || estadoActual == EstadoRadicacion.CANCELADA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede asignar un lote a una solicitud rechazada o cancelada");
+        }
+        Lote lote = repositorioLote.findByIdConEmpresa(loteId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lote no encontrado"));
+        String codigoAnterior = radicacion.getLote() != null ? radicacion.getLote().getCodigo() : null;
+        if (lote.getEmpresa() == null) {
+            lote.actualizarDatos(lote.getCodigo(), lote.getSuperficieMetrosCuadrados(), lote.isOcupado(), radicacion.getEmpresa(), lote.getZona());
+        }
+        lote.actualizarAsignacion(EstadoAsignacionLote.PREADJUDICADO, lote.getNumeroExpedienteReferencia());
+        repositorioLote.save(lote);
+        radicacion.asignarLote(lote);
+        RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
+        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(
+            actualizada, actualizada.getEstado(),
+            "Lote asignado: " + lote.getCodigo(), identificadorIngreso
+        ));
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "ASIGNACION_LOTE", "RadicacionSolicitud",
+            actualizada.getNumeroRadicado(),
+            codigoAnterior,
+            lote.getCodigo(),
+            obtenerIpActual()
+        );
+        return actualizada;
     }
 
     private String generarNumeroRadicado() {

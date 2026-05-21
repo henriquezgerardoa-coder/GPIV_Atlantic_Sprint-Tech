@@ -20,6 +20,9 @@ public record RespuestaRadicacion(
     Integer tiempoEstimadoObraMeses,
     LocalDate fechaPlazo,
     LocalDate fechaAprobacion,
-    Integer tiempoSolicitadoMeses
+    Integer tiempoSolicitadoMeses,
+    Long loteId,
+    String codigoLote,
+    Integer superficieSolicitadaM2
 ) {
 }

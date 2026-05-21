@@ -34,6 +34,10 @@ public class RadicacionSolicitud {
 	@JoinColumn(name = "empresa_id", nullable = false)
 	private Empresa empresa;
 
+	@ManyToOne(fetch = FetchType.LAZY, optional = true)
+	@JoinColumn(name = "lote_id", nullable = true)
+	private Lote lote;
+
 	@Column(name = "tipo_solicitud", nullable = false, length = 80)
 	private String tipoSolicitud;
 
@@ -188,6 +192,14 @@ public class RadicacionSolicitud {
 
 	public LocalDate getFechaAprobacion() {
 		return fechaAprobacion;
+	}
+
+	public Lote getLote() {
+		return lote;
+	}
+
+	public void asignarLote(Lote lote) {
+		this.lote = lote;
 	}
 
 	public void establecerDatosProyecto(

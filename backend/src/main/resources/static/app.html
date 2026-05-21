@@ -1087,6 +1087,31 @@
                         <div class="col-md-4 d-none" id="wrapperDetRadFechaVencimientoSolicitada"><strong>Vencimiento solicitado:</strong> <span id="detRadFechaVencimientoSolicitada">-</span></div>
                         <div class="col-md-4 d-none" id="wrapperDetRadTiempoObra"><strong>Tiempo estimado obra (admin):</strong> <span id="detRadTiempoObra">-</span></div>
                         <div class="col-md-4 d-none" id="wrapperDetRadFechaPlazo"><strong>Fecha plazo (admin):</strong> <span id="detRadFechaPlazo">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadSuperficieSolicitada"><strong>Superficie solicitada:</strong> <span id="detRadSuperficieSolicitada">-</span></div>
+                    </div>
+
+                    <!-- Sección asignación de lote -->
+                    <div class="card border-0 bg-light mb-3" id="wrapperAsignacionLote">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-2">Lote asignado</h6>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4">
+                                    <span class="fw-semibold" id="detRadLoteAsignado">Sin asignar</span>
+                                </div>
+                                <div class="col-md-5" id="wrapperSelectorLote">
+                                    <label for="selectorLoteAsignacion" class="form-label small">Asignar lote</label>
+                                    <select id="selectorLoteAsignacion" class="form-select form-select-sm">
+                                        <option value="">-- Seleccione un lote --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3" id="wrapperBotonAsignarLote">
+                                    <button type="button" class="btn btn-sm btn-outline-primary w-100"
+                                            onclick="ModuloRadicaciones.asignarLote()">
+                                        <i class="bi bi-geo-alt me-1"></i>Asignar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card border-0 bg-light mb-3">
