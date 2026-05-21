@@ -30,6 +30,7 @@ public class ControladorRegistroPublico {
         HttpServletRequest request
     ) {
         servicioUsuario.registrarPublico(
+            solicitud.nombreUsuario(),
             solicitud.correoElectronico(),
             solicitud.clave(),
             solicitud.confirmacionClave(),
