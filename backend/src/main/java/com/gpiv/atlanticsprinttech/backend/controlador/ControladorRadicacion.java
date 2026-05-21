@@ -149,6 +149,20 @@ public class ControladorRadicacion {
             .toList();
     }
 
+    @GetMapping("/{id}/relevamiento")
+    public ResponseEntity<JsonNode> obtenerRelevamiento(@PathVariable Long id, Authentication autenticacion) {
+        RadicacionSolicitud radicacion = servicioRadicacion.obtenerPorId(autenticacion.getName(), id);
+        String json = radicacion.getRelevamientoPedidoLotesJson();
+        if (json == null || json.isBlank()) {
+            return ResponseEntity.noContent().build();
+        }
+        try {
+            return ResponseEntity.ok(objectMapper.readTree(json));
+        } catch (Exception e) {
+            return ResponseEntity.noContent().build();
+        }
+    }
+
     @PatchMapping("/{id}/lote")
     public RespuestaRadicacion asignarLote(
         @PathVariable Long id,
