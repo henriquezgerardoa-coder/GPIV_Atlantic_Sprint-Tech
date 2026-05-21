@@ -82,6 +82,7 @@ const ModuloRadicaciones = (() => {
         }
 
         const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         cuerpo.innerHTML = radicaciones.map(r => `
             <tr role="button" title="Seleccionar expediente" onclick="ModuloRadicaciones.seleccionarExpediente(${r.id}, '${r.numeroRadicado}')">
                 <td class="ps-3 fw-semibold">${r.numeroRadicado}</td>
@@ -90,7 +91,7 @@ const ModuloRadicaciones = (() => {
                 <td><span class="badge bg-secondary">${formatearEstado(r.estado)}</span></td>
                 <td>${r.fechaRadicacion || '-'}</td>
                 <td>${(r.fechaUltimaActualizacion || '').replace('T', ' ').slice(0, 16)}</td>
-                <td class="text-center">${esGestor ? `<button class="btn btn-sm btn-outline-dark" onclick="event.stopPropagation(); ModuloRadicaciones.verDetalleAdmin(${r.id})">Detalle</button>` : '<span class="text-muted small">-</span>'}</td>
+                <td class="text-center">${(esGestor || esEmpresa) ? `<button class="btn btn-sm btn-outline-dark" onclick="event.stopPropagation(); ModuloRadicaciones.verDetalleAdmin(${r.id})">Detalle</button>` : '<span class="text-muted small">-</span>'}</td>
             </tr>
         `).join('');
     }
@@ -409,6 +410,8 @@ const ModuloRadicaciones = (() => {
     }
 
     function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado) {
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+
         setTexto('detRadNumero', detalle?.numeroRadicado || '-');
         setTexto('detRadSolicitante', detalle?.nombreEmpresa || '-');
         setTexto('detRadTipo', detalle?.tipoSolicitud || '-');
@@ -418,6 +421,8 @@ const ModuloRadicaciones = (() => {
         setTexto('detRadUsoEstimativo', detalle?.usoEstimativo || '-');
         setTexto('detRadRelevamiento', detalle?.tieneRelevamientoPedidoLotes ? 'Sí' : 'No');
         setTexto('detRadDescripcion', detalle?.descripcion || '-');
+
+        document.getElementById('bloqueCambiarEstadoRadAdmin')?.classList.toggle('d-none', !esGestor);
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
         if (selector) {
