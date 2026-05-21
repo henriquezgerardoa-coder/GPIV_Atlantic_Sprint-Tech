@@ -457,7 +457,7 @@ const ModuloRadicaciones = (() => {
     }
 
     function renderizarSeccionLote(loteAsignado, necesidadM2) {
-        const esAdmin = Autenticacion.tieneAcceso(['ADMINISTRADOR']);
+        const esAdmin = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         const bloqueAsignacion = document.getElementById('bloqueAsignacionLoteRad');
         if (!bloqueAsignacion) return;
 
