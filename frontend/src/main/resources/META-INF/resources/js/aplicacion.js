@@ -169,8 +169,9 @@ function navegarA(seccion) {
         case 'empresas':   ModuloEmpresas.cargar();      break;
         case 'lotes':      ModuloLotes.cargar();         break;
         case 'radicaciones': ModuloRadicaciones.cargar(); break;
-        case 'informes':   ModuloEstadisticas.cargar();  break;
-        case 'usuarios':   ModuloUsuarios.cargar();      break;
+        case 'informes':   ModuloEstadisticas.cargar();   break;
+        case 'usuarios':   ModuloUsuarios.cargar();       break;
+        case 'audit-log':  ModuloAuditLog.cargar();       break;
     }
 }
 
@@ -211,11 +212,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const esEmpresaExclusivo = Autenticacion.tieneAcceso(['EMPRESA'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
 
-    // Ocultar Informes para el rol EMPRESA (R-14: solo ADMINISTRADOR y DIRECTIVO)
+    // Ocultar Informes y Auditoría para el rol EMPRESA (R-14: solo ADMINISTRADOR y DIRECTIVO)
     if (esEmpresaExclusivo) {
         document.getElementById('itemNavInformes')?.classList.add('d-none');
         document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
         document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));
+        document.getElementById('itemNavAuditLog')?.classList.add('d-none');
+        document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
     }
 
     if (esEmpresaExclusivo) {
@@ -310,6 +313,8 @@ function ocultarAccesosEmpresaRestringidos() {
     document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
     document.getElementById('itemNavInformes')?.classList.add('d-none');
     document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
+    document.getElementById('itemNavAuditLog')?.classList.add('d-none');
+    document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
 
     document.querySelectorAll("a.enlace-nav[onclick*='navegarA(\"panel\")'], a.enlace-nav[onclick*='navegarA(\"lotes\")'], a.enlace-nav[onclick*=\"navegarA('panel')\"], a.enlace-nav[onclick*=\"navegarA('lotes')\"]")
         .forEach(el => el.closest('.nav-item')?.classList.add('d-none'));

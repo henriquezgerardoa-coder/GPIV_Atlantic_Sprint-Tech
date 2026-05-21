@@ -99,6 +99,11 @@
                 <i class="bi bi-people"></i> Usuarios
             </a>
         </li>
+        <li class="nav-item" id="itemNavAuditLog">
+            <a id="nav-audit-log" class="nav-link enlace-nav" href="#" onclick="navegarA('audit-log'); return false;">
+                <i class="bi bi-clock-history"></i> Auditoría
+            </a>
+        </li>
     </ul>
     <div class="mt-auto p-3 text-muted small border-top">
         <AST class="bi bi-info-circle me-1"></AST> Atlantic Sprint Tech v0.1.0
@@ -141,6 +146,11 @@
             <li class="nav-item" id="itemNavUsuariosMovil">
                 <a class="nav-link enlace-nav" href="#" onclick="navegarA('usuarios'); return false;">
                     <i class="bi bi-people"></i> Usuarios
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavAuditLogMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('audit-log'); return false;">
+                    <i class="bi bi-clock-history"></i> Auditoría
                 </a>
             </li>
         </ul>
@@ -824,11 +834,116 @@
         </div>
     </section>
 
+    <!-- ── SECCIÓN: AUDITORÍA ────────────────────── -->
+    <section id="seccion-audit-log" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-clock-history text-primary me-2"></i>Registro de auditoría</h4>
+                <p class="text-muted small mb-0">Historial de operaciones registradas en el sistema</p>
+            </div>
+            <button class="btn btn-outline-primary btn-sm" onclick="ModuloAuditLog.cargar()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body py-2">
+                <div class="row g-2 align-items-end">
+                    <div class="col-sm-5">
+                        <label class="form-label small mb-1 text-muted">Filtrar por entidad</label>
+                        <input type="text" id="filtroAuditEntidad" class="form-control form-control-sm"
+                               placeholder="ej: Empresa, Lote, Radicacion…"
+                               oninput="document.getElementById('filtroAuditUsuario').value=''">
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="form-label small mb-1 text-muted">Filtrar por usuario</label>
+                        <input type="text" id="filtroAuditUsuario" class="form-control form-control-sm"
+                               placeholder="nombre de usuario…"
+                               oninput="document.getElementById('filtroAuditEntidad').value=''">
+                    </div>
+                    <div class="col-sm-2">
+                        <button class="btn btn-primary btn-sm w-100" onclick="ModuloAuditLog.cargar()">
+                            <i class="bi bi-search me-1"></i>Buscar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Fecha y hora</th>
+                                <th>Usuario</th>
+                                <th>Operación</th>
+                                <th>Entidad</th>
+                                <th>IP</th>
+                                <th class="text-center">Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaAuditLog">
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
 </main>
 
 <!-- ══════════════════════════════════════════════════
      MODALES
 ══════════════════════════════════════════════════ -->
+
+<!-- Modal: Detalle de auditoría -->
+<div class="modal fade" id="modalAuditDetalle" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clock-history me-2 text-primary"></i>Detalle de operación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-3">
+                    <dt class="col-sm-3 text-muted">Fecha y hora</dt>
+                    <dd class="col-sm-9" id="auditDetalleFecha">–</dd>
+                    <dt class="col-sm-3 text-muted">Usuario</dt>
+                    <dd class="col-sm-9" id="auditDetalleUsuario">–</dd>
+                    <dt class="col-sm-3 text-muted">Operación</dt>
+                    <dd class="col-sm-9" id="auditDetalleOperacion">–</dd>
+                    <dt class="col-sm-3 text-muted">Entidad</dt>
+                    <dd class="col-sm-9" id="auditDetalleEntidad">–</dd>
+                    <dt class="col-sm-3 text-muted">IP</dt>
+                    <dd class="col-sm-9" id="auditDetalleIp">–</dd>
+                </dl>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted fw-semibold">Valor anterior</label>
+                        <pre id="auditDetalleAnterior" class="bg-light rounded p-2 small" style="max-height:220px;overflow:auto;white-space:pre-wrap;">—</pre>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted fw-semibold">Valor nuevo</label>
+                        <pre id="auditDetalleNuevo" class="bg-light rounded p-2 small" style="max-height:220px;overflow:auto;white-space:pre-wrap;">—</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal: Configuración inicial (primer ingreso EMPRESA sin empresa asociada) -->
 <div class="modal fade" id="modalConfiguracionInicial" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -1726,6 +1841,7 @@
 <script src="js/modulos/radicaciones.js"></script>
 <script src="js/modulos/estadisticas.js"></script>
 <script src="js/modulos/usuarios.js"></script>
+<script src="js/modulos/audit-log.js"></script>
 <script src="js/aplicacion.js"></script>
 </body>
 </html>
