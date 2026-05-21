@@ -1,15 +1,21 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesRegistroPublico;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCorreoVerificacion;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 @Service
 public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacion {
@@ -17,13 +23,16 @@ public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacio
 
     private final ObjectProvider<JavaMailSender> javaMailSenderProvider;
     private final PropiedadesRegistroPublico propiedadesRegistroPublico;
+    private final ServicioAuditLog servicioAuditLog;
 
     public ServicioCorreoVerificacionImpl(
         ObjectProvider<JavaMailSender> javaMailSenderProvider,
-        PropiedadesRegistroPublico propiedadesRegistroPublico
+        PropiedadesRegistroPublico propiedadesRegistroPublico,
+        ServicioAuditLog servicioAuditLog
     ) {
         this.javaMailSenderProvider = javaMailSenderProvider;
         this.propiedadesRegistroPublico = propiedadesRegistroPublico;
+        this.servicioAuditLog = servicioAuditLog;
     }
 
     @Override
@@ -40,6 +49,10 @@ public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacio
 
         if (!propiedadesRegistroPublico.getMail().isHabilitado()) {
             logger.info("[MAIL DESHABILITADO] Para {} enviar asunto='{}' cuerpo='{}'", correoDestino, asunto, cuerpo);
+            servicioAuditLog.registrarEvento(
+                obtenerUsuarioActual(correoDestino), "ENVIO_CORREO_VERIFICACION", "Usuario",
+                correoDestino, null, "mail_deshabilitado", obtenerIpActual()
+            );
             return;
         }
 
@@ -56,6 +69,27 @@ public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacio
             );
         }
         javaMailSender.send(mensaje);
+        servicioAuditLog.registrarEvento(
+            obtenerUsuarioActual(correoDestino), "ENVIO_CORREO_VERIFICACION", "Usuario",
+            correoDestino, null, "enviado", obtenerIpActual()
+        );
+    }
+
+    private String obtenerUsuarioActual(String fallback) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+            ? auth.getName()
+            : fallback;
+    }
+
+    private String obtenerIpActual() {
+        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) return "desconocida";
+        HttpServletRequest request = attrs.getRequest();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        return (forwarded != null && !forwarded.isBlank())
+            ? forwarded.split(",")[0].trim()
+            : request.getRemoteAddr();
     }
 }
 
