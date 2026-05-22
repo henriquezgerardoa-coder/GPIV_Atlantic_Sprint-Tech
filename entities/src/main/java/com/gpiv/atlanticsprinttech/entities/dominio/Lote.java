@@ -12,6 +12,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
+import EstadoAsignacionLoteConverter
 
 @Entity
 @Table(name = "lotes", uniqueConstraints = {
