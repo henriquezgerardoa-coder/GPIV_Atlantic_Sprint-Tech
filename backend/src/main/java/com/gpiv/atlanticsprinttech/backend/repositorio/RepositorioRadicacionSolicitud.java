@@ -45,4 +45,10 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
     /** Cuenta radicaciones agrupadas por estado — para informes/estadisticas (R-14). */
     @Query("SELECT r.estado, COUNT(r) FROM RadicacionSolicitud r GROUP BY r.estado")
     List<Object[]> contarPorEstado();
+
+    @Query("SELECT COALESCE(SUM(r.empleadosPrevistos), 0) FROM RadicacionSolicitud r WHERE r.estado IN :estados AND r.empleadosPrevistos IS NOT NULL")
+    Long sumEmpleadosPrevistos(@Param("estados") List<EstadoRadicacion> estados);
+
+    @Query("SELECT COUNT(r) FROM RadicacionSolicitud r WHERE r.estado NOT IN :estados")
+    long countActivas(@Param("estados") List<EstadoRadicacion> estados);
 }

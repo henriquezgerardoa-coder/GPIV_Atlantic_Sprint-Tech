@@ -94,6 +94,36 @@
                 <i class="bi bi-bar-chart-line"></i> Informes
             </a>
         </li>
+        <li class="nav-item" id="itemNavCenso">
+            <a id="nav-censo" class="nav-link enlace-nav" href="#" onclick="navegarA('censo'); return false;">
+                <i class="bi bi-people-fill"></i> Censo
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavCambioRubro">
+            <a id="nav-cambio-rubro" class="nav-link enlace-nav" href="#" onclick="navegarA('cambio-rubro'); return false;">
+                <i class="bi bi-arrow-left-right"></i> Cambio de rubro
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavProyectos">
+            <a id="nav-proyectos" class="nav-link enlace-nav" href="#" onclick="navegarA('proyectos'); return false;">
+                <i class="bi bi-building-gear"></i> Proyectos
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavInfraestructura">
+            <a id="nav-infraestructura" class="nav-link enlace-nav" href="#" onclick="navegarA('infraestructura'); return false;">
+                <i class="bi bi-lightning-charge-fill"></i> Infraestructura
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavDashboard">
+            <a id="nav-dashboard" class="nav-link enlace-nav" href="#" onclick="navegarA('dashboard'); return false;">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavMonitor">
+            <a id="nav-monitor" class="nav-link enlace-nav" href="#" onclick="navegarA('monitor'); return false;">
+                <i class="bi bi-diagram-3"></i> Monitor
+            </a>
+        </li>
         <li class="nav-item" id="itemNavUsuarios">
             <a id="nav-usuarios" class="nav-link enlace-nav" href="#" onclick="navegarA('usuarios'); return false;">
                 <i class="bi bi-people"></i> Usuarios
@@ -136,6 +166,36 @@
             <li class="nav-item" id="itemNavInformesMovil">
                 <a class="nav-link enlace-nav" href="#" onclick="navegarA('informes'); return false;">
                     <i class="bi bi-bar-chart-line"></i> Informes
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavCensoMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('censo'); return false;">
+                    <i class="bi bi-people-fill"></i> Censo
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavCambioRubroMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('cambio-rubro'); return false;">
+                    <i class="bi bi-arrow-left-right"></i> Cambio de rubro
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavProyectosMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('proyectos'); return false;">
+                    <i class="bi bi-building-gear"></i> Proyectos
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavInfraestructuraMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('infraestructura'); return false;">
+                    <i class="bi bi-lightning-charge-fill"></i> Infraestructura
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavDashboardMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('dashboard'); return false;">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavMonitorMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('monitor'); return false;">
+                    <i class="bi bi-diagram-3"></i> Monitor
                 </a>
             </li>
             <li class="nav-item" id="itemNavUsuariosMovil">
@@ -956,6 +1016,716 @@
         </div>
     </section>
 
+    <!-- ── SECCIÓN: CENSO ───────────────────────── -->
+    <section id="seccion-censo" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Censo de personal y flota</h4>
+                <p class="text-muted small mb-0">Registro para exenciones de Ingresos Brutos — Declaración anual</p>
+            </div>
+        </div>
+
+        <div id="mensajeCenso" class="alert d-none"></div>
+
+        <!-- Selector de empresa (solo ADMIN/DIRECTIVO) -->
+        <div class="card border-0 bg-light mb-3 d-none" id="bloqueSelectorEmpresaCenso">
+            <div class="card-body">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <label for="selectorEmpresaCenso" class="form-label small fw-semibold">Empresa</label>
+                        <select id="selectorEmpresaCenso" class="form-select"
+                                onchange="ModuloCenso.seleccionarEmpresa()">
+                            <option value="">Seleccionar empresa...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="contenidoCenso" class="d-none">
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="tabsCenso">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#panelCensoDeclaraciones">
+                        <i class="bi bi-calendar-check me-1"></i>Declaraciones
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#panelCensoPersonal">
+                        <i class="bi bi-person-badge me-1"></i>Personal registrado
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#panelCensoVehiculos">
+                        <i class="bi bi-truck me-1"></i>Flota vehicular
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+
+                <!-- Tab: Declaraciones anuales -->
+                <div class="tab-pane fade show active" id="panelCensoDeclaraciones">
+                    <div class="row g-3">
+                        <div class="col-lg-5">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-3">Nueva declaración</h6>
+                                    <div id="alertaDeclaracionCenso" class="alert alert-danger d-none mb-2"></div>
+                                    <form id="formDeclaracionCenso" novalidate>
+                                        <div class="mb-2">
+                                            <label class="form-label small">Año de período</label>
+                                            <input id="campoPeriodoCenso" type="number" class="form-control form-control-sm"
+                                                   min="2000" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small">Personal registrado (en relación de dependencia)</label>
+                                            <input id="campoCantRegistrado" type="number" min="0" value="0"
+                                                   class="form-control form-control-sm">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small">Personal no registrado / monotributistas</label>
+                                            <input id="campoCantNoRegistrado" type="number" min="0" value="0"
+                                                   class="form-control form-control-sm">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small">Observación</label>
+                                            <textarea id="campoObservacionCenso" class="form-control form-control-sm"
+                                                      rows="2" maxlength="500"></textarea>
+                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm w-100"
+                                                onclick="ModuloCenso.declararCenso()">
+                                            <i class="bi bi-save me-1"></i>Guardar declaración
+                                        </button>
+                                    </form>
+                                    <p class="text-muted small mt-2 mb-0">Si ya existe una declaración para el año indicado, será reemplazada.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <h6 class="text-muted mb-2">Historial de declaraciones</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Período</th>
+                                            <th>Fecha declaración</th>
+                                            <th>Registrados</th>
+                                            <th>No registrados</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpoTablaCenso">
+                                        <tr><td colspan="5" class="text-muted text-center py-3">Sin declaraciones</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Personal registrado -->
+                <div class="tab-pane fade" id="panelCensoPersonal">
+                    <div class="row g-3">
+                        <div class="col-lg-5">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-3">Agregar empleado registrado</h6>
+                                    <div id="alertaPersonalCenso" class="alert alert-danger d-none mb-2"></div>
+                                    <form id="formPersonalCenso" novalidate>
+                                        <div class="mb-2">
+                                            <label class="form-label small">CUIT <span class="text-danger">*</span></label>
+                                            <input id="campoCuitPersonal" class="form-control form-control-sm"
+                                                   placeholder="XX-XXXXXXXX-X" maxlength="20">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label small">Nombre completo <span class="text-danger">*</span></label>
+                                            <input id="campoNombrePersonal" class="form-control form-control-sm"
+                                                   maxlength="120" placeholder="Apellido, Nombre">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small">Fecha de ingreso <span class="text-danger">*</span></label>
+                                            <input id="campoFechaIngresoPersonal" type="date"
+                                                   class="form-control form-control-sm">
+                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm w-100"
+                                                onclick="ModuloCenso.agregarPersonal()">
+                                            <i class="bi bi-person-plus me-1"></i>Agregar empleado
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7">
+                            <h6 class="text-muted mb-2">Nómina de personal registrado</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">CUIT</th>
+                                            <th>Nombre completo</th>
+                                            <th>Fecha ingreso</th>
+                                            <th class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpoTablaPersonal">
+                                        <tr><td colspan="4" class="text-muted text-center py-3">Sin personal registrado</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Flota vehicular -->
+                <div class="tab-pane fade" id="panelCensoVehiculos">
+                    <div class="row g-3">
+                        <div class="col-lg-4">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-3">Agregar vehículo</h6>
+                                    <div id="alertaVehiculoCenso" class="alert alert-danger d-none mb-2"></div>
+                                    <form id="formVehiculoCenso" novalidate>
+                                        <div class="mb-2">
+                                            <label class="form-label small">Patente <span class="text-danger">*</span></label>
+                                            <input id="campoPatenteVehiculo" class="form-control form-control-sm"
+                                                   placeholder="ABC123 o AB123CD" maxlength="15">
+                                            <div class="form-text">Formato argentino (ABC123) o Mercosur (AB123CD)</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small">Marca / Modelo <span class="text-danger">*</span></label>
+                                            <input id="campoMarcaModeloVehiculo" class="form-control form-control-sm"
+                                                   maxlength="120" placeholder="Ej: Ford Transit 2022">
+                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm w-100"
+                                                onclick="ModuloCenso.agregarVehiculo()">
+                                            <i class="bi bi-truck me-1"></i>Agregar vehículo
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-8">
+                            <h6 class="text-muted mb-2">Flota registrada</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Patente</th>
+                                            <th>Marca / Modelo</th>
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpoTablaVehiculos">
+                                        <tr><td colspan="4" class="text-muted text-center py-3">Sin vehículos registrados</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /tab-content -->
+        </div><!-- /contenidoCenso -->
+    </section>
+
+    <!-- ── SECCIÓN: CAMBIO DE RUBRO ──────────────── -->
+    <section id="seccion-cambio-rubro" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-arrow-left-right text-primary me-2"></i>Control de cambio de rubro</h4>
+                <p class="text-muted small mb-0">Solicitudes formales para modificar el rubro/actividad de una empresa radicada</p>
+            </div>
+        </div>
+
+        <div id="alertaCambioRubroGlobal" class="alert d-none"></div>
+
+        <!-- Formulario de solicitud (solo EMPRESA) -->
+        <div id="bloqueFormSolicitudCambioRubro" class="card border-0 shadow-sm mb-4 d-none">
+            <div class="card-header bg-white border-bottom fw-semibold">
+                <i class="bi bi-send me-2 text-primary"></i>Nueva solicitud de cambio de rubro
+            </div>
+            <div class="card-body">
+                <div id="alertaCambioRubro" class="alert alert-danger d-none small"></div>
+                <form id="formCambioRubro">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label for="selectorRubroSolicitado" class="form-label small fw-semibold">Rubro solicitado</label>
+                            <select id="selectorRubroSolicitado" class="form-select">
+                                <option value="">Seleccionar rubro...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <label for="campoJustificacionRubro" class="form-label small fw-semibold">Justificación <span class="text-muted fw-normal">(obligatoria)</span></label>
+                            <textarea id="campoJustificacionRubro" class="form-control" rows="2"
+                                      maxlength="1000" placeholder="Explique el motivo del cambio de rubro..."></textarea>
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="button" class="btn btn-primary btn-sm px-4"
+                                    onclick="ModuloCambioRubro.enviarSolicitud()">
+                                <i class="bi bi-send me-1"></i>Enviar solicitud
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de solicitudes -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom fw-semibold">
+                <i class="bi bi-list-check me-2 text-primary"></i>Solicitudes registradas
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Empresa</th>
+                                <th>Rubro anterior</th>
+                                <th>Rubro solicitado</th>
+                                <th>Justificación</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th id="thResueltoPor">Resuelto por</th>
+                                <th id="thResolucion" class="text-center">Resolución</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoCambiosRubro">
+                            <tr><td colspan="8" class="text-muted text-center py-3">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: DASHBOARD GERENCIAL ─────────── -->
+    <section id="seccion-dashboard" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard gerencial</h4>
+                <p class="text-muted small mb-0">
+                    Indicadores clave del Parque Industrial ENREPAVI ·
+                    <span id="fechaActualizacionDashboard" class="text-muted"></span>
+                </p>
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="ModuloDashboard.cargar()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+        </div>
+
+        <div id="contenedorDashboard">
+            <!-- KPI fila 1 -->
+            <div class="row g-3 mb-3" id="kpisFila1">
+                <div class="col-12 text-muted text-center py-4 small">
+                    <i class="bi bi-hourglass-split me-2"></i>Cargando indicadores...
+                </div>
+            </div>
+
+            <!-- KPI fila 2 -->
+            <div class="row g-3 mb-4" id="kpisFila2"></div>
+
+            <!-- Gráficos -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-bottom fw-semibold small">
+                            <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Distribución por rubro
+                        </div>
+                        <div class="card-body d-flex align-items-center justify-content-center" style="height:280px">
+                            <canvas id="graficoRubroDashboard"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-bottom fw-semibold small">
+                            <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Ocupación por zona
+                        </div>
+                        <div class="card-body d-flex align-items-center justify-content-center" style="height:280px">
+                            <canvas id="graficoZonaDashboard"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de zonas -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom fw-semibold small">
+                    <i class="bi bi-table me-2 text-primary"></i>Resumen por zona
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table tabla-datos mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Zona</th>
+                                    <th class="text-end">Total lotes</th>
+                                    <th class="text-end">Ocupados</th>
+                                    <th class="text-end">Libres</th>
+                                    <th class="text-end">Superficie</th>
+                                    <th class="text-end" style="min-width:160px">Tasa ocupación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaZonaDashboard">
+                                <tr><td colspan="6" class="text-muted text-center py-3">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SECCIÓN: INFRAESTRUCTURA ─────────────── -->
+    <section id="seccion-infraestructura" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-lightning-charge-fill text-primary me-2"></i>Monitoreo de infraestructura</h4>
+                <p class="text-muted small mb-0">Estado operativo de los servicios del Parque Industrial ENREPAVI</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <div id="resumenEstadoServicios"></div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="ModuloInfraestructura.cargar()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                </button>
+                <button id="btnNuevoServicio" class="btn btn-sm btn-primary d-none"
+                        onclick="ModuloInfraestructura.abrirCreacion()">
+                    <i class="bi bi-plus-lg me-1"></i>Nuevo servicio
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid de tarjetas de servicio -->
+        <div class="row g-3" id="gridServicios">
+            <div class="col-12 text-muted text-center py-4 small">
+                <i class="bi bi-hourglass-split me-2"></i>Cargando servicios...
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal: Detalle y gestión de un servicio -->
+    <div class="modal fade" id="modalDetalleServicio" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="tituloModalServicio">Servicio</h5>
+                        <div id="estadoBadgeServicio" class="mt-1"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="alertaModalServicio" class="alert alert-danger d-none alerta-modal small"></div>
+
+                    <!-- Actualizar estado (solo gestores) -->
+                    <div id="bloqueActualizarEstado" class="card border-0 bg-light mb-3 d-none">
+                        <div class="card-body py-2">
+                            <h6 class="fw-semibold mb-2 small text-uppercase text-muted">Actualizar estado</h6>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label for="selectorNuevoEstado" class="form-label small fw-semibold">Nuevo estado</label>
+                                    <select id="selectorNuevoEstado" class="form-select form-select-sm">
+                                        <option value="OPERATIVO">Operativo</option>
+                                        <option value="MANTENIMIENTO">Mantenimiento</option>
+                                        <option value="FALLA_CRITICA">Falla crítica</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="campoComentarioServicio" class="form-label small fw-semibold">
+                                        Comentario <span class="text-muted fw-normal">(obligatorio para fallas/mantenimientos)</span>
+                                    </label>
+                                    <input type="text" id="campoComentarioServicio" class="form-control form-control-sm"
+                                           maxlength="500" placeholder="Descripción del evento...">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-primary btn-sm w-100"
+                                            onclick="ModuloInfraestructura.guardarEstado()">Guardar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Historial de eventos -->
+                    <h6 class="fw-semibold mb-2 small text-uppercase text-muted">Historial de eventos</h6>
+                    <div id="historialServicioLista" style="max-height:380px;overflow-y:auto"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo servicio -->
+    <div class="modal fade" id="modalNuevoServicio" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Nuevo servicio de infraestructura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="alertaModalNuevoServicio" class="alert alert-danger d-none alerta-modal small"></div>
+                    <form id="formNuevoServicio">
+                        <div class="mb-3">
+                            <label for="campoNombreServicio" class="form-label small fw-semibold">Nombre del servicio</label>
+                            <input type="text" id="campoNombreServicio" class="form-control"
+                                   maxlength="120" placeholder="Ej: Red de agua potable">
+                        </div>
+                        <div>
+                            <label for="campoDescripcionServicio" class="form-label small fw-semibold">Descripción técnica</label>
+                            <textarea id="campoDescripcionServicio" class="form-control" rows="2"
+                                      maxlength="1000" placeholder="Descripción técnica opcional..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="ModuloInfraestructura.guardarNuevoServicio()">Crear servicio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECCIÓN: MONITOR DE TRAZABILIDAD ─────── -->
+    <section id="seccion-monitor" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-diagram-3 text-primary me-2"></i>Monitor de trazabilidad</h4>
+                <p class="text-muted small mb-0">Seguimiento integral del ciclo de vida de los expedientes de radicación</p>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary d-none" id="btnLimpiarFiltroMonitor"
+                    onclick="ModuloMonitor.limpiarFiltro()">
+                <i class="bi bi-x-circle me-1"></i>Limpiar filtro
+            </button>
+        </div>
+
+        <!-- Resumen y alertas -->
+        <div id="tarjetasEstadoMonitor" class="mb-3"></div>
+
+        <!-- Tabla de expedientes -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between">
+                <span class="fw-semibold"><i class="bi bi-table me-2 text-primary"></i>Expedientes</span>
+                <small class="text-muted">Clic en <i class="bi bi-diagram-3"></i> para ver la línea de tiempo</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">N° Radicado</th>
+                                <th>Empresa</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Fecha rad.</th>
+                                <th>Plazo obra</th>
+                                <th title="Días desde última actualización">Sin mov.</th>
+                                <th class="text-center">Timeline</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoCuerpoMonitor">
+                            <tr><td colspan="8" class="text-muted text-center py-3">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal: Línea de tiempo del expediente -->
+    <div class="modal fade" id="modalTimeline" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="tituloTimeline">Línea de tiempo</h5>
+                        <p class="text-muted small mb-0" id="subtituloTimeline"></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="estadoActualTimeline" class="mb-3 d-flex align-items-center gap-2 flex-wrap"></div>
+                    <div id="cuerpoTimeline" style="max-height:480px;overflow-y:auto;padding-right:4px"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SECCIÓN: PROYECTOS Y HITOS DE OBRA ───── -->
+    <section id="seccion-proyectos" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-building-gear text-primary me-2"></i>Proyectos productivos</h4>
+                <p class="text-muted small mb-0">Seguimiento de hitos de obra y alertas de incumplimiento</p>
+            </div>
+            <button id="btnNuevoProyecto" class="btn btn-primary d-none"
+                    onclick="ModuloProyectos.abrirCreacion()">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo proyecto
+            </button>
+        </div>
+
+        <!-- Alertas de hitos vencidos -->
+        <div id="bloqueAlertasHitos" class="alert alert-danger d-none mb-3">
+            <div class="fw-semibold mb-1">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Hitos con plazo vencido sin cumplir
+            </div>
+            <ul id="listaAlertasHitos" class="list-group list-group-flush mb-0 small"></ul>
+        </div>
+
+        <!-- Tabla de proyectos -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-datos table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Proyecto</th>
+                                <th>Empresa</th>
+                                <th>Estado</th>
+                                <th style="min-width:130px">Avance</th>
+                                <th>Fin estimado</th>
+                                <th>Responsable</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaProyectos">
+                            <tr><td colspan="7" class="text-muted text-center py-3">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal: Hitos del proyecto -->
+    <div class="modal fade" id="modalHitosProyecto" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="tituloModalHitos">Hitos del proyecto</h5>
+                        <p class="text-muted small mb-0" id="subtituloModalHitos"></p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="alertaModalHitos" class="alert alert-danger d-none alerta-modal small"></div>
+
+                    <!-- Lista de hitos -->
+                    <div id="listaHitosModal" class="mb-3"></div>
+
+                    <!-- Formulario nuevo hito (solo gestores) -->
+                    <div id="bloqueFormNuevoHito" class="border-top pt-3 d-none">
+                        <h6 class="fw-semibold mb-2"><i class="bi bi-plus-lg me-1 text-primary"></i>Agregar hito</h6>
+                        <form id="formNuevoHito">
+                            <div class="row g-2">
+                                <div class="col-md-7">
+                                    <input type="text" id="campoDescripcionHito" class="form-control form-control-sm"
+                                           maxlength="300" placeholder="Descripción del hito...">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" id="campoFechaHito" class="form-control form-control-sm"
+                                           title="Fecha de vencimiento (opcional)">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-primary btn-sm w-100"
+                                            onclick="ModuloProyectos.agregarHito()">
+                                        <i class="bi bi-plus-lg"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cambio de estado del proyecto -->
+    <div class="modal fade" id="modalCambioEstadoProyecto" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Cambiar estado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="alertaModalEstado" class="alert alert-danger d-none alerta-modal small"></div>
+                    <label for="selectorEstadoProyecto" class="form-label small fw-semibold">Nuevo estado</label>
+                    <select id="selectorEstadoProyecto" class="form-select">
+                        <option value="PLANIFICADO">Planificado</option>
+                        <option value="EN_EJECUCION">En ejecución</option>
+                        <option value="PAUSADO">Pausado</option>
+                        <option value="FINALIZADO">Finalizado</option>
+                        <option value="CANCELADO">Cancelado</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="ModuloProyectos.guardarEstado()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo proyecto -->
+    <div class="modal fade" id="modalNuevoProyecto" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Nuevo proyecto productivo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="alertaModalNuevoProyecto" class="alert alert-danger d-none alerta-modal small"></div>
+                    <form id="formNuevoProyecto">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="campoNombreProyecto" class="form-label small fw-semibold">Nombre del proyecto</label>
+                                <input type="text" id="campoNombreProyecto" class="form-control"
+                                       maxlength="160" placeholder="Ej: Construcción nave industrial A">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="campoFechaFinProyecto" class="form-label small fw-semibold">Fecha fin estimada</label>
+                                <input type="date" id="campoFechaFinProyecto" class="form-control">
+                            </div>
+                            <div class="col-12">
+                                <label for="campoDescripcionProyecto" class="form-label small fw-semibold">Descripción</label>
+                                <textarea id="campoDescripcionProyecto" class="form-control" rows="2"
+                                          maxlength="1000" placeholder="Descripción general del proyecto..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="campoMontoProyecto" class="form-label small fw-semibold">Monto de inversión ($)</label>
+                                <input type="number" id="campoMontoProyecto" class="form-control"
+                                       min="0" step="0.01" placeholder="Opcional">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="selectorRadicacionProyecto" class="form-label small fw-semibold">Radicación vinculada</label>
+                                <select id="selectorRadicacionProyecto" class="form-select">
+                                    <option value="">Sin radicación asociada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="ModuloProyectos.guardarNuevoProyecto()">Crear proyecto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ── SECCIÓN: USUARIOS ─────────────────────── -->
     <section id="seccion-usuarios" class="seccion-contenido d-none">
         <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -1261,6 +2031,36 @@
                                     <thead><tr><th>Fecha</th><th>Estado</th><th>Observación</th><th>Usuario</th></tr></thead>
                                     <tbody id="cuerpoHistorialDetalleRadAdmin"><tr><td colspan="4" class="text-muted">Sin historial</td></tr></tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acta de rúbrica (solo ADMIN/DIRECTIVO, estados APROBADA/RADICADA) -->
+                    <div class="card border-0 bg-light mt-3 d-none" id="bloqueActaRubricaRad">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3"><i class="bi bi-pen me-1"></i>Acta de rúbrica</h6>
+                            <div id="alertaActaRubricaRad" class="alert alert-danger d-none mb-2"></div>
+                            <div id="estadoActaRubricaRad" class="mb-2">
+                                <span id="textoEstadoActaRubrica" class="text-muted small">Sin acta cargada</span>
+                                <a href="#" id="btnVerActaRubrica" class="btn btn-sm btn-outline-secondary ms-2 d-none"
+                                   target="_blank" rel="noopener">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>Ver acta
+                                </a>
+                            </div>
+                            <div id="formSubirActaRubrica" class="d-none">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-8">
+                                        <label class="form-label small">Archivo PDF del acta firmada</label>
+                                        <input id="archivoActaRubricaRad" type="file" class="form-control form-control-sm" accept=".pdf">
+                                    </div>
+                                    <div class="col-md-4 d-grid">
+                                        <button type="button" class="btn btn-primary btn-sm"
+                                                onclick="ModuloRadicaciones.subirActaRubrica()">
+                                            <i class="bi bi-upload me-1"></i>Subir acta
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Solo PDF — máx. 10 MB. Reemplaza cualquier acta anterior.</small>
                             </div>
                         </div>
                     </div>
@@ -1793,6 +2593,12 @@
 <script src="js/modulos/estadisticas.js"></script>
 <script src="js/modulos/usuarios.js"></script>
 <script src="js/modulos/audit-log.js"></script>
+<script src="js/modulos/censo.js"></script>
+<script src="js/modulos/cambio-rubro.js"></script>
+<script src="js/modulos/proyectos.js"></script>
+<script src="js/modulos/monitor.js"></script>
+<script src="js/modulos/dashboard.js"></script>
+<script src="js/modulos/infraestructura.js"></script>
 <script src="js/aplicacion.js"></script>
 </body>
 </html>

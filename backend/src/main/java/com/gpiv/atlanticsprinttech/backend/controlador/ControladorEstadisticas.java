@@ -1,6 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEstadisticas;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDashboardGerencial;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
@@ -49,6 +50,15 @@ public class ControladorEstadisticas {
     @GetMapping("/informes/lotes")
     public List<RespuestaInformeLote> informeLotes() {
         return servicioEstadisticas.obtenerInformeLotes();
+    }
+
+    /**
+     * Dashboard gerencial con KPIs, distribución por rubro y zona.
+     * GET /api/estadisticas/gerencial
+     */
+    @GetMapping("/gerencial")
+    public RespuestaDashboardGerencial dashboardGerencial() {
+        return servicioEstadisticas.obtenerDashboardGerencial();
     }
 }
 

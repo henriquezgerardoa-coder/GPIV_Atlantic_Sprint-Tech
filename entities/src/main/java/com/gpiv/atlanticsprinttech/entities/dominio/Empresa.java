@@ -198,6 +198,10 @@ public class Empresa {
 		actualizarDatos(nombre, nombre, cuit, cuit, this.direccion, this.actividadEconomica, correoElectronico, this.telefono);
 	}
 
+	public void asignarRubro(Rubro rubro) {
+		this.rubro = rubro;
+	}
+
 	public void actualizarServiciosPostRadicacion(Integer cantidadEmpleados, String vehiculosAsignadosJson) {
 		this.cantidadEmpleados = cantidadEmpleados;
 		this.vehiculosAsignadosJson = vehiculosAsignadosJson;

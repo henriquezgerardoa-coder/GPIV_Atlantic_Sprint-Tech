@@ -183,6 +183,31 @@ public class ControladorRadicacion {
         ));
     }
 
+    @PostMapping(value = "/{id}/rubrica", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public RespuestaDocumentoRadicacion subirActaRubrica(
+        @PathVariable Long id,
+        @RequestParam("archivo") MultipartFile archivo,
+        Authentication autenticacion
+    ) throws Exception {
+        RadicacionDocumento acta = servicioRadicacion.subirActaRubrica(
+            autenticacion.getName(),
+            id,
+            archivo.getOriginalFilename(),
+            archivo.getContentType(),
+            archivo.getBytes()
+        );
+        return crearRespuestaDocumento(acta);
+    }
+
+    @GetMapping("/{id}/rubrica")
+    public ResponseEntity<byte[]> obtenerActaRubrica(@PathVariable Long id, Authentication autenticacion) {
+        RadicacionDocumento acta = servicioRadicacion.obtenerActaRubrica(autenticacion.getName(), id);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(acta.getMimeType()))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + acta.getNombreArchivo().replace("\"", "") + "\"")
+            .body(acta.getContenido());
+    }
+
     @PatchMapping("/{id}/lote")
     public RespuestaRadicacion asignarLote(
         @PathVariable Long id,

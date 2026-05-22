@@ -377,6 +377,63 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         return actualizada;
     }
 
+    @Override
+    public RadicacionDocumento subirActaRubrica(
+        String identificadorIngreso,
+        Long radicacionId,
+        String nombreArchivo,
+        String mimeType,
+        byte[] contenido
+    ) {
+        Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+        if (!servicioContextoUsuario.esRolAdministrador(usuario)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el Administrador puede cargar el Acta de Rúbrica");
+        }
+        RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, radicacionId);
+        EstadoRadicacion estado = radicacion.getEstado();
+        if (estado != EstadoRadicacion.APROBADA && estado != EstadoRadicacion.RADICADA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "El Acta de Rúbrica solo puede cargarse cuando el expediente está Aprobado o Radicado");
+        }
+        if (mimeType == null || !mimeType.toLowerCase(Locale.ROOT).contains("pdf")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El Acta de Rúbrica debe ser un archivo PDF");
+        }
+        validarArchivo(radicacionId, nombreArchivo, mimeType, contenido);
+
+        RadicacionDocumento acta = RadicacionDocumento.crear(
+            radicacion,
+            TipoDocumentoRadicacion.ACTA_RUBRICA,
+            nombreArchivo,
+            mimeType,
+            contenido.length,
+            "Acta de rúbrica firmada por el Directorio",
+            identificadorIngreso,
+            contenido
+        );
+        RadicacionDocumento guardada = repositorioRadicacionDocumento.save(acta);
+        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(
+            radicacion, radicacion.getEstado(),
+            "Acta de rúbrica cargada: " + nombreArchivo,
+            identificadorIngreso
+        ));
+        servicioAuditLog.registrarEvento(
+            identificadorIngreso, "CARGA_ACTA_RUBRICA", "RadicacionDocumento",
+            radicacion.getNumeroRadicado(),
+            null,
+            nombreArchivo,
+            obtenerIpActual()
+        );
+        return guardada;
+    }
+
+    @Override
+    public RadicacionDocumento obtenerActaRubrica(String identificadorIngreso, Long radicacionId) {
+        obtenerPorId(identificadorIngreso, radicacionId);
+        return repositorioRadicacionDocumento
+            .findTopByRadicacionIdAndTipoDocumentoOrderByFechaSubidaDesc(radicacionId, TipoDocumentoRadicacion.ACTA_RUBRICA)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Acta de rúbrica no encontrada para este expediente"));
+    }
+
     private String generarNumeroRadicado() {
         String prefijo = "RAD-" + LocalDate.now().format(FORMATO_FECHA) + "-";
         String candidato;

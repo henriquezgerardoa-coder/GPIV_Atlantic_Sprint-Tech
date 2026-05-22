@@ -1,0 +1,18 @@
+package com.gpiv.atlanticsprinttech.commons.comunicacion.dto;
+
+public record RespuestaSolicitudCambioRubro(
+    Long id,
+    Long empresaId,
+    String nombreEmpresa,
+    Long rubroSolicitadoId,
+    String nombreRubroSolicitado,
+    String rubroAnteriorNombre,
+    String justificacion,
+    String estado,
+    String motivoRechazo,
+    String solicitadoPor,
+    String fechaSolicitud,
+    String resueltoPor,
+    String fechaResolucion
+) {
+}

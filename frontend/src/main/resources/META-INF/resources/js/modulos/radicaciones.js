@@ -419,6 +419,75 @@ const ModuloRadicaciones = (() => {
         await cargar();
     }
 
+    async function subirActaRubrica() {
+        if (!radicacionDetalleAdmin?.id) return;
+        const alerta = document.getElementById('alertaActaRubricaRad');
+        const archivo = document.getElementById('archivoActaRubricaRad').files[0];
+
+        alerta?.classList.add('d-none');
+        if (!archivo) {
+            alerta.textContent = 'Seleccione un archivo PDF.';
+            alerta?.classList.remove('d-none');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('archivo', archivo);
+
+        const respuesta = await ApiCliente.subirArchivo(`/api/radicaciones/${radicacionDetalleAdmin.id}/rubrica`, formData);
+        if (!respuesta?.ok) {
+            const error = await respuesta?.json().catch(() => ({}));
+            alerta.textContent = error?.mensaje || error?.message || 'No se pudo subir el acta.';
+            alerta?.classList.remove('d-none');
+            return;
+        }
+
+        document.getElementById('archivoActaRubricaRad').value = '';
+        await renderizarSeccionActaRubrica(radicacionDetalleAdmin.id, radicacionDetalleAdmin.estado);
+        mostrarAlerta('Acta de rúbrica cargada correctamente.');
+    }
+
+    async function renderizarSeccionActaRubrica(radicacionId, estado) {
+        const bloque = document.getElementById('bloqueActaRubricaRad');
+        if (!bloque) return;
+
+        const esAdmin = Autenticacion.tieneAcceso(['ADMINISTRADOR']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const estadoPermiteActa = estado === 'APROBADA' || estado === 'RADICADA';
+
+        if (!esGestor || !estadoPermiteActa) {
+            bloque.classList.add('d-none');
+            return;
+        }
+        bloque.classList.remove('d-none');
+
+        const formSubir = document.getElementById('formSubirActaRubrica');
+        const textoEstado = document.getElementById('textoEstadoActaRubrica');
+        const btnVer = document.getElementById('btnVerActaRubrica');
+        const alerta = document.getElementById('alertaActaRubricaRad');
+        alerta?.classList.add('d-none');
+
+        const resp = await ApiCliente.obtener(`/api/radicaciones/${radicacionId}/rubrica`);
+        if (resp?.ok) {
+            if (textoEstado) textoEstado.textContent = 'Acta cargada';
+            if (btnVer) {
+                btnVer.href = `/api/radicaciones/${radicacionId}/rubrica`;
+                btnVer.classList.remove('d-none');
+            }
+            if (formSubir) {
+                if (esAdmin) {
+                    formSubir.classList.remove('d-none');
+                } else {
+                    formSubir.classList.add('d-none');
+                }
+            }
+        } else {
+            if (textoEstado) textoEstado.textContent = 'Sin acta cargada';
+            if (btnVer) btnVer.classList.add('d-none');
+            if (formSubir) formSubir.classList.toggle('d-none', !esAdmin);
+        }
+    }
+
     async function verDetalleAdmin(id) {
         const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleRadicacionAdmin'));
         const estadoCarga = document.getElementById('estadoCargaDetalleRadAdmin');
@@ -459,6 +528,7 @@ const ModuloRadicaciones = (() => {
                 ? await respRelevamiento.json().catch(() => null) : null;
             radicacionDetalleAdmin = detalle;
             renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento);
+            await renderizarSeccionActaRubrica(id, detalle.estado);
             contenido?.classList.remove('d-none');
         } catch (e) {
             estadoCarga?.classList.add('d-none');
@@ -1221,7 +1291,8 @@ const ModuloRadicaciones = (() => {
         guardarBorradorAhora,
         descartarBorrador,
         abrirModalNuevaSolicitud,
-        subirDocumentoDesdeModal
+        subirDocumentoDesdeModal,
+        subirActaRubrica
     };
 })();
 

@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "servicios")
@@ -37,6 +38,9 @@ public class Servicio {
     @JoinColumn(name = "ultimo_tecnico_id")
     private Usuario ultimoTecnicoResponsable;
 
+    @Column(name = "fecha_ultima_actualizacion")
+    private LocalDateTime fechaUltimaActualizacion;
+
     protected Servicio() {
     }
 
@@ -44,6 +48,7 @@ public class Servicio {
         this.nombre = nombre;
         this.descripcionTecnica = descripcionTecnica;
         this.estadoActual = EstadoServicio.OPERATIVO;
+        this.fechaUltimaActualizacion = LocalDateTime.now();
     }
 
     public static Servicio crear(String nombre, String descripcionTecnica) {
@@ -74,18 +79,28 @@ public class Servicio {
         return ultimoTecnicoResponsable;
     }
 
+    public LocalDateTime getFechaUltimaActualizacion() {
+        return fechaUltimaActualizacion;
+    }
+
     public void reportarFalla(String comentario, Usuario tecnico) {
         this.estadoActual = EstadoServicio.FALLA_CRITICA;
         this.ultimoComentario = comentario;
         this.ultimoTecnicoResponsable = tecnico;
+        this.fechaUltimaActualizacion = LocalDateTime.now();
     }
 
-    public void registrarMantenimiento() {
+    public void registrarMantenimiento(String comentario, Usuario tecnico) {
         this.estadoActual = EstadoServicio.MANTENIMIENTO;
+        this.ultimoComentario = comentario;
+        this.ultimoTecnicoResponsable = tecnico;
+        this.fechaUltimaActualizacion = LocalDateTime.now();
     }
 
-    public void marcarOperativo() {
+    public void marcarOperativo(String comentario, Usuario tecnico) {
         this.estadoActual = EstadoServicio.OPERATIVO;
-        this.ultimoComentario = null;
+        this.ultimoComentario = comentario;
+        this.ultimoTecnicoResponsable = tecnico;
+        this.fechaUltimaActualizacion = LocalDateTime.now();
     }
 }

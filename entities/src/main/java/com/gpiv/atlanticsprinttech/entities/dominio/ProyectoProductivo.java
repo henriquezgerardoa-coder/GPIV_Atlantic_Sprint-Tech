@@ -153,6 +153,10 @@ public class ProyectoProductivo {
         this.estado = nuevoEstado;
     }
 
+    public void vincularRadicacion(RadicacionSolicitud solicitud) {
+        this.solicitudOrigen = solicitud;
+    }
+
     public double calcularAvanceFisico() {
         if (hitos.isEmpty()) return 0.0;
         long cumplidos = hitos.stream().filter(HitoObra::isCumplido).count();

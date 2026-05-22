@@ -52,4 +52,14 @@ public interface ServicioRadicacion {
     List<RadicacionHistorial> listarHistorial(String identificadorIngreso, Long id);
 
     RadicacionSolicitud asignarLote(String identificadorIngreso, Long radicacionId, Long loteId);
+
+    RadicacionDocumento subirActaRubrica(
+        String identificadorIngreso,
+        Long radicacionId,
+        String nombreArchivo,
+        String mimeType,
+        byte[] contenido
+    );
+
+    RadicacionDocumento obtenerActaRubrica(String identificadorIngreso, Long radicacionId);
 }

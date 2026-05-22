@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.servicio;
 
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDashboardGerencial;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
@@ -19,5 +20,8 @@ public interface ServicioEstadisticas {
 
     /** Informe por lotes con estado de asignación y detalles. */
     List<RespuestaInformeLote> obtenerInformeLotes();
+
+    /** Dashboard gerencial con KPIs, distribución por rubro y zona. */
+    RespuestaDashboardGerencial obtenerDashboardGerencial();
 }
 

@@ -192,6 +192,12 @@ function navegarA(seccion) {
         case 'informes':   ModuloEstadisticas.cargar();   break;
         case 'usuarios':   ModuloUsuarios.cargar();       break;
         case 'audit-log':  ModuloAuditLog.cargar();       break;
+        case 'censo':         ModuloCenso.cargar();          break;
+        case 'cambio-rubro':  ModuloCambioRubro.cargar();    break;
+        case 'proyectos':     ModuloProyectos.cargar();      break;
+        case 'infraestructura': ModuloInfraestructura.cargar(); break;
+        case 'dashboard':       ModuloDashboard.cargar();       break;
+        case 'monitor':       ModuloMonitor.cargar();        break;
     }
 }
 
@@ -239,6 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));
         document.getElementById('itemNavAuditLog')?.classList.add('d-none');
         document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
+        document.getElementById('itemNavMonitor')?.classList.add('d-none');
+        document.getElementById('itemNavMonitorMovil')?.classList.add('d-none');
+        document.getElementById('itemNavProyectos')?.classList.add('d-none');
+        document.getElementById('itemNavProyectosMovil')?.classList.add('d-none');
+        document.getElementById('itemNavDashboard')?.classList.add('d-none');
+        document.getElementById('itemNavDashboardMovil')?.classList.add('d-none');
     }
 
     if (esEmpresaExclusivo) {
@@ -335,6 +347,12 @@ function ocultarAccesosEmpresaRestringidos() {
     document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
     document.getElementById('itemNavAuditLog')?.classList.add('d-none');
     document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
+    document.getElementById('itemNavMonitor')?.classList.add('d-none');
+    document.getElementById('itemNavMonitorMovil')?.classList.add('d-none');
+    document.getElementById('itemNavProyectos')?.classList.add('d-none');
+    document.getElementById('itemNavProyectosMovil')?.classList.add('d-none');
+    document.getElementById('itemNavDashboard')?.classList.add('d-none');
+    document.getElementById('itemNavDashboardMovil')?.classList.add('d-none');
 
     document.querySelectorAll("a.enlace-nav[onclick*='navegarA(\"panel\")'], a.enlace-nav[onclick*='navegarA(\"lotes\")'], a.enlace-nav[onclick*=\"navegarA('panel')\"], a.enlace-nav[onclick*=\"navegarA('lotes')\"]")
         .forEach(el => el.closest('.nav-item')?.classList.add('d-none'));
