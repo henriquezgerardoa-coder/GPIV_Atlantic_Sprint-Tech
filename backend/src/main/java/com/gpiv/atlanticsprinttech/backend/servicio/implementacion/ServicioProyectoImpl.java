@@ -6,7 +6,6 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSoli
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioProyecto;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
-import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
 import com.gpiv.atlanticsprinttech.entities.dominio.HitoObra;
 import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
@@ -125,10 +124,7 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         ProyectoProductivo proyecto = repositorioProyecto.findById(proyectoId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
 
-        if (proyecto.getEstado().esFinal()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "No se pueden agregar hitos a un proyecto " + proyecto.getEstado().name().toLowerCase());
-        }
+        proyecto.validarPermiteModificarHitos();
 
         HitoObra hito = HitoObra.crear(proyecto, descripcion, fechaVencimiento);
         return repositorioHito.save(hito);
@@ -145,10 +141,7 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         HitoObra hito = repositorioHito.findByIdAndProyectoId(hitoId, proyectoId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hito no encontrado"));
 
-        if (hito.isCumplido()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El hito ya fue marcado como cumplido");
-        }
-
+        hito.validarNoCumplido();
         hito.marcarComoCumplido();
         return repositorioHito.save(hito);
     }
@@ -164,11 +157,7 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         HitoObra hito = repositorioHito.findByIdAndProyectoId(hitoId, proyectoId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hito no encontrado"));
 
-        if (hito.isCumplido()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "No se puede eliminar un hito ya cumplido");
-        }
-
+        hito.validarNoCumplido();
         repositorioHito.delete(hito);
     }
 

@@ -157,6 +157,18 @@ public class Usuario {
             && tokenVerificacionExpiraEn != null
             && tokenVerificacionExpiraEn.isAfter(ahora);
     }
+
+    public void validarTokenVigente(LocalDateTime ahora) {
+        if (!tokenVerificacionVigente(ahora)) {
+            throw new IllegalStateException("El enlace de verificacion expiro");
+        }
+    }
+
+    public void validarCorreoNoVerificado() {
+        if (Boolean.TRUE.equals(this.emailVerificado)) {
+            throw new IllegalStateException("El correo ya se encuentra verificado");
+        }
+    }
     public void marcarEmailVerificado(LocalDateTime fechaVerificacion) {
         this.emailVerificado = Boolean.TRUE;
         this.fechaVerificacionEmail = fechaVerificacion;

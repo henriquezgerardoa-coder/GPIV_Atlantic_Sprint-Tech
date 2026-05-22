@@ -149,6 +149,12 @@ public class ProyectoProductivo {
         this.estado = EstadoProyecto.EN_EJECUCION;
     }
 
+    public void validarPermiteModificarHitos() {
+        if (this.estado.esFinal()) {
+            throw new IllegalStateException("No se pueden modificar hitos de un proyecto " + this.estado.name().toLowerCase());
+        }
+    }
+
     public void actualizarEstado(EstadoProyecto nuevoEstado) {
         this.estado = nuevoEstado;
     }

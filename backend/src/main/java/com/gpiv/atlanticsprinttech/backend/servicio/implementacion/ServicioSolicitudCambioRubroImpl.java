@@ -6,7 +6,6 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioSolicitudCambi
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
-import com.gpiv.atlanticsprinttech.entities.dominio.EstadoCambioRubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.SolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
@@ -101,10 +100,7 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         SolicitudCambioRubro solicitud = repositorioSolicitud.findByIdConDetalle(solicitudId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Solicitud no encontrada"));
 
-        if (solicitud.getEstado() != EstadoCambioRubro.PENDIENTE) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "Solo se pueden resolver solicitudes en estado PENDIENTE");
-        }
+        solicitud.validarResoluble();
 
         if (aprobada) {
             solicitud.aprobar(identificadorIngreso);

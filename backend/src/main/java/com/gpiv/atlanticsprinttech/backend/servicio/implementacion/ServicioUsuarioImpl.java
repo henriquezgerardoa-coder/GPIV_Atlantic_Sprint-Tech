@@ -233,9 +233,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     public void verificarCorreoElectronico(String tokenVerificacion) {
         Usuario usuario = repositorioUsuario.findByTokenVerificacionEmail(tokenVerificacion)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token es invalido o ya fue utilizado"));
-        if (!usuario.tokenVerificacionVigente(LocalDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.GONE, "El enlace de verificacion expiro. Solicite un nuevo correo");
-        }
+        usuario.validarTokenVigente(LocalDateTime.now());
         usuario.marcarEmailVerificado(LocalDateTime.now());
         repositorioUsuario.save(usuario);
         servicioAuditLog.registrarEvento(
@@ -259,9 +257,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
 
         Usuario usuario = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correoNormalizado)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe una cuenta asociada a ese correo"));
-        if (usuario.isEmailVerificado()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo ya se encuentra verificado");
-        }
+        usuario.validarCorreoNoVerificado();
         renovarTokenVerificacion(usuario);
         repositorioUsuario.save(usuario);
         enviarCorreoVerificacion(usuario);

@@ -12,7 +12,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
-import EstadoAsignacionLoteConverter
+
 
 @Entity
 @Table(name = "lotes", uniqueConstraints = {
@@ -103,6 +103,25 @@ public class Lote {
 
     public boolean esAdjudicable() {
         return !ocupado && empresa == null && estadoAsignacion == null;
+    }
+
+    public boolean tieneEmpresaAsignada() {
+        return empresa != null;
+    }
+
+    public boolean cambioDeEmpresa(Long nuevaEmpresaId) {
+        Long idActual = empresa != null ? empresa.getId() : null;
+        return idActual == null || !idActual.equals(nuevaEmpresaId);
+    }
+
+    public void ocuparConEmpresa(Empresa empresaAsignada, String numeroRadicado) {
+        this.ocupado = true;
+        this.empresa = empresaAsignada;
+        if (this.fechaAsignacion == null) {
+            this.fechaAsignacion = LocalDate.now();
+        }
+        this.estadoAsignacion = EstadoAsignacionLote.PREADJUDICADO;
+        this.numeroExpedienteReferencia = numeroRadicado;
     }
 
     public void actualizarDatos(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa, String zona) {

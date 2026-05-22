@@ -183,7 +183,44 @@ public class RadicacionSolicitud {
 		return fechaUltimaActualizacion;
 	}
 
-	public void cambiarEstado(EstadoRadicacion estado) {
+	public void validarYCambiarEstado(EstadoRadicacion nuevo, String comentario, LocalDate fechaPlazo) {
+		if (this.estado == nuevo) {
+			throw new IllegalStateException("La radicacion ya se encuentra en ese estado");
+		}
+		if (!this.estado.puedeTransicionarA(nuevo)) {
+			throw new IllegalStateException("Transicion de estado no permitida");
+		}
+		if (nuevo.requiereComentario() && (comentario == null || comentario.isBlank())) {
+			throw new IllegalArgumentException("Debe indicar un comentario para el estado seleccionado");
+		}
+		if (nuevo == EstadoRadicacion.APROBADA && fechaPlazo == null) {
+			throw new IllegalArgumentException("Debe indicar la fecha de plazo al aprobar una solicitud");
+		}
+		cambiarEstado(nuevo);
+	}
+
+	public void validarPermiteAsignarLote() {
+		if (!this.estado.permiteAsignarLote()) {
+			throw new IllegalStateException("No se puede asignar un lote a una solicitud rechazada o cancelada");
+		}
+	}
+
+	public void validarPermiteActaRubrica() {
+		if (!this.estado.permiteActaRubrica()) {
+			throw new IllegalStateException("El Acta de Rubrica solo puede cargarse cuando el expediente esta Aprobado o Radicado");
+		}
+	}
+
+	public void sincronizarLote(Lote lote) {
+		if (lote == null) return;
+		if (estado == EstadoRadicacion.APROBADA || estado == EstadoRadicacion.RADICADA) {
+			lote.actualizarAsignacion(EstadoAsignacionLote.ADJUDICADO, lote.getNumeroExpedienteReferencia());
+		} else if (estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA) {
+			lote.actualizarAsignacion(EstadoAsignacionLote.DESADJUDICADO, lote.getNumeroExpedienteReferencia());
+		}
+	}
+
+	private void cambiarEstado(EstadoRadicacion estado) {
 		this.estado = estado;
 		if (estado == EstadoRadicacion.APROBADA && this.fechaAprobacion == null) {
 			this.fechaAprobacion = LocalDate.now();

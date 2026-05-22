@@ -29,11 +29,11 @@ public class ServicioContextoUsuario {
 	}
 
 	public boolean esRolEmpresa(Usuario usuario) {
-		return usuario.getRoles().contains(RolUsuario.EMPRESA);
+		return usuario.tieneRol(RolUsuario.EMPRESA);
 	}
 
 	public boolean esRolAdministrador(Usuario usuario) {
-		return usuario.getRoles().contains(RolUsuario.ADMINISTRADOR);
+		return usuario.tieneRol(RolUsuario.ADMINISTRADOR);
 	}
 
 	public Long obtenerEmpresaIdRequerido(Usuario usuario) {

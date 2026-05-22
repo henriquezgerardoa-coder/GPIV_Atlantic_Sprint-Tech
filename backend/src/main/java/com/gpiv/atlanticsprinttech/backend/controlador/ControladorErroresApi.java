@@ -21,6 +21,18 @@ public class ControladorErroresApi {
             .body(new RespuestaOperacion(ex.getReason() == null ? "No se pudo completar la operacion" : ex.getReason()));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<RespuestaOperacion> manejarEstadoInvalido(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RespuestaOperacion(ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<RespuestaOperacion> manejarArgumentoInvalido(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+            .body(new RespuestaOperacion(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<RespuestaOperacion> manejarErroresValidacion(MethodArgumentNotValidException ex) {
         String mensaje = ex.getBindingResult()

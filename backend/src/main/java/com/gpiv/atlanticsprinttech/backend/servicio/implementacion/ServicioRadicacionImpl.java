@@ -15,7 +15,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamientoPedidoLotes;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
-import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
@@ -27,8 +26,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -46,20 +43,6 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private static final Set<Integer> OPCIONES_TIEMPO_RADICACION = Set.of(6, 12, 24, 36);
     private static final Set<Integer> OPCIONES_NECESIDAD_M2 = Set.of(1200, 1800, 2500, 3300, 5000, 6000);
     private static final String TIPO_SOLICITUD_PEDIDO_LOTES = "PEDIDO_LOTES";
-    private static final Map<EstadoRadicacion, Set<EstadoRadicacion>> TRANSICIONES_VALIDAS = Map.of(
-        EstadoRadicacion.PENDIENTE, Set.of(EstadoRadicacion.EN_REVISION, EstadoRadicacion.RECHAZADA, EstadoRadicacion.CANCELADA),
-        EstadoRadicacion.EN_REVISION, Set.of(
-            EstadoRadicacion.APROBADA,
-            EstadoRadicacion.RECHAZADA,
-            EstadoRadicacion.REQUIERE_INFORMACION_ADICIONAL,
-            EstadoRadicacion.CANCELADA
-        ),
-        EstadoRadicacion.REQUIERE_INFORMACION_ADICIONAL, Set.of(EstadoRadicacion.EN_REVISION, EstadoRadicacion.RECHAZADA, EstadoRadicacion.CANCELADA),
-        EstadoRadicacion.APROBADA, Set.of(EstadoRadicacion.RADICADA),
-        EstadoRadicacion.RADICADA, Set.of(),
-        EstadoRadicacion.RECHAZADA, Set.of(),
-        EstadoRadicacion.CANCELADA, Set.of()
-    );
 
     private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
     private final RepositorioRadicacionHistorial repositorioRadicacionHistorial;
@@ -219,17 +202,15 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         }
 
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, id);
-        validarTransicionEstado(radicacion.getEstado(), estado, comentario);
-        if (estado == EstadoRadicacion.APROBADA && fechaPlazo == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de plazo al aprobar una solicitud");
-        }
         EstadoRadicacion estadoAnterior = radicacion.getEstado();
         if (estado == EstadoRadicacion.APROBADA && fechaAprobacion != null) {
             radicacion.establecerFechaAprobacion(fechaAprobacion);
         }
-        radicacion.cambiarEstado(estado);
+        radicacion.validarYCambiarEstado(estado, comentario, fechaPlazo);
         radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
-        actualizarEstadoLoteSegunRadicacion(radicacion, estado);
+        Lote lote = radicacion.getLote();
+        radicacion.sincronizarLote(lote);
+        if (lote != null) repositorioLote.save(lote);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estado, comentario, identificadorIngreso));
         servicioAuditLog.registrarEvento(
@@ -242,33 +223,6 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         return actualizada;
     }
 
-    private void actualizarEstadoLoteSegunRadicacion(RadicacionSolicitud radicacion, EstadoRadicacion nuevoEstado) {
-        Lote lote = radicacion.getLote();
-        if (lote == null) return;
-        switch (nuevoEstado) {
-            case APROBADA, RADICADA ->
-                lote.actualizarAsignacion(EstadoAsignacionLote.ADJUDICADO, lote.getNumeroExpedienteReferencia());
-            case RECHAZADA, CANCELADA ->
-                lote.actualizarAsignacion(EstadoAsignacionLote.DESADJUDICADO, lote.getNumeroExpedienteReferencia());
-            default -> { return; }
-        }
-        repositorioLote.save(lote);
-    }
-
-    private void validarTransicionEstado(EstadoRadicacion actual, EstadoRadicacion siguiente, String comentario) {
-        if (actual == siguiente) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "La radicacion ya se encuentra en ese estado");
-        }
-        Set<EstadoRadicacion> estadosPermitidos = TRANSICIONES_VALIDAS.getOrDefault(actual, Set.of());
-        if (!estadosPermitidos.contains(siguiente)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Transicion de estado no permitida");
-        }
-
-        boolean requiereComentario = siguiente == EstadoRadicacion.RECHAZADA || siguiente == EstadoRadicacion.CANCELADA;
-        if (requiereComentario && (comentario == null || comentario.isBlank())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar un comentario para el estado seleccionado");
-        }
-    }
 
     @Override
     public void registrarObservacion(String identificadorIngreso, Long id, String comentario) {
@@ -351,15 +305,11 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El rol EMPRESA no puede asignar lotes");
         }
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, radicacionId);
-        EstadoRadicacion estadoActual = radicacion.getEstado();
-        if (estadoActual == EstadoRadicacion.RECHAZADA || estadoActual == EstadoRadicacion.CANCELADA) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede asignar un lote a una solicitud rechazada o cancelada");
-        }
+        radicacion.validarPermiteAsignarLote();
         Lote lote = repositorioLote.findByIdConEmpresa(loteId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lote no encontrado"));
         String codigoAnterior = radicacion.getLote() != null ? radicacion.getLote().getCodigo() : null;
-        lote.actualizarDatos(lote.getCodigo(), lote.getSuperficieMetrosCuadrados(), true, radicacion.getEmpresa(), lote.getZona());
-        lote.actualizarAsignacion(EstadoAsignacionLote.PREADJUDICADO, radicacion.getNumeroRadicado());
+        lote.ocuparConEmpresa(radicacion.getEmpresa(), radicacion.getNumeroRadicado());
         repositorioLote.save(lote);
         radicacion.asignarLote(lote);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
@@ -390,11 +340,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el Administrador puede cargar el Acta de Rúbrica");
         }
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, radicacionId);
-        EstadoRadicacion estado = radicacion.getEstado();
-        if (estado != EstadoRadicacion.APROBADA && estado != EstadoRadicacion.RADICADA) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "El Acta de Rúbrica solo puede cargarse cuando el expediente está Aprobado o Radicado");
-        }
+        radicacion.validarPermiteActaRubrica();
         if (mimeType == null || !mimeType.toLowerCase(Locale.ROOT).contains("pdf")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El Acta de Rúbrica debe ser un archivo PDF");
         }

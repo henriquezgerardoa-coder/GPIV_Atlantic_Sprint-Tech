@@ -317,20 +317,20 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 
 	private void validarAccesoAdmin(String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		if (!usuario.getRoles().contains(RolUsuario.ADMINISTRADOR)) {
+		if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMINISTRADOR puede acceder a esta vista");
 		}
 	}
 
 	private void validarNoDirectivoEnMutacion(Usuario usuario) {
-		if (usuario.getRoles().contains(RolUsuario.DIRECTIVO)) {
+		if (usuario.tieneRol(RolUsuario.DIRECTIVO)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El rol DIRECTIVO tiene permisos de solo lectura para empresas");
 		}
 	}
 
 	private RespuestaUsuarioEmpresaAdmin construirUsuarioAsociado(Long empresaId) {
 		return repositorioUsuario.findByEmpresa_IdOrderByIdAsc(empresaId).stream()
-			.filter(usuario -> usuario.getRoles().contains(RolUsuario.EMPRESA))
+			.filter(usuario -> usuario.tieneRol(RolUsuario.EMPRESA))
 			.findFirst()
 			.map(usuario -> new RespuestaUsuarioEmpresaAdmin(
 				usuario.getNombreCompleto(),

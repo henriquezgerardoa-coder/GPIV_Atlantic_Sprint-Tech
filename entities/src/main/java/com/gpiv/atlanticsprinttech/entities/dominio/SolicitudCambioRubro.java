@@ -83,6 +83,12 @@ public class SolicitudCambioRubro {
         return new SolicitudCambioRubro(empresa, rubroSolicitado, rubroAnteriorNombre, justificacion, solicitadoPor);
     }
 
+    public void validarResoluble() {
+        if (this.estado != EstadoCambioRubro.PENDIENTE) {
+            throw new IllegalStateException("Solo se pueden resolver solicitudes en estado PENDIENTE");
+        }
+    }
+
     public void aprobar(String resueltoPor) {
         this.estado = EstadoCambioRubro.APROBADA;
         this.resueltoPor = resueltoPor;

@@ -172,8 +172,7 @@ public class ServicioLoteImpl implements ServicioLote {
                 return;
             }
 
-            Long empresaActualId = loteActual.getEmpresa() != null ? loteActual.getEmpresa().getId() : null;
-            boolean cambioEmpresa = empresaActualId != null;
+            boolean cambioEmpresa = loteActual.tieneEmpresaAsignada();
             boolean cambioCodigo = !loteActual.getCodigo().equals(codigoNuevo);
             if ((cambioEmpresa || cambioCodigo) && repositorioLote.existsByEmpresaIsNullAndCodigo(codigoNuevo)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote sin asignar con ese codigo");
@@ -188,8 +187,7 @@ public class ServicioLoteImpl implements ServicioLote {
             return;
         }
 
-        Long empresaActualId = loteActual.getEmpresa() != null ? loteActual.getEmpresa().getId() : null;
-        boolean cambioEmpresa = empresaActualId == null || !empresaActualId.equals(empresaId);
+        boolean cambioEmpresa = loteActual.cambioDeEmpresa(empresaId);
         boolean cambioCodigo = !loteActual.getCodigo().equals(codigoNuevo);
         if ((cambioEmpresa || cambioCodigo) && repositorioLote.existsByEmpresaIdAndCodigo(empresaId, codigoNuevo)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote con ese codigo para la empresa");

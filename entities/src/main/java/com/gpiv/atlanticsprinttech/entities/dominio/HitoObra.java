@@ -66,6 +66,12 @@ public class HitoObra {
         return !cumplido && fechaVencimientoReal != null && fechaVencimientoReal.isBefore(LocalDate.now());
     }
 
+    public void validarNoCumplido() {
+        if (this.cumplido) {
+            throw new IllegalStateException("El hito ya fue marcado como cumplido");
+        }
+    }
+
     public void marcarComoCumplido() {
         this.cumplido = true;
     }
