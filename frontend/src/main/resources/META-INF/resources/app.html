@@ -1192,8 +1192,8 @@
                             <h6 class="text-muted">Documentos adjuntos</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm">
-                                    <thead><tr><th>Tipo</th><th>Archivo</th><th>Fecha</th><th></th></tr></thead>
-                                    <tbody id="cuerpoDocumentosDetalleRadAdmin"><tr><td colspan="4" class="text-muted">Sin documentos</td></tr></tbody>
+                                    <thead><tr><th>Tipo</th><th>Archivo</th><th>Fecha</th></tr></thead>
+                                    <tbody id="cuerpoDocumentosDetalleRadAdmin"><tr><td colspan="3" class="text-muted">Sin documentos</td></tr></tbody>
                                 </table>
                             </div>
                         </div>
@@ -1205,6 +1205,38 @@
                                     <tbody id="cuerpoHistorialDetalleRadAdmin"><tr><td colspan="4" class="text-muted">Sin historial</td></tr></tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Adjuntar documentación (solo EMPRESA) -->
+                    <div class="card border-0 bg-light mt-3 d-none" id="bloqueAdjuntarDocRadModal">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-3"><i class="bi bi-paperclip me-1"></i>Adjuntar documentación</h6>
+                            <div id="alertaDocRadModal" class="alert alert-danger d-none mb-2"></div>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label small">Tipo</label>
+                                    <select id="tipoDocRadModal" class="form-select form-select-sm">
+                                        <option value="OBLIGATORIO">Obligatorio</option>
+                                        <option value="ADICIONAL">Adicional</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Descripción</label>
+                                    <input id="descripcionDocRadModal" class="form-control form-control-sm" maxlength="250" placeholder="Ej: Estatuto societario">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Archivo</label>
+                                    <input id="archivoDocRadModal" type="file" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="col-md-1 d-grid">
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                            onclick="ModuloRadicaciones.subirDocumentoDesdeModal()">
+                                        <i class="bi bi-upload"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted">PDF, DOC, DOCX, JPG, PNG — máx. 10 MB.</small>
                         </div>
                     </div>
                 </div>

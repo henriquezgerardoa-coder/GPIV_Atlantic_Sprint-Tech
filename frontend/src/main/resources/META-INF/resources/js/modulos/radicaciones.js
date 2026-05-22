@@ -243,27 +243,28 @@ const ModuloRadicaciones = (() => {
     function ajustarVistaRadicacionesPorRol() {
         const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !esEmpresa;
-        const tabA = document.getElementById('tab-rad-a')?.closest('.nav-item');
-        const tabD = document.getElementById('tab-rad-d')?.closest('.nav-item');
+        const navTabs = document.getElementById('tabsRadicaciones');
 
         if (esGestor) {
-            // Solicitud y documentación son exclusivas de EMPRESA.
-            tabA?.classList.add('d-none');
-            tabD?.classList.add('d-none');
+            if (navTabs) navTabs.classList.remove('d-none');
+            ['tab-rad-a', 'tab-rad-d'].forEach(id =>
+                document.getElementById(id)?.closest('.nav-item')?.classList.add('d-none'));
             document.getElementById('btnNuevaSolicitudRad')?.classList.add('d-none');
             document.getElementById('btnNuevaSolicitudRadListado')?.classList.add('d-none');
             const tabB = document.getElementById('tab-rad-b');
-            if (tabB && window.bootstrap?.Tab) {
-                window.bootstrap.Tab.getOrCreateInstance(tabB).show();
-            }
+            if (tabB && window.bootstrap?.Tab) window.bootstrap.Tab.getOrCreateInstance(tabB).show();
             return;
         }
 
-        // Para EMPRESA se mantiene el comportamiento normal.
-        tabA?.classList.remove('d-none');
-        tabD?.classList.remove('d-none');
+        // EMPRESA: ocultar toda la barra de tabs, mostrar panel-b directamente.
+        if (navTabs) navTabs.classList.add('d-none');
         document.getElementById('btnNuevaSolicitudRad')?.classList.remove('d-none');
         document.getElementById('btnNuevaSolicitudRadListado')?.classList.remove('d-none');
+        const panelB = document.getElementById('panel-rad-b');
+        if (panelB) {
+            panelB.classList.add('show', 'active');
+            panelB.classList.remove('fade');
+        }
     }
 
     function abrirModalNuevaSolicitud() {
@@ -333,6 +334,53 @@ const ModuloRadicaciones = (() => {
         document.getElementById('formDocumentoRad').reset();
         mostrarAlerta('Documento cargado correctamente.');
         await cargar();
+    }
+
+    async function subirDocumentoDesdeModal() {
+        if (!radicacionDetalleAdmin?.id) return;
+        const alerta = document.getElementById('alertaDocRadModal');
+        const tipoDocumento = document.getElementById('tipoDocRadModal').value;
+        const descripcion = document.getElementById('descripcionDocRadModal').value.trim();
+        const archivo = document.getElementById('archivoDocRadModal').files[0];
+
+        alerta?.classList.add('d-none');
+        if (!archivo) {
+            alerta.textContent = 'Seleccione un archivo.';
+            alerta?.classList.remove('d-none');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('tipoDocumento', tipoDocumento);
+        formData.append('descripcion', descripcion);
+        formData.append('archivo', archivo);
+
+        const respuesta = await ApiCliente.subirArchivo(`/api/radicaciones/${radicacionDetalleAdmin.id}/documentos`, formData);
+        if (!respuesta?.ok) {
+            const error = await respuesta?.json().catch(() => ({}));
+            alerta.textContent = error?.mensaje || 'No se pudo subir el documento.';
+            alerta?.classList.remove('d-none');
+            return;
+        }
+
+        document.getElementById('descripcionDocRadModal').value = '';
+        document.getElementById('archivoDocRadModal').value = '';
+
+        // Recargar la lista de documentos en el modal
+        const respDocs = await ApiCliente.obtener(`/api/radicaciones/${radicacionDetalleAdmin.id}/documentos`);
+        const documentos = respDocs?.ok ? await respDocs.json() : [];
+        const cuerpoDocs = document.getElementById('cuerpoDocumentosDetalleRadAdmin');
+        if (cuerpoDocs) {
+            cuerpoDocs.innerHTML = documentos?.length
+                ? documentos.map(d => `
+                    <tr>
+                        <td>${d.tipoDocumento || '-'}</td>
+                        <td>${d.nombreArchivo || '-'}</td>
+                        <td>${formatearFechaEvento(d.fechaSubida)}</td>
+                    </tr>`).join('')
+                : '<tr><td colspan="3" class="text-muted">Sin documentos</td></tr>';
+        }
+        mostrarAlerta('Documento cargado correctamente.');
     }
 
     async function cambiarEstado(id) {
@@ -413,7 +461,8 @@ const ModuloRadicaciones = (() => {
     }
 
     function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null) {
-        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esGestor = !esEmpresa && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
 
         setTexto('detRadNumero', detalle?.numeroRadicado || '-');
         setTexto('detRadSolicitante', detalle?.nombreEmpresa || '-');
@@ -426,6 +475,7 @@ const ModuloRadicaciones = (() => {
         setTexto('detRadDescripcion', detalle?.descripcion || '-');
 
         document.getElementById('bloqueCambiarEstadoRadAdmin')?.classList.toggle('d-none', !esGestor);
+        document.getElementById('bloqueAdjuntarDocRadModal')?.classList.toggle('d-none', !esEmpresa);
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
         if (selector) {
@@ -1082,7 +1132,8 @@ const ModuloRadicaciones = (() => {
         confirmarAsignacionLote,
         guardarBorradorAhora,
         descartarBorrador,
-        abrirModalNuevaSolicitud
+        abrirModalNuevaSolicitud,
+        subirDocumentoDesdeModal
     };
 })();
 
