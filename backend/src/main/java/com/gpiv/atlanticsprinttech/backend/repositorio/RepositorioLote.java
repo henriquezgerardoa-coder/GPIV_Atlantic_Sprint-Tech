@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.repositorio;
 
+import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import java.util.List;
 import java.util.Optional;
@@ -31,5 +32,8 @@ public interface RepositorioLote extends JpaRepository<Lote, Long> {
 
     /** Cuenta lotes ocupados — para estadisticas (R-14). */
     long countByOcupado(boolean ocupado);
+
+    /** Cuenta lotes por estado de asignación — para estadisticas (R-14). */
+    long countByEstadoAsignacion(EstadoAsignacionLote estado);
 }
 

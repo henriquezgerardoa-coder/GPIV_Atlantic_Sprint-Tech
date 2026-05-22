@@ -5,10 +5,9 @@ const ModuloLotes = (() => {
     let idEdicion   = null;
 
     const ETIQUETA_ESTADO_ASIGNACION = {
-        DISPONIBLE:                'Libre',
-        PREADJUDICADO_A_SOLICITUD: 'Preadjudicado a solicitud',
-        ASIGNADO_A_EMPRESA:        'Asignado a empresa',
-        ADJUDICADO_RADICADA:       'Adjudicado - Radicada'
+        PREADJUDICADO: 'Preadjudicado',
+        ADJUDICADO:    'Adjudicado',
+        DESADJUDICADO: 'Desadjudicado'
     };
 
     const ETIQUETA_ZONA = {
@@ -26,6 +25,7 @@ const ModuloLotes = (() => {
         lotes    = lotesData.contenido ?? lotesData;
         empresas = respEmpresas?.ok ? await respEmpresas.json() : [];
         poblarSelectorEmpresa();
+        poblarFiltroSuperficie();
         resetearFiltros();
         renderizarTabla();
     }
@@ -37,28 +37,22 @@ const ModuloLotes = (() => {
             empresas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
     }
 
+    function poblarFiltroSuperficie() {
+        const selector = document.getElementById('filtroSuperficieLote');
+        if (!selector) return;
+        const valores = [...new Set(lotes.map(l => l.superficieMetrosCuadrados).filter(v => v != null))].sort((a, b) => a - b);
+        selector.innerHTML = '<option value="">Todas</option>' +
+            valores.map(v => `<option value="${v}">${v.toLocaleString('es-AR')} m²</option>`).join('');
+    }
+
     function resetearFiltros() {
-        ['filtroZonaLote', 'filtroSuperficieLote', 'filtroEstadoOcupacionLote'].forEach(grupoId => {
-            const grupo = document.getElementById(grupoId);
-            if (!grupo) return;
-            grupo.querySelectorAll('button').forEach((btn, idx) => {
-                btn.classList.toggle('active', idx === 0);
-            });
+        ['filtroZonaLote', 'filtroSuperficieLote', 'filtroEstadoLote'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
         });
     }
 
-    function leerFiltroActivo(grupoId, attr) {
-        const grupo = document.getElementById(grupoId);
-        if (!grupo) return '';
-        const activo = grupo.querySelector('button.active');
-        return activo ? (activo.dataset[attr] ?? '') : '';
-    }
-
-    function filtrar(boton) {
-        if (boton) {
-            boton.closest('.btn-group').querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            boton.classList.add('active');
-        }
+    function filtrar() {
         renderizarTabla();
     }
 
@@ -66,9 +60,9 @@ const ModuloLotes = (() => {
         const cuerpo = document.getElementById('cuerpoTablaLotes');
         if (!cuerpo) return;
 
-        const zona      = leerFiltroActivo('filtroZonaLote', 'zona');
-        const sup       = leerFiltroActivo('filtroSuperficieLote', 'sup');
-        const ocupacion = leerFiltroActivo('filtroEstadoOcupacionLote', 'ocupacion');
+        const zona      = document.getElementById('filtroZonaLote')?.value || '';
+        const sup       = document.getElementById('filtroSuperficieLote')?.value || '';
+        const ocupacion = document.getElementById('filtroEstadoLote')?.value || '';
 
         let filtrados = lotes.filter(l => {
             if (zona && l.zona !== zona) return false;
@@ -78,7 +72,7 @@ const ModuloLotes = (() => {
             return true;
         });
 
-        const badge = document.getElementById('badgeLotesFiltrados');
+        const badge = document.getElementById('badgeTotalLotesFiltrados');
         if (badge) {
             const hayFiltro = zona || sup || ocupacion;
             badge.textContent = hayFiltro ? `${filtrados.length} de ${lotes.length}` : `Total: ${lotes.length}`;

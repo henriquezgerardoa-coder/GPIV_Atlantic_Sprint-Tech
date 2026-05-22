@@ -214,6 +214,10 @@ public class RadicacionSolicitud {
 		this.planAmbiental = planAmbiental;
 	}
 
+	public void establecerFechaAprobacion(LocalDate fecha) {
+		this.fechaAprobacion = fecha;
+	}
+
 	public void establecerDatosPlazo(Integer tiempoEstimadoObraMeses, LocalDate fechaPlazo) {
 		this.tiempoEstimadoObraMeses = tiempoEstimadoObraMeses;
 		this.fechaPlazo = fechaPlazo;

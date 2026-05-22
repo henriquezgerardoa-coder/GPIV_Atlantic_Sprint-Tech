@@ -29,7 +29,8 @@ public interface ServicioRadicacion {
         EstadoRadicacion estado,
         String comentario,
         Integer tiempoEstimadoObraMeses,
-        LocalDate fechaPlazo
+        LocalDate fechaPlazo,
+        LocalDate fechaAprobacion
     );
 
     void registrarObservacion(String identificadorIngreso, Long id, String comentario);

@@ -137,9 +137,20 @@ const ModuloEmpresas = (() => {
             nit: empresa?.nit, cuit: empresa?.cuit, telefono: empresa?.telefono,
             direccion: empresa?.direccion, actividadEconomica: empresa?.actividadEconomica,
             correoElectronico: empresa?.correoElectronico, totalEmpleados: empresa?.cantidadEmpleados ?? 0,
-            totalVehiculos: 0, vehiculos: [], fechaRegistro: null, statusEmpresa: null, estadoExpediente: null, usuarioAsociado: null
+            totalVehiculos: 0, vehiculos: [], lotes: [], fechaRegistro: null, statusEmpresa: null, estadoExpediente: null, usuarioAsociado: null
         };
     }
+
+    const ETIQUETA_ESTADO_LOTE = {
+        PREADJUDICADO: { texto: 'Preadjudicado', color: 'warning' },
+        ADJUDICADO:    { texto: 'Adjudicado',    color: 'success' },
+        DESADJUDICADO: { texto: 'Desadjudicado', color: 'danger'  }
+    };
+
+    const ETIQUETA_ZONA_EMPRESA = {
+        PARQUE_VIEJO: 'Parque Viejo',
+        PARQUE_NUEVO: 'Parque Nuevo'
+    };
 
     function renderizarDetalleAdmin(detalle) {
         const usuario = detalle?.usuarioAsociado;
@@ -160,6 +171,30 @@ const ModuloEmpresas = (() => {
         setTexto('detUsuarioUltimoAcceso', formatearFechaHora(usuario?.fechaUltimoAcceso));
         setTexto('detTotalEmpleados', `${detalle?.totalEmpleados ?? 0}`);
         setTexto('detTotalVehiculos', `${detalle?.totalVehiculos ?? 0}`);
+
+        const contenidoLotes = document.getElementById('contenidoLotesEmpresaAdmin');
+        const lotes = detalle?.lotes || [];
+        if (contenidoLotes) {
+            if (!lotes.length) {
+                contenidoLotes.innerHTML = '<span class="text-muted fst-italic small"><i class="bi bi-dash-circle me-1"></i>Sin lote asignado</span>';
+            } else {
+                const estadoInfo = estado => ETIQUETA_ESTADO_LOTE[estado] || { texto: estado || 'Sin estado', color: 'secondary' };
+                contenidoLotes.innerHTML = lotes.map(l => {
+                    const { texto, color } = estadoInfo(l.estadoAsignacion);
+                    return `<div class="border rounded p-2 mb-2 bg-light-subtle">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
+                            <span class="fw-semibold"><i class="bi bi-map me-1 text-primary"></i>${l.codigo}</span>
+                            <span class="badge bg-${color}">${texto}</span>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            <span class="me-3"><i class="bi bi-arrows-angle-expand me-1"></i>${(l.superficieMetrosCuadrados || 0).toLocaleString('es-AR')} m²</span>
+                            ${l.zona ? `<span class="me-3"><i class="bi bi-geo-alt me-1"></i>${ETIQUETA_ZONA_EMPRESA[l.zona] || l.zona}</span>` : ''}
+                            ${l.fechaAsignacion ? `<span><i class="bi bi-calendar me-1"></i>${l.fechaAsignacion}</span>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        }
 
         const cuerpoVehiculos = document.getElementById('cuerpoVehiculosEmpresaAdmin');
         const vehiculos = detalle?.vehiculos || [];

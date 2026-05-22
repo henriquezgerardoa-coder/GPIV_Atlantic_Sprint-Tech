@@ -430,34 +430,42 @@ const ModuloRadicaciones = (() => {
         contenido?.classList.add('d-none');
         modal.show();
 
-        const [respDetalle, respDocs, respHist, respLoteAsignado, respLotesDisp, respRelevamiento] = await Promise.all([
-            ApiCliente.obtener(`/api/radicaciones/${id}`),
-            ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
-            ApiCliente.obtener(`/api/radicaciones/${id}/historial`),
-            ApiCliente.obtener(`/api/radicaciones/${id}/lote`),
-            ApiCliente.obtener('/api/lotes'),
-            ApiCliente.obtener(`/api/radicaciones/${id}/relevamiento`)
-        ]);
-        estadoCarga?.classList.add('d-none');
-        if (!respDetalle?.ok) {
-            const err = await respDetalle?.json().catch(() => ({}));
-            error.textContent = err?.mensaje || err?.message || 'No se pudo cargar el detalle del expediente.';
-            error?.classList.remove('d-none');
-            return;
-        }
+        try {
+            const [respDetalle, respDocs, respHist, respLoteAsignado, respLotesDisp, respRelevamiento] = await Promise.all([
+                ApiCliente.obtener(`/api/radicaciones/${id}`),
+                ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
+                ApiCliente.obtener(`/api/radicaciones/${id}/historial`),
+                ApiCliente.obtener(`/api/radicaciones/${id}/lote`),
+                ApiCliente.obtener('/api/lotes'),
+                ApiCliente.obtener(`/api/radicaciones/${id}/relevamiento`)
+            ]);
+            estadoCarga?.classList.add('d-none');
+            if (!respDetalle?.ok) {
+                const err = await respDetalle?.json().catch(() => ({}));
+                error.textContent = err?.mensaje || err?.message || 'No se pudo cargar el detalle del expediente.';
+                error?.classList.remove('d-none');
+                return;
+            }
 
-        const detalle = await respDetalle.json();
-        const documentos = respDocs?.ok ? await respDocs.json() : [];
-        const historial = respHist?.ok ? await respHist.json() : [];
-        const loteAsignado = respLoteAsignado?.ok ? await respLoteAsignado.json() : null;
-        const respLotesJson = respLotesDisp?.ok ? await respLotesDisp.json() : [];
-        const todosLosLotes = Array.isArray(respLotesJson) ? respLotesJson : (respLotesJson.contenido || []);
-        lotesDisponibles = todosLosLotes.filter(l => !l.estadoAsignacion);
-        const relevamiento = (respRelevamiento?.ok && respRelevamiento.status !== 204)
-            ? await respRelevamiento.json().catch(() => null) : null;
-        radicacionDetalleAdmin = detalle;
-        renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento);
-        contenido?.classList.remove('d-none');
+            const detalle = await respDetalle.json();
+            const documentos = respDocs?.ok ? await respDocs.json() : [];
+            const historial = respHist?.ok ? await respHist.json() : [];
+            const loteAsignado = (respLoteAsignado?.ok && respLoteAsignado.status !== 204)
+                ? await respLoteAsignado.json() : null;
+            const respLotesJson = respLotesDisp?.ok ? await respLotesDisp.json() : [];
+            const todosLosLotes = Array.isArray(respLotesJson) ? respLotesJson : (respLotesJson.contenido || []);
+            lotesDisponibles = todosLosLotes.filter(l => !l.estadoAsignacion);
+            const relevamiento = (respRelevamiento?.ok && respRelevamiento.status !== 204)
+                ? await respRelevamiento.json().catch(() => null) : null;
+            radicacionDetalleAdmin = detalle;
+            renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento);
+            contenido?.classList.remove('d-none');
+        } catch (e) {
+            estadoCarga?.classList.add('d-none');
+            console.error('Error al cargar detalle de radicación:', e);
+            error.textContent = 'Error al cargar el detalle del expediente.';
+            error?.classList.remove('d-none');
+        }
     }
 
     function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null) {
@@ -474,17 +482,39 @@ const ModuloRadicaciones = (() => {
         setTexto('detRadRelevamiento', detalle?.tieneRelevamientoPedidoLotes ? 'Sí' : 'No');
         setTexto('detRadDescripcion', detalle?.descripcion || '-');
 
+        const wrapAprobacion = document.getElementById('wrapperDetRadFechaAprobacion');
+        if (wrapAprobacion) {
+            wrapAprobacion.classList.toggle('d-none', !detalle?.fechaAprobacion);
+            setTexto('detRadFechaAprobacion', detalle?.fechaAprobacion || '-');
+        }
+        const wrapPlazo = document.getElementById('wrapperDetRadFechaPlazo');
+        if (wrapPlazo) {
+            wrapPlazo.classList.toggle('d-none', !detalle?.fechaPlazo);
+            setTexto('detRadFechaPlazo', detalle?.fechaPlazo || '-');
+        }
+
         document.getElementById('bloqueCambiarEstadoRadAdmin')?.classList.toggle('d-none', !esGestor);
         document.getElementById('bloqueAdjuntarDocRadModal')?.classList.toggle('d-none', !esEmpresa);
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
         if (selector) {
             selector.innerHTML = opcionesEstadoGestion(detalle?.estado);
-            selector.onchange = () => actualizarRequisitoObservacion(selector.value);
+            selector.onchange = () => {
+                actualizarRequisitoObservacion(selector.value);
+                toggleCamposPlazo(selector.value);
+            };
             actualizarRequisitoObservacion(selector.value);
+            toggleCamposPlazo(selector.value);
         }
         const obs = document.getElementById('campoObservacionesRadAdmin');
         if (obs) obs.value = '';
+        // Limpiar campos de plazo
+        const campoFecha = document.getElementById('campoPlazoFecha');
+        if (campoFecha) campoFecha.value = '';
+        const campoMeses = document.getElementById('campoPlazoMeses');
+        if (campoMeses) campoMeses.value = '';
+        const display = document.getElementById('campoPlazoCalculadoDisplay');
+        if (display) display.textContent = '-';
 
         // Sección de lote
         renderizarSeccionLote(loteAsignado, detalle?.necesidadMetrosCuadrados);
@@ -659,6 +689,38 @@ const ModuloRadicaciones = (() => {
         await cargar();
     }
 
+    function toggleCamposPlazo(estado) {
+        const esAprobada = estado === 'APROBADA';
+        ['wrapperCampoPlazoFecha', 'wrapperCampoPlazoMeses', 'wrapperCampoPlazoCalculado'].forEach(id => {
+            document.getElementById(id)?.classList.toggle('d-none', !esAprobada);
+        });
+        if (esAprobada) {
+            const campoFecha = document.getElementById('campoPlazoFecha');
+            if (campoFecha && !campoFecha.value) {
+                campoFecha.value = new Date().toISOString().split('T')[0];
+            }
+            const campoMeses = document.getElementById('campoPlazoMeses');
+            if (campoMeses && !campoMeses.value && radicacionDetalleAdmin?.tiempoSolicitadoMeses) {
+                campoMeses.value = radicacionDetalleAdmin.tiempoSolicitadoMeses;
+            }
+            calcularFechaPlazo();
+        }
+    }
+
+    function calcularFechaPlazo() {
+        const fechaVal = document.getElementById('campoPlazoFecha')?.value;
+        const mesesVal = parseInt(document.getElementById('campoPlazoMeses')?.value, 10);
+        const display = document.getElementById('campoPlazoCalculadoDisplay');
+        if (!display) return;
+        if (fechaVal && !isNaN(mesesVal) && mesesVal > 0) {
+            const d = new Date(fechaVal + 'T00:00:00');
+            d.setMonth(d.getMonth() + mesesVal);
+            display.textContent = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } else {
+            display.textContent = '-';
+        }
+    }
+
     function actualizarRequisitoObservacion(estado) {
         const label = document.getElementById('labelObservacionesRadAdmin');
         const campo = document.getElementById('campoObservacionesRadAdmin');
@@ -691,16 +753,40 @@ const ModuloRadicaciones = (() => {
             mostrarAlerta('Debe ingresar observaciones para el estado seleccionado.', 'danger');
             return;
         }
+
+        const fechaAprobacion = document.getElementById('campoPlazoFecha')?.value || null;
+        const mesesVal = parseInt(document.getElementById('campoPlazoMeses')?.value, 10);
+        const tiempoEstimadoObraMeses = !isNaN(mesesVal) && mesesVal > 0 ? mesesVal : null;
+
+        if (nuevoEstado === 'APROBADA') {
+            if (!fechaAprobacion) {
+                mostrarAlerta('Debe indicar la fecha de radicación para aprobar el expediente.', 'danger');
+                return;
+            }
+            if (!tiempoEstimadoObraMeses) {
+                mostrarAlerta('Debe indicar los meses de plazo para aprobar el expediente.', 'danger');
+                return;
+            }
+        }
+
+        let fechaPlazo = null;
+        if (fechaAprobacion && tiempoEstimadoObraMeses) {
+            const d = new Date(fechaAprobacion + 'T00:00:00');
+            d.setMonth(d.getMonth() + tiempoEstimadoObraMeses);
+            fechaPlazo = d.toISOString().split('T')[0];
+        }
+
         const confirmado = window.confirm(`Se cambiará el expediente ${radicacionDetalleAdmin.numeroRadicado} a ${formatearEstado(nuevoEstado)}. ¿Desea continuar?`);
         if (!confirmado) {
             return;
         }
 
         const comentario = observaciones || `Cambio de estado a ${formatearEstado(nuevoEstado)} por administración`;
-        const respuesta = await ApiCliente.parche(`/api/radicaciones/${radicacionDetalleAdmin.id}/estado`, {
-            estado: nuevoEstado,
-            comentario
-        });
+        const payload = { estado: nuevoEstado, comentario };
+        if (fechaAprobacion) payload.fechaAprobacion = fechaAprobacion;
+        if (fechaPlazo) payload.fechaPlazo = fechaPlazo;
+        if (tiempoEstimadoObraMeses) payload.tiempoEstimadoObraMeses = tiempoEstimadoObraMeses;
+        const respuesta = await ApiCliente.parche(`/api/radicaciones/${radicacionDetalleAdmin.id}/estado`, payload);
         if (!respuesta?.ok) {
             const err = await respuesta?.json().catch(() => ({}));
             mostrarAlerta(err?.mensaje || err?.message || 'No se pudo actualizar el estado del expediente.', 'danger');
@@ -1128,6 +1214,8 @@ const ModuloRadicaciones = (() => {
         verHistorial,
         verDetalleAdmin,
         confirmarCambioEstadoDetalleAdmin,
+        toggleCamposPlazo,
+        calcularFechaPlazo,
         mostrarFormAsignacionLote,
         confirmarAsignacionLote,
         guardarBorradorAhora,

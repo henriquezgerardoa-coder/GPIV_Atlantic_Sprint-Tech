@@ -11,6 +11,7 @@ public record SolicitudCambioEstadoRadicacion(
     @Size(max = 1000, message = "El comentario no puede superar 1000 caracteres")
     String comentario,
     Integer tiempoEstimadoObraMeses,
-    LocalDate fechaPlazo
+    LocalDate fechaPlazo,
+    LocalDate fechaAprobacion
 ) {
 }

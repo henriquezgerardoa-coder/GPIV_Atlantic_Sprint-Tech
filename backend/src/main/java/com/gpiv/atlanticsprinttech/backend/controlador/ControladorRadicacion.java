@@ -87,7 +87,8 @@ public class ControladorRadicacion {
             solicitud.estado(),
             solicitud.comentario(),
             solicitud.tiempoEstimadoObraMeses(),
-            solicitud.fechaPlazo()
+            solicitud.fechaPlazo(),
+            solicitud.fechaAprobacion()
         );
         return crearRespuesta(actualizada);
     }
