@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDocumentoRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaHistorialRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaRadicacion;
@@ -161,6 +162,24 @@ public class ControladorRadicacion {
         } catch (Exception e) {
             return ResponseEntity.noContent().build();
         }
+    }
+
+    @GetMapping("/{id}/lote")
+    public ResponseEntity<RespuestaLote> obtenerLote(@PathVariable Long id, Authentication autenticacion) {
+        RadicacionSolicitud radicacion = servicioRadicacion.obtenerPorId(autenticacion.getName(), id);
+        var lote = radicacion.getLote();
+        if (lote == null) return ResponseEntity.noContent().build();
+        String estadoAsignacion = lote.getEstadoAsignacion() != null ? lote.getEstadoAsignacion().name() : null;
+        String fechaAsignacion = lote.getFechaAsignacion() != null
+            ? lote.getFechaAsignacion().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE) : null;
+        String nombreEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getNombre() : null;
+        String cuitEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getCuit() : null;
+        Long empresaId = lote.getEmpresa() != null ? lote.getEmpresa().getId() : null;
+        return ResponseEntity.ok(new RespuestaLote(
+            lote.getId(), lote.getCodigo(), lote.getSuperficieMetrosCuadrados(),
+            lote.isOcupado(), empresaId, nombreEmpresa, cuitEmpresa,
+            estadoAsignacion, fechaAsignacion, lote.getNumeroExpedienteReferencia(), lote.getZona()
+        ));
     }
 
     @PatchMapping("/{id}/lote")
