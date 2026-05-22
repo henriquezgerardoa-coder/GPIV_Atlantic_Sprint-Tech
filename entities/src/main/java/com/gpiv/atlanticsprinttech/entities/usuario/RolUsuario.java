@@ -5,5 +5,6 @@ public enum RolUsuario {
     DIRECTIVO,
     EMPRESA,
     AUDITOR,
-    TECNICO
+    TECNICO,
+    SECRETARIO
 }

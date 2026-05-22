@@ -78,7 +78,7 @@ public class ProyectoProductivo {
 	private List<DocumentoPDF> documentos = new ArrayList<>();
 
 	@SuppressWarnings("unused")
-	protected ProyectoProductivo() {
+    public ProyectoProductivo() {
 	}
 
 	private ProyectoProductivo(

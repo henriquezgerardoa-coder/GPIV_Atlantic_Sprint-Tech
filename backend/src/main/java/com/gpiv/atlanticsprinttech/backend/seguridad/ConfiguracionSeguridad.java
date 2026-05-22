@@ -25,6 +25,7 @@ public class ConfiguracionSeguridad {
     private static final String ROL_ADMINISTRADOR = "ADMINISTRADOR";
     private static final String ROL_DIRECTIVO = "DIRECTIVO";
     private static final String ROL_EMPRESA = "EMPRESA";
+    private static final String ROL_SECRETARIO = "SECRETARIO";
 
     private static final String API_USUARIOS = "/api/usuarios/**";
     private static final String API_USUARIOS_MI_CLAVE = "/api/usuarios/mi-clave";
@@ -91,11 +92,11 @@ public class ConfiguracionSeguridad {
                 .requestMatchers("/api/estadisticas/**").hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO)
 
                 // Radicaciones.
-                .requestMatchers(HttpMethod.GET, API_RADICACIONES).hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO, ROL_EMPRESA)
+                .requestMatchers(HttpMethod.GET, API_RADICACIONES).hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO, ROL_EMPRESA, ROL_SECRETARIO)
                 .requestMatchers(HttpMethod.POST, API_RADICACIONES_CREAR).hasRole(ROL_EMPRESA)
-                .requestMatchers(HttpMethod.POST, API_RADICACIONES_DOCUMENTOS).hasRole(ROL_EMPRESA)
-                .requestMatchers(HttpMethod.PATCH, API_RADICACIONES_ESTADO).hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO)
-                .requestMatchers(HttpMethod.POST, API_RADICACIONES_OBSERVACIONES).hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO)
+                .requestMatchers(HttpMethod.POST, API_RADICACIONES_DOCUMENTOS).hasAnyRole(ROL_EMPRESA, ROL_ADMINISTRADOR, ROL_SECRETARIO)
+                .requestMatchers(HttpMethod.PATCH, API_RADICACIONES_ESTADO).hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO, ROL_SECRETARIO)
+                .requestMatchers(HttpMethod.POST, API_RADICACIONES_OBSERVACIONES).hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO, ROL_SECRETARIO)
 
                 // Solicitudes: EMPRESA crea, ADMIN/DIRECTIVO consultan y cambian estado
                 .requestMatchers(HttpMethod.GET, API_SOLICITUDES).hasAnyRole(ROL_ADMINISTRADOR, ROL_DIRECTIVO, ROL_EMPRESA)

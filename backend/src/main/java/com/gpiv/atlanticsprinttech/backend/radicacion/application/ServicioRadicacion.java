@@ -44,6 +44,8 @@ public interface ServicioRadicacion {
 
     List<RadicacionHistorial> listarHistorial(String identificadorIngreso, Long id);
 
+    RadicacionDocumento obtenerDocumento(String identificadorIngreso, Long radicacionId, Long documentoId);
+
     void asignarLote(String identificadorIngreso, Long radicacionId, Long loteId);
 
     Optional<Lote> obtenerLoteAsignado(String identificadorIngreso, Long radicacionId);

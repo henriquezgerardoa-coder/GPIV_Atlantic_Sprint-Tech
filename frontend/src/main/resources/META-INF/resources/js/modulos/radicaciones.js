@@ -240,15 +240,19 @@ const ModuloRadicaciones = (() => {
     }
 
     function ajustarVistaRadicacionesPorRol() {
-        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !esEmpresa;
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']) && !esEmpresa;
         const tabA = document.getElementById('tab-rad-a')?.closest('.nav-item');
         const tabD = document.getElementById('tab-rad-d')?.closest('.nav-item');
 
         if (esGestor) {
-            // Solicitud y documentación son exclusivas de EMPRESA.
+            // Solicitud es exclusiva de EMPRESA.
             tabA?.classList.add('d-none');
-            tabD?.classList.add('d-none');
+
+            // Documentación (HU-05) habilitada para EMPRESA, ADMIN y SECRETARIO.
+            const puedeAdjuntar = Autenticacion.tieneAcceso(['EMPRESA', 'ADMINISTRADOR', 'SECRETARIO']);
+            tabD?.classList.toggle('d-none', !puedeAdjuntar);
+
             const tabB = document.getElementById('tab-rad-b');
             if (tabB && window.bootstrap?.Tab) {
                 window.bootstrap.Tab.getOrCreateInstance(tabB).show();
@@ -428,8 +432,13 @@ const ModuloRadicaciones = (() => {
                         <td>${d.tipoDocumento || '-'}</td>
                         <td>${d.nombreArchivo || '-'}</td>
                         <td>${formatearFechaEvento(d.fechaSubida)}</td>
+                        <td class="text-end">
+                            <a href="/api/radicaciones/${detalle.id}/documentos/${d.id}" target="_blank" class="btn btn-sm btn-link text-decoration-none">
+                                <i class="bi bi-file-earmark-pdf"></i> Ver
+                            </a>
+                        </td>
                     </tr>`).join('')
-                : '<tr><td colspan="3" class="text-muted">Sin documentos</td></tr>';
+                : '<tr><td colspan="4" class="text-muted">Sin documentos</td></tr>';
         }
 
         const cuerpoHist = document.getElementById('cuerpoHistorialDetalleRadAdmin');

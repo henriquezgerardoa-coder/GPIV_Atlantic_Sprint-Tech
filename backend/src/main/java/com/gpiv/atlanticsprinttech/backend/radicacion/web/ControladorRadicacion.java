@@ -132,6 +132,19 @@ public class ControladorRadicacion {
             .toList();
     }
 
+    @GetMapping("/{id}/documentos/{documentoId}")
+    public ResponseEntity<byte[]> descargarDocumento(
+        @PathVariable Long id,
+        @PathVariable Long documentoId,
+        Authentication autenticacion
+    ) {
+        RadicacionDocumento documento = servicioRadicacion.obtenerDocumento(autenticacion.getName(), id, documentoId);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(documento.getMimeType()))
+            .header("Content-Disposition", "inline; filename=\"" + documento.getNombreArchivo() + "\"")
+            .body(documento.getContenido());
+    }
+
     @GetMapping("/{id}/historial")
     public List<RespuestaHistorialRadicacion> listarHistorial(@PathVariable Long id, Authentication autenticacion) {
         return servicioRadicacion.listarHistorial(autenticacion.getName(), id).stream()

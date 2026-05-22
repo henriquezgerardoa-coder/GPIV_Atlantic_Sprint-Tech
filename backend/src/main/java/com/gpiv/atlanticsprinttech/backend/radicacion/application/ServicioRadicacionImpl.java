@@ -213,26 +213,25 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         try {
             radicacion.cambiarEstado(nuevoEstado);
             if (nuevoEstado == EstadoRadicacion.APROBADA) {
-
-                ProyectoProductivo proyecto = new ProyectoProductivo();
-                proyecto.setNombre("PROY-" + radicacion.getNumeroRadicado());
-                proyecto.setDescripcion(radicacion.getDescripcion());
-
-                if (radicacion.getRentabilidadEstimada() != null) {
-                    proyecto.setMontoInversion(BigDecimal.valueOf(radicacion.getRentabilidadEstimada()));
-                } else {
-                    proyecto.setMontoInversion(BigDecimal.ZERO);
-                }
-
-                proyecto.setEstado(EstadoProyecto.INICIADO);
-                proyecto.setFechaCreacion(LocalDateTime.now());
-                proyecto.setEmpresa(radicacion.getEmpresa());
-                proyecto.setRadicacionOrigen(radicacion);
+                Lote loteAsignado = obtenerLoteAsignado(identificadorIngreso, id)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede aprobar la solicitud sin un lote preadjudicado."));
 
                 Usuario admin = repositorioUsuario.findByNombreUsuario(identificadorIngreso)
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Usuario no encontrado"));
-                proyecto.setResponsableSeguimiento(admin);
 
+                BigDecimal inversion = BigDecimal.ZERO;
+                if (radicacion.getRentabilidadEstimada() != null) {
+                    inversion = BigDecimal.valueOf(radicacion.getRentabilidadEstimada());
+                }
+                ProyectoProductivo proyecto = ProyectoProductivo.crear(
+                        "PROY-" + radicacion.getNumeroRadicado(),
+                        radicacion.getDescripcion(),
+                        LocalDate.now().plusYears(1),
+                        inversion,
+                        radicacion.getEmpresa(),
+                        loteAsignado,
+                        admin
+                );
                 repositorioProyecto.save(proyecto);
             }
         } catch (IllegalStateException | IllegalArgumentException ex) {
@@ -301,6 +300,14 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     public List<RadicacionHistorial> listarHistorial(String identificadorIngreso, Long id) {
         obtenerPorId(identificadorIngreso, id);
         return repositorioRadicacionHistorial.findByRadicacionIdOrderByFechaEventoDesc(id);
+    }
+
+    @Override
+    public RadicacionDocumento obtenerDocumento(String identificadorIngreso, Long radicacionId, Long documentoId) {
+        obtenerPorId(identificadorIngreso, radicacionId);
+        return repositorioRadicacionDocumento.findById(documentoId)
+            .filter(d -> d.getRadicacion().getId().equals(radicacionId))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Documento no encontrado"));
     }
 
     private String generarNumeroRadicado() {
