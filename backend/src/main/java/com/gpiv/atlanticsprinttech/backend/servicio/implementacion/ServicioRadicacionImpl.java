@@ -210,7 +210,8 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         EstadoRadicacion estado,
         String comentario,
         Integer tiempoEstimadoObraMeses,
-        LocalDate fechaPlazo
+        LocalDate fechaPlazo,
+        LocalDate fechaAprobacion
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -223,8 +224,12 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de plazo al aprobar una solicitud");
         }
         EstadoRadicacion estadoAnterior = radicacion.getEstado();
+        if (estado == EstadoRadicacion.APROBADA && fechaAprobacion != null) {
+            radicacion.establecerFechaAprobacion(fechaAprobacion);
+        }
         radicacion.cambiarEstado(estado);
         radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
+        actualizarEstadoLoteSegunRadicacion(radicacion, estado);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estado, comentario, identificadorIngreso));
         servicioAuditLog.registrarEvento(
@@ -235,6 +240,19 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             obtenerIpActual()
         );
         return actualizada;
+    }
+
+    private void actualizarEstadoLoteSegunRadicacion(RadicacionSolicitud radicacion, EstadoRadicacion nuevoEstado) {
+        Lote lote = radicacion.getLote();
+        if (lote == null) return;
+        switch (nuevoEstado) {
+            case APROBADA, RADICADA ->
+                lote.actualizarAsignacion(EstadoAsignacionLote.ADJUDICADO, lote.getNumeroExpedienteReferencia());
+            case RECHAZADA, CANCELADA ->
+                lote.actualizarAsignacion(EstadoAsignacionLote.DESADJUDICADO, lote.getNumeroExpedienteReferencia());
+            default -> { return; }
+        }
+        repositorioLote.save(lote);
     }
 
     private void validarTransicionEstado(EstadoRadicacion actual, EstadoRadicacion siguiente, String comentario) {

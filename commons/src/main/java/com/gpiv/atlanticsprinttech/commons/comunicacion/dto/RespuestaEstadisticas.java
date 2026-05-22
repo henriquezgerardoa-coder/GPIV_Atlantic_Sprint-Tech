@@ -16,6 +16,9 @@ public record RespuestaEstadisticas(
     long radicacionesPendientes,
     long radicacionesEnRevision,
     long radicacionesAprobadas,
-    long radicacionesRechazadas
+    long radicacionesRechazadas,
+    long lotesPreadjudicados,
+    long lotesAdjudicados,
+    long lotesDesadjudicados
 ) {}
 

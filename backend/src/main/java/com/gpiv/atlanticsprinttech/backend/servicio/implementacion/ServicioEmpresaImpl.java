@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
+import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
@@ -184,6 +185,18 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			.map(RadicacionSolicitud::getEstado)
 			.map(Enum::name)
 			.orElse(null);
+		List<RespuestaEmpresaDetalleAdmin.LoteResumen> lotes = repositorioLote
+			.findAllByEmpresaIdConEmpresa(empresaId)
+			.stream()
+			.map(l -> new RespuestaEmpresaDetalleAdmin.LoteResumen(
+				l.getId(),
+				l.getCodigo(),
+				l.getZona(),
+				l.getSuperficieMetrosCuadrados(),
+				l.getEstadoAsignacion() != null ? l.getEstadoAsignacion().name() : null,
+				l.getFechaAsignacion()
+			))
+			.toList();
 
 		return new RespuestaEmpresaDetalleAdmin(
 			empresa.getId(),
@@ -201,7 +214,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			vehiculos.size(),
 			estadoExpediente,
 			usuarioAsociado,
-			vehiculos
+			vehiculos,
+			lotes
 		);
 	}
 

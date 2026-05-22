@@ -8,8 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
@@ -40,7 +39,7 @@ public class Lote {
     @Column(name = "fecha_asignacion")
     private LocalDate fechaAsignacion;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = EstadoAsignacionLoteConverter.class)
     @Column(name = "estado_asignacion", length = 40)
     private EstadoAsignacionLote estadoAsignacion;
 

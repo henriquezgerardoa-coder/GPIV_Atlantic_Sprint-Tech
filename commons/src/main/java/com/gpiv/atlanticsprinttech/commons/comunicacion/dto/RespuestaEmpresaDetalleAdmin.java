@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.commons.comunicacion.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,7 +20,16 @@ public record RespuestaEmpresaDetalleAdmin(
     Integer totalVehiculos,
     String estadoExpediente,
     RespuestaUsuarioEmpresaAdmin usuarioAsociado,
-    List<RespuestaVehiculoEmpresa> vehiculos
+    List<RespuestaVehiculoEmpresa> vehiculos,
+    List<LoteResumen> lotes
 ) {
+    public record LoteResumen(
+        Long id,
+        String codigo,
+        String zona,
+        Double superficieMetrosCuadrados,
+        String estadoAsignacion,
+        LocalDate fechaAsignacion
+    ) {}
 }
 

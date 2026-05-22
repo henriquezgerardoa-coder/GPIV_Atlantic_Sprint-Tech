@@ -14,6 +14,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadistica
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
+import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
@@ -49,9 +50,12 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
 
     @Override
     public RespuestaEstadisticas obtenerResumen() {
-        long totalEmpresas  = repositorioEmpresa.count();
-        long totalLotes     = repositorioLote.count();
-        long lotesOcupados  = repositorioLote.countByOcupado(true);
+        long totalEmpresas       = repositorioEmpresa.count();
+        long totalLotes          = repositorioLote.count();
+        long lotesOcupados       = repositorioLote.countByOcupado(true);
+        long lotesPreadjudicados = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.PREADJUDICADO);
+        long lotesAdjudicados    = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.ADJUDICADO);
+        long lotesDesadjudicados = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.DESADJUDICADO);
 
         List<Object[]> porEstado = repositorioRadicacionSolicitud.contarPorEstado();
         Map<String, Long> radicacionesPorEstado = new HashMap<>();
@@ -78,7 +82,10 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             pendientes,
             enRevision,
             aprobadas,
-            rechazadas
+            rechazadas,
+            lotesPreadjudicados,
+            lotesAdjudicados,
+            lotesDesadjudicados
         );
     }
 
