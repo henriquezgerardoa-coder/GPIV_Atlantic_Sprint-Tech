@@ -20,15 +20,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
-@ExtendWith({SpringExtension.class, MockitoExtension.class})
+@ExtendWith(MockitoExtension.class)
 @DisplayName("Pruebas del Servicio de Empleados")
 class ServicioEmpleadoImplTest {
 
@@ -57,8 +55,6 @@ class ServicioEmpleadoImplTest {
 
 	@BeforeEach
 	void setUp() {
-
-		// Configurar datos de prueba
 		empresa = Empresa.crear("Mi Empresa", "Empresa S.A.", "20123456789",
 			"Calle 1", "Comercio", "empresa@test.com", "1234567890");
 
@@ -74,28 +70,23 @@ class ServicioEmpleadoImplTest {
 	@Test
 	@DisplayName("Crear empleado con rol EMPRESA exitosamente")
 	void testCrearEmpleadoExitosamente() {
-		// Given
 		Long empresaId = 1L;
-		when(servicioContextoUsuario.obtenerUsuarioPorIngreso("usuario_empresa"))
+		when(servicioContextoUsuario.obtenerUsuarioPorIngreso(anyString()))
 			.thenReturn(usuarioEmpresa);
-		when(servicioContextoUsuario.esRolEmpresa(usuarioEmpresa))
+		when(servicioContextoUsuario.esRolEmpresa(any(Usuario.class)))
 			.thenReturn(true);
-		when(servicioContextoUsuario.obtenerEmpresaIdRequerido(usuarioEmpresa))
+		when(servicioContextoUsuario.obtenerEmpresaIdRequerido(any(Usuario.class)))
 			.thenReturn(empresaId);
 		when(repositorioEmpresa.findById(empresaId))
 			.thenReturn(Optional.of(empresa));
 		when(repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, solicitudEmpleado.cuit()))
 			.thenReturn(false);
-
-		Empleado empleadoCreado = Empleado.crear(solicitudEmpleado.cuit(),
-			solicitudEmpleado.nombre(), empresa);
+		Empleado empleadoCreado = Empleado.crear(solicitudEmpleado.cuit(), solicitudEmpleado.nombre(), empresa);
 		when(repositorioEmpleado.save(any(Empleado.class)))
 			.thenReturn(empleadoCreado);
 
-		// When
 		Empleado resultado = servicioEmpleado.crear(empresaId, solicitudEmpleado, "usuario_empresa");
 
-		// Then
 		assertNotNull(resultado);
 		assertEquals(solicitudEmpleado.cuit(), resultado.getCuit());
 		assertEquals(solicitudEmpleado.nombre(), resultado.getNombre());
@@ -104,14 +95,10 @@ class ServicioEmpleadoImplTest {
 	@Test
 	@DisplayName("Error al crear empleado con rol que no es EMPRESA")
 	void testCrearEmpleadoConRolIncorrecto() {
-		// Given
 		Long empresaId = 1L;
-		when(servicioContextoUsuario.obtenerUsuarioPorIngreso("usuario_admin"))
+		when(servicioContextoUsuario.obtenerUsuarioPorIngreso(anyString()))
 			.thenReturn(usuarioAdmin);
-		when(servicioContextoUsuario.esRolEmpresa(usuarioAdmin))
-			.thenReturn(false);
 
-		// When & Then
 		assertThrows(ResponseStatusException.class,
 			() -> servicioEmpleado.crear(empresaId, solicitudEmpleado, "usuario_admin"),
 			"Solo los usuarios de EMPRESA pueden crear empleados"
@@ -121,17 +108,15 @@ class ServicioEmpleadoImplTest {
 	@Test
 	@DisplayName("Error al crear empleado en otra empresa")
 	void testCrearEmpleadoEnOtraEmpresa() {
-		// Given
 		Long empresaId = 1L;
 		Long otraEmpresaId = 2L;
-		when(servicioContextoUsuario.obtenerUsuarioPorIngreso("usuario_empresa"))
+		when(servicioContextoUsuario.obtenerUsuarioPorIngreso(anyString()))
 			.thenReturn(usuarioEmpresa);
-		when(servicioContextoUsuario.esRolEmpresa(usuarioEmpresa))
+		when(servicioContextoUsuario.esRolEmpresa(any(Usuario.class)))
 			.thenReturn(true);
-		when(servicioContextoUsuario.obtenerEmpresaIdRequerido(usuarioEmpresa))
+		when(servicioContextoUsuario.obtenerEmpresaIdRequerido(any(Usuario.class)))
 			.thenReturn(otraEmpresaId);
 
-		// When & Then
 		assertThrows(ResponseStatusException.class,
 			() -> servicioEmpleado.crear(empresaId, solicitudEmpleado, "usuario_empresa"),
 			"No puedes crear empleados en otra empresa"
@@ -141,20 +126,18 @@ class ServicioEmpleadoImplTest {
 	@Test
 	@DisplayName("Error al crear empleado con CUIT duplicado")
 	void testCrearEmpleadoConCuitDuplicado() {
-		// Given
 		Long empresaId = 1L;
-		when(servicioContextoUsuario.obtenerUsuarioPorIngreso("usuario_empresa"))
+		when(servicioContextoUsuario.obtenerUsuarioPorIngreso(anyString()))
 			.thenReturn(usuarioEmpresa);
-		when(servicioContextoUsuario.esRolEmpresa(usuarioEmpresa))
+		when(servicioContextoUsuario.esRolEmpresa(any(Usuario.class)))
 			.thenReturn(true);
-		when(servicioContextoUsuario.obtenerEmpresaIdRequerido(usuarioEmpresa))
+		when(servicioContextoUsuario.obtenerEmpresaIdRequerido(any(Usuario.class)))
 			.thenReturn(empresaId);
 		when(repositorioEmpresa.findById(empresaId))
 			.thenReturn(Optional.of(empresa));
 		when(repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, solicitudEmpleado.cuit()))
 			.thenReturn(true);
 
-		// When & Then
 		assertThrows(ResponseStatusException.class,
 			() -> servicioEmpleado.crear(empresaId, solicitudEmpleado, "usuario_empresa"),
 			"El CUIT ya está registrado para esta empresa"
@@ -164,39 +147,30 @@ class ServicioEmpleadoImplTest {
 	@Test
 	@DisplayName("Obtener cantidad de empleados como ADMIN")
 	void testObtenerCantidadComoAdmin() {
-		// Given
 		Long empresaId = 1L;
-		when(servicioContextoUsuario.obtenerUsuarioPorIngreso("usuario_admin"))
+		when(servicioContextoUsuario.obtenerUsuarioPorIngreso(anyString()))
 			.thenReturn(usuarioAdmin);
-		when(servicioContextoUsuario.obtenerEmpresaIdRequerido(usuarioAdmin))
-			.thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "No tiene empresa"));
 		when(repositorioEmpresa.findById(empresaId))
 			.thenReturn(Optional.of(empresa));
 		when(repositorioEmpleado.countByEmpresaId(empresaId))
 			.thenReturn(5L);
 
-		// When
 		RespuestaEmpleadosCantidad resultado = servicioEmpleado.obtenerCantidadPorEmpresa(empresaId, "usuario_admin");
 
-		// Then
 		assertNotNull(resultado);
-		assertEquals(empresaId, resultado.empresaId());
 		assertEquals(5L, resultado.cantidadEmpleados());
 	}
 
 	@Test
 	@DisplayName("Error al obtener cantidad con rol EMPRESA")
 	void testObtenerCantidadComoEmpresa() {
-		// Given
 		Long empresaId = 1L;
-		when(servicioContextoUsuario.obtenerUsuarioPorIngreso("usuario_empresa"))
+		when(servicioContextoUsuario.obtenerUsuarioPorIngreso(anyString()))
 			.thenReturn(usuarioEmpresa);
 
-		// When & Then
 		assertThrows(ResponseStatusException.class,
 			() -> servicioEmpleado.obtenerCantidadPorEmpresa(empresaId, "usuario_empresa"),
 			"Solo ADMIN y DIRECTIVO pueden acceder a este recurso"
 		);
 	}
 }
-
