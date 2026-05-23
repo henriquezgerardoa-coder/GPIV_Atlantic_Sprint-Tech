@@ -910,6 +910,10 @@
                             <span id="empActividadPropia">-</span>
                         </div>
                         <div class="col-md-6">
+                            <span class="fw-semibold">Rubro:</span>
+                            <span id="empRubroPropio">-</span>
+                        </div>
+                        <div class="col-md-6">
                             <span class="fw-semibold">Dirección:</span>
                             <span id="empDireccionPropia">-</span>
                         </div>
@@ -1340,9 +1344,15 @@
                     <div class="row g-3">
                         <div class="col-md-5">
                             <label for="selectorRubroSolicitado" class="form-label small fw-semibold">Rubro solicitado</label>
-                            <select id="selectorRubroSolicitado" class="form-select">
+                            <select id="selectorRubroSolicitado" class="form-select"
+                                    onchange="ModuloCambioRubro.toggleDescripcionOtros()">
                                 <option value="">Seleccionar rubro...</option>
                             </select>
+                        </div>
+                        <div class="col-md-5 d-none" id="bloqueDescripcionOtros">
+                            <label for="campoDescripcionOtros" class="form-label small fw-semibold">¿Cuál? <span class="text-danger">*</span></label>
+                            <input type="text" id="campoDescripcionOtros" class="form-control"
+                                   maxlength="300" placeholder="Describa el rubro específico...">
                         </div>
                         <div class="col-md-7">
                             <label for="campoJustificacionRubro" class="form-label small fw-semibold">Justificación <span class="text-muted fw-normal">(obligatoria)</span></label>
@@ -1955,6 +1965,7 @@
                         <div class="col-md-6"><strong>Fecha de registro:</strong> <span id="detEmpresaFechaRegistro">-</span></div>
                         <div class="col-md-6"><strong>Status empresa:</strong> <span id="detEmpresaStatus">-</span></div>
                         <div class="col-md-6"><strong>Actividad económica:</strong> <span id="detEmpresaActividad">-</span></div>
+                        <div class="col-md-6"><strong>Rubro:</strong> <span id="detEmpresaRubro">-</span></div>
                         <div class="col-md-6"><strong>Estado expediente:</strong> <span id="detEmpresaEstado">-</span></div>
                     </div>
 
@@ -2258,8 +2269,8 @@
                             <div class="col-md-6"><label for="relPersonaReferente" class="form-label small">Persona referente</label><input id="relPersonaReferente" class="form-control form-control-sm"></div>
                             <div class="col-md-6"><label for="relTelefono" class="form-label small">Teléfono</label><input id="relTelefono" class="form-control form-control-sm"></div>
                             <div class="col-md-6"><label for="relCorreoElectronico" class="form-label small">Correo electrónico de contacto</label><input id="relCorreoElectronico" type="email" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relRubro" class="form-label small">Rubro</label><select id="relRubro" class="form-select form-select-sm"><option value="SERVICIOS">Servicios</option><option value="BIENES">Bienes</option><option value="BIENES_Y_SERVICIOS">Bienes y servicios</option><option value="OTROS">Otros</option></select></div>
-                            <div class="col-md-6"><label for="relRubroOtro" class="form-label small">Detalle rubro otros</label><input id="relRubroOtro" class="form-control form-control-sm"></div>
+                            <div class="col-md-6"><label for="relRubro" class="form-label small">Rubro</label><select id="relRubro" class="form-select form-select-sm" onchange="ModuloRadicaciones.toggleRubroOtros()"><option value="">Seleccionar rubro...</option></select></div>
+                            <div class="col-md-6 d-none" id="bloqueRelRubroOtro"><label for="relRubroOtro" class="form-label small">¿Cuál? <span class="text-danger">*</span></label><input id="relRubroOtro" class="form-control form-control-sm" maxlength="300" placeholder="Describa el rubro específico..."></div>
                             <div class="col-12"><label for="relDescripcionServicio" class="form-label small">Descripción del servicio o bien ofrecido</label><textarea id="relDescripcionServicio" rows="2" class="form-control form-control-sm"></textarea></div>
                             <div class="col-md-6"><label for="relEmplazamiento" class="form-label small">Emplazamiento actual</label><select id="relEmplazamiento" class="form-select form-select-sm"><option value="PROPIO">Propio</option><option value="ALQUILADO">Alquilado</option></select></div>
                             <div class="col-md-2"><label for="relPersonalJerarquico" class="form-label small">Personal jerárquico</label><input id="relPersonalJerarquico" type="number" min="0" class="form-control form-control-sm" value="0"></div>
@@ -2284,6 +2295,34 @@
                             <div class="col-12"><label for="relMateriasPrimas" class="form-label small">Materias primas</label><textarea id="relMateriasPrimas" rows="2" class="form-control form-control-sm"></textarea></div>
                             <div class="col-12"><label for="relDestinoProduccion" class="form-label small">Destino de la producción</label><textarea id="relDestinoProduccion" rows="2" class="form-control form-control-sm"></textarea></div>
                             <div class="col-12"><label for="relTipoResiduos" class="form-label small">Residuos/Efluentes</label><textarea id="relTipoResiduos" rows="2" class="form-control form-control-sm"></textarea></div>
+                        </div>
+                    </div>
+
+                    <!-- Adjuntar documentación inicial -->
+                    <div class="form-check form-switch mt-3 mb-2">
+                        <input class="form-check-input" type="checkbox" id="activarAdjuntoRadicacion"
+                               onchange="ModuloRadicaciones.toggleAdjuntoRadicacion()">
+                        <label class="form-check-label fw-semibold" for="activarAdjuntoRadicacion">
+                            Adjuntar documentación inicial (PDF)
+                        </label>
+                    </div>
+                    <div id="bloqueAdjuntoRadicacion" class="border rounded p-3 bg-light-subtle d-none">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label for="adjRadTipoDocumento" class="form-label small">Tipo de documento</label>
+                                <select id="adjRadTipoDocumento" class="form-select form-select-sm">
+                                    <option value="OBLIGATORIO">Obligatorio</option>
+                                    <option value="ADICIONAL">Adicional</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label for="adjRadDescripcion" class="form-label small">Descripción <span class="text-muted fw-normal">(opcional)</span></label>
+                                <input id="adjRadDescripcion" class="form-control form-control-sm" maxlength="200" placeholder="Ej: Nota de presentación, estatuto...">
+                            </div>
+                            <div class="col-12">
+                                <label for="adjRadArchivo" class="form-label small">Archivo PDF</label>
+                                <input id="adjRadArchivo" type="file" class="form-control form-control-sm" accept=".pdf,.PDF">
+                            </div>
                         </div>
                     </div>
                 </form>

@@ -10,7 +10,7 @@ public interface ServicioSolicitudCambioRubro {
 
     List<SolicitudCambioRubro> listar(String identificadorIngreso);
 
-    SolicitudCambioRubro crear(String identificadorIngreso, Long rubroSolicitadoId, String justificacion);
+    SolicitudCambioRubro crear(String identificadorIngreso, Long rubroSolicitadoId, String justificacion, String descripcionOtros);
 
-    SolicitudCambioRubro resolver(String identificadorIngreso, Long solicitudId, boolean aprobada, String motivoRechazo);
+    SolicitudCambioRubro resolver(String identificadorIngreso, Long solicitudId, boolean aprobada, String motivoRechazo, String nombreNuevoRubro);
 }

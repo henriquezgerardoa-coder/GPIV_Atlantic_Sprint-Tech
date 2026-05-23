@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
+import com.gpiv.atlanticsprinttech.backend.mapeador.MapeadorEmpresa;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaDetalleAdmin;
@@ -28,18 +29,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class ControladorEmpresa {
 
     private final ServicioEmpresa servicioEmpresa;
-    public ControladorEmpresa(ServicioEmpresa servicioEmpresa) {
+    private final MapeadorEmpresa mapeador;
+
+    public ControladorEmpresa(ServicioEmpresa servicioEmpresa, MapeadorEmpresa mapeador) {
         this.servicioEmpresa = servicioEmpresa;
+        this.mapeador = mapeador;
     }
     @GetMapping
     public List<RespuestaEmpresa> listar(Authentication autenticacion) {
         return servicioEmpresa.listar(autenticacion.getName()).stream()
-            .map(empresa -> crearRespuesta(empresa, autenticacion.getName()))
+            .map(e -> mapeador.toRespuesta(e, servicioEmpresa.permiteServiciosPostRadicacion(e.getId(), autenticacion.getName())))
             .toList();
     }
+
     @GetMapping("/{id}")
     public RespuestaEmpresa obtenerPorId(@PathVariable Long id, Authentication autenticacion) {
-        return crearRespuesta(servicioEmpresa.obtenerPorId(id, autenticacion.getName()), autenticacion.getName());
+        return mapeador.toRespuesta(
+            servicioEmpresa.obtenerPorId(id, autenticacion.getName()),
+            servicioEmpresa.permiteServiciosPostRadicacion(id, autenticacion.getName())
+        );
     }
 
     @GetMapping("/admin/vista")
@@ -53,14 +61,15 @@ public class ControladorEmpresa {
     }
     @PostMapping
     public ResponseEntity<RespuestaEmpresa> crear(@Valid @RequestBody SolicitudEmpresa solicitud, Authentication autenticacion) {
-        Empresa empresaCreada = servicioEmpresa.crear(crearEmpresa(solicitud), autenticacion.getName());
+        Empresa empresaCreada = servicioEmpresa.crear(mapeador.desdeSolicitud(solicitud), autenticacion.getName());
         return ResponseEntity.created(URI.create("/api/empresas/" + empresaCreada.getId()))
-            .body(crearRespuesta(empresaCreada, autenticacion.getName()));
+            .body(mapeador.toRespuesta(empresaCreada, servicioEmpresa.permiteServiciosPostRadicacion(empresaCreada.getId(), autenticacion.getName())));
     }
+
     @PutMapping("/{id}")
     public RespuestaEmpresa actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudEmpresa solicitud, Authentication autenticacion) {
-        Empresa empresaActualizada = servicioEmpresa.actualizar(id, crearEmpresa(solicitud), autenticacion.getName());
-        return crearRespuesta(empresaActualizada, autenticacion.getName());
+        Empresa actualizada = servicioEmpresa.actualizar(id, mapeador.desdeSolicitud(solicitud), autenticacion.getName());
+        return mapeador.toRespuesta(actualizada, servicioEmpresa.permiteServiciosPostRadicacion(id, autenticacion.getName()));
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication autenticacion) {
@@ -82,31 +91,4 @@ public class ControladorEmpresa {
         return servicioEmpresa.actualizarServiciosPostRadicacion(id, solicitud, autenticacion.getName());
     }
 
-    private Empresa crearEmpresa(SolicitudEmpresa solicitud) {
-		return Empresa.crear(
-			solicitud.nombre(),
-			solicitud.razonSocial(),
-			solicitud.cuit(),
-			solicitud.direccion(),
-			solicitud.actividadEconomica(),
-          solicitud.correoElectronico(),
-          solicitud.telefono()
-		);
-    }
-    private RespuestaEmpresa crearRespuesta(Empresa empresa, String identificadorIngreso) {
-    boolean permiteServiciosPostRadicacion = empresa.getId() != null
-      && servicioEmpresa.permiteServiciosPostRadicacion(empresa.getId(), identificadorIngreso);
-        return new RespuestaEmpresa(
-            empresa.getId(),
-            empresa.getNombre(),
-			empresa.getRazonSocial(),
-            empresa.getCuit(),
-			empresa.getDireccion(),
-			empresa.getActividadEconomica(),
-			empresa.getCorreoElectronico(),
-                  empresa.getTelefono(),
-			empresa.getCantidadEmpleados(),
-			permiteServiciosPostRadicacion
-        );
-    }
 }

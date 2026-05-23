@@ -35,6 +35,9 @@ public class SolicitudCambioRubro {
     @Column(name = "justificacion", nullable = false, length = 1000)
     private String justificacion;
 
+    @Column(name = "descripcion_otros", length = 300)
+    private String descripcionOtros;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
     private EstadoCambioRubro estado;
@@ -62,12 +65,14 @@ public class SolicitudCambioRubro {
         Rubro rubroSolicitado,
         String rubroAnteriorNombre,
         String justificacion,
+        String descripcionOtros,
         String solicitadoPor
     ) {
         this.empresa = empresa;
         this.rubroSolicitado = rubroSolicitado;
         this.rubroAnteriorNombre = rubroAnteriorNombre;
         this.justificacion = justificacion;
+        this.descripcionOtros = descripcionOtros;
         this.solicitadoPor = solicitadoPor;
         this.estado = EstadoCambioRubro.PENDIENTE;
         this.fechaSolicitud = LocalDateTime.now();
@@ -78,9 +83,10 @@ public class SolicitudCambioRubro {
         Rubro rubroSolicitado,
         String rubroAnteriorNombre,
         String justificacion,
+        String descripcionOtros,
         String solicitadoPor
     ) {
-        return new SolicitudCambioRubro(empresa, rubroSolicitado, rubroAnteriorNombre, justificacion, solicitadoPor);
+        return new SolicitudCambioRubro(empresa, rubroSolicitado, rubroAnteriorNombre, justificacion, descripcionOtros, solicitadoPor);
     }
 
     public void validarResoluble() {
@@ -107,6 +113,8 @@ public class SolicitudCambioRubro {
     public Rubro getRubroSolicitado() { return rubroSolicitado; }
     public String getRubroAnteriorNombre() { return rubroAnteriorNombre; }
     public String getJustificacion() { return justificacion; }
+    public String getDescripcionOtros() { return descripcionOtros; }
+    public boolean esRubroOtros() { return "Otros".equalsIgnoreCase(rubroSolicitado.getNombre()); }
     public EstadoCambioRubro getEstado() { return estado; }
     public String getMotivoRechazo() { return motivoRechazo; }
     public String getSolicitadoPor() { return solicitadoPor; }

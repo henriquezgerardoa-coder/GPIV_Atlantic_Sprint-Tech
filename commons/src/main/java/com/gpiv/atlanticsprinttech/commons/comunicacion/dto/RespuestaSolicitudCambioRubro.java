@@ -8,6 +8,7 @@ public record RespuestaSolicitudCambioRubro(
     String nombreRubroSolicitado,
     String rubroAnteriorNombre,
     String justificacion,
+    String descripcionOtros,
     String estado,
     String motivoRechazo,
     String solicitadoPor,

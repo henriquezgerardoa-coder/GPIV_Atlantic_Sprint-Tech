@@ -8,6 +8,9 @@ public record SolicitudResolverCambioRubro(
     Boolean aprobada,
 
     @Size(max = 500, message = "El motivo no puede superar 500 caracteres")
-    String motivoRechazo
+    String motivoRechazo,
+
+    @Size(max = 120, message = "El nombre del nuevo rubro no puede superar 120 caracteres")
+    String nombreNuevoRubro
 ) {
 }

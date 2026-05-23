@@ -46,9 +46,9 @@ public record SolicitudRelevamientoPedidoLotes(
     @Size(max = 150, message = "El correo electronico no puede superar 150 caracteres")
     String correoElectronico,
     @NotBlank(message = "El rubro es obligatorio")
-    @Pattern(regexp = "SERVICIOS|BIENES|BIENES_Y_SERVICIOS|OTROS", message = "El rubro enviado no es valido")
+    @Size(max = 120, message = "El rubro no puede superar 120 caracteres")
     String rubro,
-    @Size(max = 120, message = "El detalle de rubro otros no puede superar 120 caracteres")
+    @Size(max = 300, message = "El detalle de rubro otros no puede superar 300 caracteres")
     String rubroOtro,
     @NotBlank(message = "La descripcion del servicio o bien ofrecido es obligatoria")
     @Size(max = 800, message = "La descripcion no puede superar 800 caracteres")

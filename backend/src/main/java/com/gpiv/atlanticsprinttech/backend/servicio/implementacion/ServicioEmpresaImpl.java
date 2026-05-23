@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
+import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
@@ -201,6 +202,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			))
 			.toList();
 
+		Rubro rubro = empresa.getRubro();
 		return new RespuestaEmpresaDetalleAdmin(
 			empresa.getId(),
 			empresa.getNombre(),
@@ -215,6 +217,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getCantidadEmpleados() == null ? 0 : empresa.getCantidadEmpleados(),
 			vehiculos.size(),
 			estadoExpediente,
+			rubro != null ? rubro.getId() : null,
+			rubro != null ? rubro.getNombre() : null,
 			usuarioAsociado,
 			vehiculos,
 			lotes

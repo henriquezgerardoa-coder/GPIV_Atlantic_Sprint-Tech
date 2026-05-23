@@ -1,5 +1,6 @@
 const ModuloRadicaciones = (() => {
     let radicaciones = [];
+    let rubrosRadicacion = [];
     let historialRadicacionSeleccionadaId = null;
     let historialEventos = [];
     let radicacionDetalleAdmin = null;
@@ -31,11 +32,39 @@ const ModuloRadicaciones = (() => {
         'relSupExpansion', 'relSupEstacionamiento', 'relTienePlanos', 'relPersonalAOcupar', 'relMateriasPrimas',
         'relDestinoProduccion', 'relTension', 'relPotenciaKw', 'relAguaLtsMes', 'relRequiereGas', 'relTipoResiduos',
         'relTratamientoPlanta', 'relBalanzaPublica', 'relComedorUnitario', 'relSalonCoworking',
-        'relPlanAmbiental', 'relRentabilidad'
+        'adjRadTipoDocumento', 'adjRadDescripcion'
     ];
+
+    async function cargarRubrosParaFormulario() {
+        const resp = await ApiCliente.obtener('/api/catalogos/rubros');
+        if (!resp?.ok) return;
+        rubrosRadicacion = await resp.json();
+        const selector = document.getElementById('relRubro');
+        if (!selector) return;
+        const valorActual = selector.value;
+        selector.innerHTML = '<option value="">Seleccionar rubro...</option>'
+            + rubrosRadicacion.map(r =>
+                `<option value="${r.nombre}"${r.requierePermisoEspecial ? ' data-especial="true"' : ''}>${r.nombre}${r.requierePermisoEspecial ? ' ⚠ (requiere permiso especial)' : ''}</option>`
+            ).join('');
+        if (valorActual) selector.value = valorActual;
+        toggleRubroOtros();
+    }
+
+    function toggleRubroOtros() {
+        const selector = document.getElementById('relRubro');
+        const bloque = document.getElementById('bloqueRelRubroOtro');
+        if (!selector || !bloque) return;
+        const esOtros = selector.value.toLowerCase() === 'otros';
+        bloque.classList.toggle('d-none', !esOtros);
+        if (!esOtros) {
+            const campo = document.getElementById('relRubroOtro');
+            if (campo) campo.value = '';
+        }
+    }
 
     async function cargar() {
         inicializarFormularioRadicacion();
+        await cargarRubrosParaFormulario();
         ajustarVistaRadicacionesPorRol();
         const params = new URLSearchParams();
         const estado = document.getElementById('filtroEstadoRad')?.value;
@@ -275,6 +304,15 @@ const ModuloRadicaciones = (() => {
         ).show();
     }
 
+    function toggleAdjuntoRadicacion() {
+        const activo = document.getElementById('activarAdjuntoRadicacion')?.checked;
+        document.getElementById('bloqueAdjuntoRadicacion')?.classList.toggle('d-none', !activo);
+        if (!activo) {
+            document.getElementById('adjRadArchivo').value = '';
+            document.getElementById('adjRadDescripcion').value = '';
+        }
+    }
+
     async function crear() {
         ocultarErrorRadicacion();
         const tipoSolicitud = document.getElementById('campoTipoSolicitudRad').value.trim();
@@ -303,7 +341,21 @@ const ModuloRadicaciones = (() => {
             return;
         }
 
+        const radicacionCreada = await respuesta.json().catch(() => null);
+
+        const adjuntoActivo = document.getElementById('activarAdjuntoRadicacion')?.checked;
+        const archivoAdjunto = document.getElementById('adjRadArchivo')?.files[0];
+        if (adjuntoActivo && archivoAdjunto && radicacionCreada?.id) {
+            const formData = new FormData();
+            formData.append('tipoDocumento', document.getElementById('adjRadTipoDocumento').value);
+            formData.append('descripcion', document.getElementById('adjRadDescripcion').value.trim());
+            formData.append('archivo', archivoAdjunto);
+            await ApiCliente.subirArchivo(`/api/radicaciones/${radicacionCreada.id}/documentos`, formData);
+        }
+
         document.getElementById('formRadicacionNueva').reset();
+        document.getElementById('activarAdjuntoRadicacion').checked = false;
+        document.getElementById('bloqueAdjuntoRadicacion')?.classList.add('d-none');
         actualizarVisibilidadRelevamiento();
         limpiarBorradorPersistido();
         mostrarAlerta('Radicación creada correctamente.');
@@ -913,21 +965,11 @@ const ModuloRadicaciones = (() => {
             tratamientoEnPlanta: leerBooleano('relTratamientoPlanta'),
             necesitaBalanzaPublica: leerBooleano('relBalanzaPublica'),
             necesitaComedorUnitario: leerBooleano('relComedorUnitario'),
-            necesitaSalonCoworking: leerBooleano('relSalonCoworking'),
-            planAmbiental: leerTexto('relPlanAmbiental'),
-            rentabilidadEstimada: leerTexto('relRentabilidad')
+            necesitaSalonCoworking: leerBooleano('relSalonCoworking')
         };
 
         if (!relevamiento.correo || !relevamiento.razonSocialEmpresa || !relevamiento.cuit || !relevamiento.actividadPrincipal) {
             mostrarErrorRadicacion('Complete los campos obligatorios del relevamiento (correo, razón social, CUIT y actividad principal).');
-            return null;
-        }
-        if (!relevamiento.planAmbiental) {
-            mostrarErrorRadicacion('El plan ambiental es obligatorio.');
-            return null;
-        }
-        if (!relevamiento.rentabilidadEstimada) {
-            mostrarErrorRadicacion('La rentabilidad estimada es obligatoria.');
             return null;
         }
         const cuitDigitos = relevamiento.cuit.replace(/-/g, '').trim();
@@ -1234,7 +1276,9 @@ const ModuloRadicaciones = (() => {
         guardarBorradorAhora,
         descartarBorrador,
         abrirModalNuevaSolicitud,
-        subirDocumentoDesdeModal
+        subirDocumentoDesdeModal,
+        toggleRubroOtros,
+        toggleAdjuntoRadicacion
     };
 })();
 

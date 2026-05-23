@@ -10,6 +10,9 @@ public record SolicitudSolicitarCambioRubro(
 
     @NotBlank(message = "La justificación es obligatoria")
     @Size(max = 1000, message = "La justificación no puede superar 1000 caracteres")
-    String justificacion
+    String justificacion,
+
+    @Size(max = 300, message = "La descripción no puede superar 300 caracteres")
+    String descripcionOtros
 ) {
 }

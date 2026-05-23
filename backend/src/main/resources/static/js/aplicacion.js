@@ -173,7 +173,7 @@ function ocultarAlertaModal(idElemento) {
 function navegarA(seccion) {
     const esEmpresaExclusivo = Autenticacion.tieneAcceso(['EMPRESA'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-    const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor', 'censo', 'cambio-rubro']);
+    const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor', 'censo']);
     if (esEmpresaExclusivo && seccionesRestringidasEmpresa.has(seccion)) {
         mostrarAlerta('No tienes acceso a esta sección.', 'danger');
         seccion = 'empresas';
@@ -253,8 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));
         document.getElementById('itemNavCenso')?.classList.add('d-none');
         document.getElementById('itemNavCensoMovil')?.classList.add('d-none');
-        document.getElementById('itemNavCambioRubro')?.classList.add('d-none');
-        document.getElementById('itemNavCambioRubroMovil')?.classList.add('d-none');
         document.getElementById('itemNavAuditLog')?.classList.add('d-none');
         document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
         document.getElementById('itemNavInfraestructura')?.classList.add('d-none');
@@ -365,8 +363,6 @@ function ocultarAccesosEmpresaRestringidos() {
     document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
     document.getElementById('itemNavCenso')?.classList.add('d-none');
     document.getElementById('itemNavCensoMovil')?.classList.add('d-none');
-    document.getElementById('itemNavCambioRubro')?.classList.add('d-none');
-    document.getElementById('itemNavCambioRubroMovil')?.classList.add('d-none');
     document.getElementById('itemNavAuditLog')?.classList.add('d-none');
     document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
     document.getElementById('itemNavInfraestructura')?.classList.add('d-none');

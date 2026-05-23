@@ -41,7 +41,8 @@ public class ControladorSolicitudCambioRubro {
         return toRespuesta(servicio.crear(
             auth.getName(),
             solicitud.rubroSolicitadoId(),
-            solicitud.justificacion()
+            solicitud.justificacion(),
+            solicitud.descripcionOtros()
         ));
     }
 
@@ -52,7 +53,7 @@ public class ControladorSolicitudCambioRubro {
         Authentication auth
     ) {
         return toRespuesta(servicio.resolver(
-            auth.getName(), id, solicitud.aprobada(), solicitud.motivoRechazo()
+            auth.getName(), id, solicitud.aprobada(), solicitud.motivoRechazo(), solicitud.nombreNuevoRubro()
         ));
     }
 
@@ -65,6 +66,7 @@ public class ControladorSolicitudCambioRubro {
             s.getRubroSolicitado().getNombre(),
             s.getRubroAnteriorNombre(),
             s.getJustificacion(),
+            s.getDescripcionOtros(),
             s.getEstado().name(),
             s.getMotivoRechazo(),
             s.getSolicitadoPor(),

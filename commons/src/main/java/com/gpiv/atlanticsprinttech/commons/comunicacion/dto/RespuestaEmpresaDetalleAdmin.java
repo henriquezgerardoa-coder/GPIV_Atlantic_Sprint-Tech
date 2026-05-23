@@ -18,6 +18,8 @@ public record RespuestaEmpresaDetalleAdmin(
     Integer totalEmpleados,
     Integer totalVehiculos,
     String estadoExpediente,
+    Long rubroId,
+    String rubroNombre,
     RespuestaUsuarioEmpresaAdmin usuarioAsociado,
     List<RespuestaVehiculoEmpresa> vehiculos,
     List<LoteResumen> lotes

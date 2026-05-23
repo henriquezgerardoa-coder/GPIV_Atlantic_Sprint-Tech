@@ -16,6 +16,16 @@ const ModuloCambioRubro = (() => {
         document.getElementById('thResolucion')?.classList.toggle('d-none', !esGestor);
     }
 
+    function toggleDescripcionOtros() {
+        const selector = document.getElementById('selectorRubroSolicitado');
+        const bloque = document.getElementById('bloqueDescripcionOtros');
+        if (!selector || !bloque) return;
+        const seleccionado = rubros.find(r => r.id === parseInt(selector.value));
+        const esOtros = seleccionado && seleccionado.nombre.toLowerCase() === 'otros';
+        bloque.classList.toggle('d-none', !esOtros);
+        if (!esOtros) document.getElementById('campoDescripcionOtros').value = '';
+    }
+
     async function cargarRubros() {
         const resp = await ApiCliente.obtener('/api/catalogos/rubros');
         if (!resp?.ok) return;
@@ -42,11 +52,15 @@ const ModuloCambioRubro = (() => {
             && !Autenticacion.tieneAcceso(['EMPRESA']);
 
         cuerpo.innerHTML = solicitudes.length
-            ? solicitudes.map(s => `
+            ? solicitudes.map(s => {
+                const rubroSolicitadoTexto = s.nombreRubroSolicitado.toLowerCase() === 'otros' && s.descripcionOtros
+                    ? `Otros <span class="text-muted small">(${s.descripcionOtros})</span>`
+                    : s.nombreRubroSolicitado;
+                return `
                 <tr>
                     <td class="ps-3 fw-semibold">${s.nombreEmpresa}</td>
                     <td>${s.rubroAnteriorNombre || '<span class="text-muted">Sin rubro</span>'}</td>
-                    <td>${s.nombreRubroSolicitado}</td>
+                    <td>${rubroSolicitadoTexto}</td>
                     <td class="small text-muted" style="max-width:200px">${s.justificacion}</td>
                     <td>${badgeEstado(s.estado)}</td>
                     <td class="small text-muted">${formatearFecha(s.fechaSolicitud)}</td>
@@ -55,7 +69,7 @@ const ModuloCambioRubro = (() => {
                     <td class="text-center columnaResolucion">
                         ${s.estado === 'PENDIENTE' ? `
                         <button class="btn btn-sm btn-success me-1"
-                            onclick="ModuloCambioRubro.aprobar(${s.id})">
+                            onclick="ModuloCambioRubro.aprobar(${s.id}, ${!!s.descripcionOtros})">
                             <i class="bi bi-check-lg"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-danger"
@@ -63,7 +77,8 @@ const ModuloCambioRubro = (() => {
                             <i class="bi bi-x-lg"></i>
                         </button>` : '<span class="text-muted small">—</span>'}
                     </td>` : ''}
-                </tr>`).join('')
+                </tr>`;
+            }).join('')
             : `<tr><td colspan="${esGestor ? 8 : 7}" class="text-muted text-center py-3">Sin solicitudes registradas</td></tr>`;
     }
 
@@ -73,9 +88,17 @@ const ModuloCambioRubro = (() => {
 
         const rubroSolicitadoId = parseInt(document.getElementById('selectorRubroSolicitado').value);
         const justificacion = document.getElementById('campoJustificacionRubro').value.trim();
+        const descripcionOtros = document.getElementById('campoDescripcionOtros')?.value.trim() || null;
+        const seleccionado = rubros.find(r => r.id === rubroSolicitadoId);
+        const esOtros = seleccionado && seleccionado.nombre.toLowerCase() === 'otros';
 
         if (!rubroSolicitadoId) {
             alerta.textContent = 'Seleccione el rubro solicitado.';
+            alerta?.classList.remove('d-none');
+            return;
+        }
+        if (esOtros && !descripcionOtros) {
+            alerta.textContent = 'Debe especificar cuál es el rubro cuando selecciona "Otros".';
             alerta?.classList.remove('d-none');
             return;
         }
@@ -85,7 +108,9 @@ const ModuloCambioRubro = (() => {
             return;
         }
 
-        const resp = await ApiCliente.crear('/api/cambios-rubro', { rubroSolicitadoId, justificacion });
+        const cuerpoSolicitud = { rubroSolicitadoId, justificacion };
+        if (esOtros && descripcionOtros) cuerpoSolicitud.descripcionOtros = descripcionOtros;
+        const resp = await ApiCliente.crear('/api/cambios-rubro', cuerpoSolicitud);
         if (!resp?.ok) {
             const err = await resp?.json().catch(() => ({}));
             alerta.textContent = err?.mensaje || err?.message || 'No se pudo enviar la solicitud.';
@@ -97,11 +122,19 @@ const ModuloCambioRubro = (() => {
         await cargarSolicitudes();
     }
 
-    async function aprobar(solicitudId) {
+    async function aprobar(solicitudId, esOtros) {
         if (!confirm('¿Confirma la aprobación del cambio de rubro? El rubro de la empresa será actualizado.')) return;
-        const resp = await ApiCliente.parche(`/api/cambios-rubro/${solicitudId}/resolver`, {
-            aprobada: true
-        });
+        const cuerpo = { aprobada: true };
+        if (esOtros) {
+            const nombreNuevoRubro = prompt(
+                'La empresa solicitó el rubro "Otros".\n' +
+                'Ingrese el nombre oficial del nuevo rubro para crearlo en el sistema\n' +
+                '(deje vacío para dejarlo como "Otros"):'
+            );
+            if (nombreNuevoRubro === null) return;
+            if (nombreNuevoRubro.trim()) cuerpo.nombreNuevoRubro = nombreNuevoRubro.trim();
+        }
+        const resp = await ApiCliente.parche(`/api/cambios-rubro/${solicitudId}/resolver`, cuerpo);
         if (!resp?.ok) {
             const err = await resp?.json().catch(() => ({}));
             mostrarAlerta(err?.mensaje || err?.message || 'No se pudo aprobar la solicitud.', 'danger');
@@ -142,5 +175,5 @@ const ModuloCambioRubro = (() => {
         return String(fechaIso).replace('T', ' ').slice(0, 16);
     }
 
-    return { cargar, enviarSolicitud, aprobar, rechazar };
+    return { cargar, enviarSolicitud, aprobar, rechazar, toggleDescripcionOtros };
 })();

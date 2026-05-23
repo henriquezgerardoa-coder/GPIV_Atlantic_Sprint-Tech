@@ -172,6 +172,7 @@ const ModuloEmpresas = (() => {
         setTexto('detEmpresaFechaRegistro', formatearFechaHora(detalle?.fechaRegistro));
         setTexto('detEmpresaStatus', detalle?.statusEmpresa);
         setTexto('detEmpresaActividad', detalle?.actividadEconomica);
+        setTexto('detEmpresaRubro', detalle?.rubroNombre || 'Sin rubro asignado');
         setTexto('detEmpresaEstado', detalle?.estadoExpediente || 'Sin expediente');
         setTexto('detUsuarioNombre', usuario?.nombreCompleto || 'Sin usuario asociado');
         setTexto('detUsuarioCorreo', usuario?.correoElectronico);
@@ -271,6 +272,7 @@ const ModuloEmpresas = (() => {
         setTexto('empRazonSocialPropio', emp.razonSocial || '-');
         setTexto('empCuitPropio', emp.cuit || '-');
         setTexto('empActividadPropia', emp.actividadEconomica || '-');
+        setTexto('empRubroPropio', emp.rubroNombre || 'Sin rubro asignado');
         setTexto('empDireccionPropia', emp.direccion || '-');
         setTexto('empCorreoPropio', emp.correoElectronico || '-');
         setTexto('empTelefonoPropio', emp.telefono || '-');

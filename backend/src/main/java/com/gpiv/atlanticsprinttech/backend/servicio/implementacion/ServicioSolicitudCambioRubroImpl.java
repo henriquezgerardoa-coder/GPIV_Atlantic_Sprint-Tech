@@ -50,7 +50,7 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
     }
 
     @Override
-    public SolicitudCambioRubro crear(String identificadorIngreso, Long rubroSolicitadoId, String justificacion) {
+    public SolicitudCambioRubro crear(String identificadorIngreso, Long rubroSolicitadoId, String justificacion, String descripcionOtros) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (!servicioContextoUsuario.esRolEmpresa(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
@@ -75,9 +75,16 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
                 "El rubro solicitado es el mismo que el rubro actual");
         }
 
+        if ("Otros".equalsIgnoreCase(rubroSolicitado.getNombre())
+                && (descripcionOtros == null || descripcionOtros.isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Debe especificar cuál es el rubro cuando selecciona 'Otros'");
+        }
+
         String rubroAnteriorNombre = rubroActual != null ? rubroActual.getNombre() : null;
         SolicitudCambioRubro solicitud = SolicitudCambioRubro.crear(
-            empresa, rubroSolicitado, rubroAnteriorNombre, justificacion.trim(), identificadorIngreso
+            empresa, rubroSolicitado, rubroAnteriorNombre, justificacion.trim(),
+            descripcionOtros != null ? descripcionOtros.trim() : null, identificadorIngreso
         );
         return repositorioSolicitud.save(solicitud);
     }
@@ -87,7 +94,8 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         String identificadorIngreso,
         Long solicitudId,
         boolean aprobada,
-        String motivoRechazo
+        String motivoRechazo,
+        String nombreNuevoRubro
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -103,7 +111,13 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         if (aprobada) {
             solicitud.aprobar(identificadorIngreso);
             Empresa empresa = solicitud.getEmpresa();
-            empresa.asignarRubro(solicitud.getRubroSolicitado());
+            Rubro rubroFinal = solicitud.getRubroSolicitado();
+            if (solicitud.esRubroOtros() && nombreNuevoRubro != null && !nombreNuevoRubro.isBlank()) {
+                rubroFinal = repositorioRubro.save(
+                    Rubro.crear(nombreNuevoRubro.trim(), solicitud.getDescripcionOtros(), false)
+                );
+            }
+            empresa.asignarRubro(rubroFinal);
             repositorioEmpresa.save(empresa);
         } else {
             if (motivoRechazo == null || motivoRechazo.isBlank()) {

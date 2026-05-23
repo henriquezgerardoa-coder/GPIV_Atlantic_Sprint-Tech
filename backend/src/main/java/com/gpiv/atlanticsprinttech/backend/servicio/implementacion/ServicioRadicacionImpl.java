@@ -170,9 +170,9 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar el objeto del proyecto para empresa existente");
         }
 
-        if ("OTROS".equalsIgnoreCase(relevamiento.rubro())
+        if ("Otros".equalsIgnoreCase(relevamiento.rubro())
             && (relevamiento.rubroOtro() == null || relevamiento.rubroOtro().isBlank())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe detallar el rubro cuando se selecciona OTROS");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe detallar el rubro cuando se selecciona Otros");
         }
     }
 
