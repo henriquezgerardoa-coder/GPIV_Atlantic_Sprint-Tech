@@ -956,3 +956,113 @@ html.en-modal .card {
     }
 }
 
+/* ── Sección consulta pública ── */
+.consulta-seccion {
+    background: #eef6f1;
+}
+
+.consulta-card {
+    background: #ffffff;
+    border: 1px solid #c8ddd0;
+    border-radius: 18px;
+    padding: 2.5rem;
+    box-shadow: 0 4px 28px rgba(26, 107, 48, 0.08);
+}
+
+.consulta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.4rem;
+}
+
+.consulta-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.consulta-campo--full {
+    grid-column: 1 / -1;
+}
+
+.consulta-campo--end {
+    align-items: flex-end;
+    margin-top: 0.25rem;
+}
+
+.consulta-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #2d5a3d;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.consulta-req {
+    color: #1a6b30;
+}
+
+.consulta-opcional {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #7a9e87;
+}
+
+.consulta-input {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border: 1.5px solid #c8ddd0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #1f2937;
+    background: #f5fbf7;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    font-family: inherit;
+    outline: none;
+}
+
+.consulta-input::placeholder {
+    color: #a3b9ac;
+}
+
+.consulta-input:focus {
+    border-color: #1a6b30;
+    box-shadow: 0 0 0 3px rgba(26, 107, 48, 0.12);
+    background: #ffffff;
+}
+
+.consulta-textarea {
+    resize: vertical;
+    min-height: 130px;
+}
+
+.consulta-mensaje {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.consulta-mensaje.exito {
+    background: #d1f0dc;
+    color: #0f5132;
+    border: 1px solid #a3cfbb;
+}
+
+.consulta-mensaje.error {
+    background: #fde8e8;
+    color: #842029;
+    border: 1px solid #f1aeb5;
+}
+
+@media (max-width: 640px) {
+    .consulta-grid {
+        grid-template-columns: 1fr;
+    }
+    .consulta-card {
+        padding: 1.5rem 1rem;
+    }
+}
+

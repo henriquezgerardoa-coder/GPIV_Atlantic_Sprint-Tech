@@ -100,6 +100,60 @@
     </div>
 </section>
 
+<section id="consulta-publica" class="nosotros consulta-seccion">
+
+    <div class="container-nosotros">
+        <div class="nosotros-principal">
+            <div class="nosotros-texto">
+                <span class="subtitulo-seccion">CONTACTO</span>
+                <h2>¿Tenés consultas?</h2>
+                <p class="texto-destacado">¿Aún no estás registrado como empresa? Escribinos desde aquí.</p>
+                <p>Nuestro equipo responderá tu consulta a la brevedad. También podés encontrarnos en nuestras oficinas en Ruta 1 S/N, Viedma.</p>
+            </div>
+            <div class="nosotros-badge-industrial">
+                <div class="badge-contenido">
+                    <i class="bi bi-envelope-check"></i>
+                    <h3>Atención directa</h3>
+                    <p>Respondemos todas las consultas de lunes a viernes en horario de oficina.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="consulta-card">
+            <div id="mensajeConsultaPublica" class="consulta-mensaje d-none" role="status" aria-live="polite"></div>
+            <form id="formConsultaPublica" novalidate>
+                <div class="consulta-grid">
+                    <div class="consulta-campo">
+                        <label for="consultaNombreEmpresa" class="consulta-label">Nombre o Empresa <span class="consulta-req">*</span></label>
+                        <input type="text" id="consultaNombreEmpresa" class="consulta-input" placeholder="Tu nombre o razón social" maxlength="160" required>
+                    </div>
+                    <div class="consulta-campo">
+                        <label for="consultaCorreo" class="consulta-label">Correo electrónico <span class="consulta-req">*</span></label>
+                        <input type="email" id="consultaCorreo" class="consulta-input" placeholder="ejemplo@correo.com" maxlength="160" required>
+                    </div>
+                    <div class="consulta-campo">
+                        <label for="consultaTelefono" class="consulta-label">Teléfono <span class="consulta-opcional">(opcional)</span></label>
+                        <input type="text" id="consultaTelefono" class="consulta-input" placeholder="(02920) 000000" maxlength="40">
+                    </div>
+                    <div class="consulta-campo">
+                        <label for="consultaAsunto" class="consulta-label">Asunto <span class="consulta-req">*</span></label>
+                        <input type="text" id="consultaAsunto" class="consulta-input" placeholder="Tema de tu consulta" maxlength="160" required>
+                    </div>
+                    <div class="consulta-campo consulta-campo--full">
+                        <label for="consultaMensaje" class="consulta-label">¿En qué podemos ayudarte? <span class="consulta-req">*</span></label>
+                        <textarea id="consultaMensaje" class="consulta-input consulta-textarea" placeholder="Describí tu consulta con el mayor detalle posible..." rows="5" maxlength="4000" required></textarea>
+                    </div>
+                    <div class="consulta-campo consulta-campo--full consulta-campo--end">
+                        <button type="submit" id="btnEnviarConsultaPublica" class="btn-solid btn-lg">
+                            <i class="bi bi-send"></i> Enviar consulta
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
 <footer class="footer-contacto">
     <div class="footer-principal">
         <div class="footer-info">
@@ -123,5 +177,6 @@
 </footer>
 
 <script src="js/index-modal.js"></script>
+<script src="js/contacto-publico.js"></script>
 </body>
 </html>
