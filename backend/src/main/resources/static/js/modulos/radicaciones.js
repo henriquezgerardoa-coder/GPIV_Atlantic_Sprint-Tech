@@ -241,16 +241,17 @@ const ModuloRadicaciones = (() => {
     }
 
     function ajustarVistaRadicacionesPorRol() {
-        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !esEmpresa;
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']) && !esEmpresa;
         const navTabs = document.getElementById('tabsRadicaciones');
 
         if (esGestor) {
             if (navTabs) navTabs.classList.remove('d-none');
-            ['tab-rad-a', 'tab-rad-d'].forEach(id =>
-                document.getElementById(id)?.closest('.nav-item')?.classList.add('d-none'));
+            document.getElementById('tab-rad-a')?.closest('.nav-item')?.classList.add('d-none');
             document.getElementById('btnNuevaSolicitudRad')?.classList.add('d-none');
             document.getElementById('btnNuevaSolicitudRadListado')?.classList.add('d-none');
+            const puedeAdjuntar = Autenticacion.tieneAcceso(['EMPRESA', 'ADMINISTRADOR', 'SECRETARIO']);
+            document.getElementById('tab-rad-d')?.closest('.nav-item')?.classList.toggle('d-none', !puedeAdjuntar);
             const tabB = document.getElementById('tab-rad-b');
             if (tabB && window.bootstrap?.Tab) window.bootstrap.Tab.getOrCreateInstance(tabB).show();
             return;
@@ -378,8 +379,13 @@ const ModuloRadicaciones = (() => {
                         <td>${d.tipoDocumento || '-'}</td>
                         <td>${d.nombreArchivo || '-'}</td>
                         <td>${formatearFechaEvento(d.fechaSubida)}</td>
+                        <td class="text-end">
+                            <a href="/api/radicaciones/${radicacionDetalleAdmin.id}/documentos/${d.id}" target="_blank" class="btn btn-sm btn-link text-decoration-none p-0">
+                                <i class="bi bi-file-earmark-pdf"></i> Ver
+                            </a>
+                        </td>
                     </tr>`).join('')
-                : '<tr><td colspan="3" class="text-muted">Sin documentos</td></tr>';
+                : '<tr><td colspan="4" class="text-muted">Sin documentos</td></tr>';
         }
         mostrarAlerta('Documento cargado correctamente.');
     }
@@ -532,8 +538,13 @@ const ModuloRadicaciones = (() => {
                         <td>${d.tipoDocumento || '-'}</td>
                         <td>${d.nombreArchivo || '-'}</td>
                         <td>${formatearFechaEvento(d.fechaSubida)}</td>
+                        <td class="text-end">
+                            <a href="/api/radicaciones/${detalle.id}/documentos/${d.id}" target="_blank" class="btn btn-sm btn-link text-decoration-none p-0">
+                                <i class="bi bi-file-earmark-pdf"></i> Ver
+                            </a>
+                        </td>
                     </tr>`).join('')
-                : '<tr><td colspan="3" class="text-muted">Sin documentos</td></tr>';
+                : '<tr><td colspan="4" class="text-muted">Sin documentos</td></tr>';
         }
 
         const cuerpoHist = document.getElementById('cuerpoHistorialDetalleRadAdmin');
