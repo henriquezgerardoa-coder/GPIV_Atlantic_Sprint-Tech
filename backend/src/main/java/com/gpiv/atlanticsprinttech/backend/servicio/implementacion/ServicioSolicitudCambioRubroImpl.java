@@ -5,10 +5,8 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
-import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
-import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
-import com.gpiv.atlanticsprinttech.entities.dominio.SolicitudCambioRubro;
-import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
+import com.gpiv.atlanticsprinttech.entities.dominio.*;
+
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

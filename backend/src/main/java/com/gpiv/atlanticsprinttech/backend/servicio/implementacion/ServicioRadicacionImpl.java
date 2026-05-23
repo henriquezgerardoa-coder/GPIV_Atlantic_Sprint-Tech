@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -206,8 +207,15 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         if (estado == EstadoRadicacion.APROBADA && fechaAprobacion != null) {
             radicacion.establecerFechaAprobacion(fechaAprobacion);
         }
-        radicacion.validarYCambiarEstado(estado, comentario, fechaPlazo);
-        radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
+        try {
+            radicacion.validarYCambiarEstado(estado, comentario, fechaPlazo);
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+        // Solo actualizar plazo cuando se proporciona explícitamente (evita borrar datos al cambiar a RADICADA)
+        if (tiempoEstimadoObraMeses != null || fechaPlazo != null) {
+            radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
+        }
         Lote lote = radicacion.getLote();
         radicacion.sincronizarLote(lote);
         if (lote != null) repositorioLote.save(lote);

@@ -3,6 +3,7 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpresa;
@@ -11,10 +12,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaServiciosPostRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaConsumoServicioPostRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaDetalleAdmin;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaListadoAdmin;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaUsuarioEmpresaAdmin;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaVehiculoEmpresa;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudConsumoServicioPostRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudServiciosPostRadicacion;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +40,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	private final RepositorioEmpresa repositorioEmpresa;
 	private final RepositorioLote repositorioLote;
 	private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
+	private final RepositorioRadicacionHistorial repositorioRadicacionHistorial;
 	private final RepositorioUsuario repositorioUsuario;
 	private final ServicioContextoUsuario servicioContextoUsuario;
 	private final ServicioAuditLog servicioAuditLog;
@@ -46,6 +50,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		RepositorioEmpresa repositorioEmpresa,
 		RepositorioLote repositorioLote,
 		RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
+		RepositorioRadicacionHistorial repositorioRadicacionHistorial,
 		RepositorioUsuario repositorioUsuario,
 		ServicioContextoUsuario servicioContextoUsuario,
 		ServicioAuditLog servicioAuditLog,
@@ -54,6 +59,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		this.repositorioEmpresa = repositorioEmpresa;
 		this.repositorioLote = repositorioLote;
 		this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
+		this.repositorioRadicacionHistorial = repositorioRadicacionHistorial;
 		this.repositorioUsuario = repositorioUsuario;
 		this.servicioContextoUsuario = servicioContextoUsuario;
 		this.servicioAuditLog = servicioAuditLog;
@@ -88,7 +94,6 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El usuario EMPRESA ya tiene una empresa asociada");
 		}
 		validarCuitDisponible(empresa.getCuit(), null);
-		validarNitDisponible(empresa.getNit(), null);
 		Empresa guardada = repositorioEmpresa.save(empresa);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
 			usuario.actualizarEmpresa(guardada);
@@ -121,12 +126,10 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		}
 		Empresa empresaActual = obtenerPorIdInterno(id);
 		validarCuitDisponible(empresa.getCuit(), empresaActual.getCuit());
-		validarNitDisponible(empresa.getNit(), empresaActual.getNit());
 		String anteriorDatos = empresaActual.getNombre() + " | CUIT=" + empresaActual.getCuit();
 		empresaActual.actualizarDatos(
 			empresa.getNombre(),
 			empresa.getRazonSocial(),
-			empresa.getNit(),
 			empresa.getCuit(),
 			empresa.getDireccion(),
 			empresa.getActividadEconomica(),
@@ -202,7 +205,6 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getId(),
 			empresa.getNombre(),
 			empresa.getRazonSocial(),
-			empresa.getNit(),
 			empresa.getCuit(),
 			empresa.getTelefono(),
 			empresa.getDireccion(),
@@ -222,20 +224,27 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	@Override
 	public boolean permiteServiciosPostRadicacion(Long empresaId, String identificadorIngreso) {
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
-		return repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA);
+		return tieneHabilitacionServiciosPostRadicacion(empresaId);
 	}
 
 	@Override
 	public RespuestaServiciosPostRadicacion obtenerServiciosPostRadicacion(Long empresaId, String identificadorIngreso) {
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
 		Empresa empresa = obtenerPorIdInterno(empresaId);
-		if (!repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA)) {
+		if (!tieneHabilitacionServiciosPostRadicacion(empresaId)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "La empresa aun no tiene un expediente en estado RADICADA");
 		}
+		DatosServiciosPostRadicacion datos = leerDatosServiciosPostRadicacion(empresa);
 		return new RespuestaServiciosPostRadicacion(
 			empresa.getId(),
 			empresa.getCantidadEmpleados() == null ? 0 : empresa.getCantidadEmpleados(),
-			leerVehiculos(empresa.getVehiculosAsignadosJson())
+			leerVehiculos(empresa.getVehiculosAsignadosJson()),
+			datos.solicitaAguaCruda(),
+			datos.consumoAguaCrudaM3(),
+			datos.consumoLuzKwh(),
+			datos.consumoGasM3(),
+			datos.consumoInternetMbps(),
+			datos.consumosAdicionales()
 		);
 	}
 
@@ -247,7 +256,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	) {
 		validarNoDirectivoEnMutacion(servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso));
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
-		if (!repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA)) {
+		if (!tieneHabilitacionServiciosPostRadicacion(empresaId)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo puedes gestionar servicios despues de la radicacion");
 		}
 
@@ -258,9 +267,15 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		validarVehiculos(vehiculos);
 
 		Empresa empresa = obtenerPorIdInterno(empresaId);
+		DatosServiciosPostRadicacion datosActuales = leerDatosServiciosPostRadicacion(empresa);
 		List<RespuestaVehiculoEmpresa> vehiculosAnteriores = leerVehiculos(empresa.getVehiculosAsignadosJson());
 		String anteriorServicios = "empleados=" + empresa.getCantidadEmpleados() + " | vehiculos=" + vehiculosAnteriores.size();
-		empresa.actualizarServiciosPostRadicacion(solicitud.cantidadEmpleados(), serializarVehiculos(vehiculos));
+		DatosServiciosPostRadicacion datosActualizados = construirDatosServiciosPostRadicacion(solicitud, datosActuales);
+		empresa.actualizarServiciosPostRadicacion(
+			solicitud.cantidadEmpleados(),
+			serializarVehiculos(vehiculos),
+			serializarDatosServiciosPostRadicacion(datosActualizados)
+		);
 		Empresa guardada = repositorioEmpresa.save(empresa);
 		servicioAuditLog.registrarEvento(
 			identificadorIngreso, "ACTUALIZACION_SERVICIOS_EMPRESA", "Empresa",
@@ -272,8 +287,76 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		return new RespuestaServiciosPostRadicacion(
 			guardada.getId(),
 			guardada.getCantidadEmpleados(),
-			leerVehiculos(guardada.getVehiculosAsignadosJson())
+			leerVehiculos(guardada.getVehiculosAsignadosJson()),
+			datosActualizados.solicitaAguaCruda(),
+			datosActualizados.consumoAguaCrudaM3(),
+			datosActualizados.consumoLuzKwh(),
+			datosActualizados.consumoGasM3(),
+			datosActualizados.consumoInternetMbps(),
+			datosActualizados.consumosAdicionales()
 		);
+	}
+
+	private DatosServiciosPostRadicacion construirDatosServiciosPostRadicacion(
+		SolicitudServiciosPostRadicacion solicitud,
+		DatosServiciosPostRadicacion actual
+	) {
+		List<RespuestaConsumoServicioPostRadicacion> consumosAdicionales = solicitud.consumosAdicionales() == null
+			? actual.consumosAdicionales()
+			: solicitud.consumosAdicionales().stream()
+				.map(this::normalizarConsumoAdicional)
+				.toList();
+
+		return new DatosServiciosPostRadicacion(
+			solicitud.solicitaAguaCruda() != null ? solicitud.solicitaAguaCruda() : actual.solicitaAguaCruda(),
+			solicitud.consumoAguaCrudaM3() != null ? solicitud.consumoAguaCrudaM3() : actual.consumoAguaCrudaM3(),
+			solicitud.consumoLuzKwh() != null ? solicitud.consumoLuzKwh() : actual.consumoLuzKwh(),
+			solicitud.consumoGasM3() != null ? solicitud.consumoGasM3() : actual.consumoGasM3(),
+			solicitud.consumoInternetMbps() != null ? solicitud.consumoInternetMbps() : actual.consumoInternetMbps(),
+			consumosAdicionales
+		);
+	}
+
+	private RespuestaConsumoServicioPostRadicacion normalizarConsumoAdicional(SolicitudConsumoServicioPostRadicacion consumo) {
+		String unidad = consumo.unidad() == null || consumo.unidad().isBlank() ? null : consumo.unidad().trim();
+		String detalle = consumo.detalle() == null || consumo.detalle().isBlank() ? null : consumo.detalle().trim();
+		return new RespuestaConsumoServicioPostRadicacion(
+			consumo.nombre().trim(),
+			consumo.consumoEstimado(),
+			unidad,
+			detalle
+		);
+	}
+
+	private DatosServiciosPostRadicacion leerDatosServiciosPostRadicacion(Empresa empresa) {
+		String json = empresa.getServiciosPostRadicacionJson();
+		if (json == null || json.isBlank()) {
+			return DatosServiciosPostRadicacion.vacio();
+		}
+		try {
+			DatosServiciosPostRadicacion datos = objectMapper.readValue(json, DatosServiciosPostRadicacion.class);
+			if (datos == null) {
+				return DatosServiciosPostRadicacion.vacio();
+			}
+			return new DatosServiciosPostRadicacion(
+				datos.solicitaAguaCruda(),
+				datos.consumoAguaCrudaM3(),
+				datos.consumoLuzKwh(),
+				datos.consumoGasM3(),
+				datos.consumoInternetMbps(),
+				datos.consumosAdicionales() == null ? List.of() : datos.consumosAdicionales()
+			);
+		} catch (Exception ex) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo leer los servicios post-radicacion");
+		}
+	}
+
+	private String serializarDatosServiciosPostRadicacion(DatosServiciosPostRadicacion datos) {
+		try {
+			return objectMapper.writeValueAsString(datos);
+		} catch (Exception ex) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo serializar los servicios post-radicacion");
+		}
 	}
 
 	private String obtenerIpActual() {
@@ -298,12 +381,6 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		}
 	}
 
-	private void validarNitDisponible(String nitNuevo, String nitActual) {
-		boolean cambioDeNit = nitActual == null || !nitActual.equals(nitNuevo);
-		if (cambioDeNit && repositorioEmpresa.existsByNit(nitNuevo)) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una empresa con ese NIT");
-		}
-	}
 
 	private void validarAccesoEmpresa(Long empresaId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
@@ -368,6 +445,24 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			return objectMapper.writeValueAsString(vehiculos);
 		} catch (Exception ex) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo serializar la lista de vehiculos");
+		}
+	}
+
+	private boolean tieneHabilitacionServiciosPostRadicacion(Long empresaId) {
+		return repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA)
+			|| repositorioRadicacionHistorial.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA);
+	}
+
+	private record DatosServiciosPostRadicacion(
+		Boolean solicitaAguaCruda,
+		Double consumoAguaCrudaM3,
+		Double consumoLuzKwh,
+		Double consumoGasM3,
+		Double consumoInternetMbps,
+		List<RespuestaConsumoServicioPostRadicacion> consumosAdicionales
+	) {
+		private static DatosServiciosPostRadicacion vacio() {
+			return new DatosServiciosPostRadicacion(false, null, null, null, null, List.of());
 		}
 	}
 }

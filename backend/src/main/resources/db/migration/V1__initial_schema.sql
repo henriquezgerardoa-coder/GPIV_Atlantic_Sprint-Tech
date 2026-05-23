@@ -31,7 +31,6 @@ CREATE TABLE IF NOT EXISTS empresas (
     id                      BIGSERIAL PRIMARY KEY,
     nombre                  VARCHAR(120) NOT NULL,
     razon_social            VARCHAR(160) NOT NULL,
-    nit                     VARCHAR(30)  NOT NULL,
     cuit                    VARCHAR(20)  NOT NULL,
     direccion               VARCHAR(240) NOT NULL,
     actividad_economica     VARCHAR(180) NOT NULL,
@@ -42,8 +41,7 @@ CREATE TABLE IF NOT EXISTS empresas (
     cantidad_empleados      INTEGER,
     vehiculos_asignados_json VARCHAR(12000),
     rubro_id                BIGINT REFERENCES rubros(id),
-    CONSTRAINT uk_empresa_cuit UNIQUE (cuit),
-    CONSTRAINT uk_empresa_nit  UNIQUE (nit)
+    CONSTRAINT uk_empresa_cuit UNIQUE (cuit)
 );
 
 CREATE TABLE IF NOT EXISTS usuarios (

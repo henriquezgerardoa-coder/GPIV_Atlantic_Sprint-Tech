@@ -196,6 +196,12 @@ public class RadicacionSolicitud {
 		if (nuevo == EstadoRadicacion.APROBADA && fechaPlazo == null) {
 			throw new IllegalArgumentException("Debe indicar la fecha de plazo al aprobar una solicitud");
 		}
+		if (nuevo == EstadoRadicacion.RADICADA && this.fechaPlazo != null
+				&& LocalDate.now().isAfter(this.fechaPlazo)) {
+			throw new IllegalStateException(
+				"No se puede radicar: el plazo de radicacion ha vencido (plazo: " + this.fechaPlazo + ")"
+			);
+		}
 		cambiarEstado(nuevo);
 	}
 

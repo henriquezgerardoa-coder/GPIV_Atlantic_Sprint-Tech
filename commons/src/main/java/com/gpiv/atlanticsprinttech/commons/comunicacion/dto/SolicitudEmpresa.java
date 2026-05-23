@@ -11,9 +11,6 @@ public record SolicitudEmpresa(
 	@NotBlank(message = "La razon social es obligatoria")
 	@Size(max = 160, message = "La razon social no puede superar 160 caracteres")
 	String razonSocial,
-	@NotBlank(message = "El NIT es obligatorio")
-	@Size(max = 30, message = "El NIT no puede superar 30 caracteres")
-	String nit,
 	@NotBlank(message = "El CUIT es obligatorio")
 	@Size(max = 20, message = "El CUIT no puede superar 20 caracteres")
 	String cuit,

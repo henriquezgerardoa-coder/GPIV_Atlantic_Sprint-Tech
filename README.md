@@ -330,7 +330,6 @@ Ejemplo de cuerpo para `POST`/`PUT` de empresas:
 {
   "nombre": "Empresa Uno",
   "razonSocial": "Empresa Uno SA",
-  "nit": "NIT-EMP-001",
   "cuit": "20-12345678-9",
   "direccion": "Av. Industrial 123",
   "actividadEconomica": "Metalurgica",

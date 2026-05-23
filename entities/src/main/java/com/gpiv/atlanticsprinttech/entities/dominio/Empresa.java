@@ -14,8 +14,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "empresas", uniqueConstraints = {
-	@UniqueConstraint(name = "uk_empresa_cuit", columnNames = "cuit"),
-	@UniqueConstraint(name = "uk_empresa_nit", columnNames = "nit")
+	@UniqueConstraint(name = "uk_empresa_cuit", columnNames = "cuit")
 })
 public class Empresa {
 
@@ -26,8 +25,6 @@ public class Empresa {
 	private String nombre;
 	@Column(name = "razon_social", nullable = false, length = 160)
 	private String razonSocial;
-	@Column(name = "nit", nullable = false, length = 30, unique = true)
-	private String nit;
 	@Column(nullable = false, length = 20, unique = true)
 	private String cuit;
 	@Column(name = "direccion", nullable = false, length = 240)
@@ -46,6 +43,8 @@ public class Empresa {
 	private Integer cantidadEmpleados;
 	@Column(name = "vehiculos_asignados_json", length = 12000)
 	private String vehiculosAsignadosJson;
+	@Column(name = "servicios_post_radicacion_json", length = 20000)
+	private String serviciosPostRadicacionJson;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "rubro_id")
@@ -56,7 +55,6 @@ public class Empresa {
 	private Empresa(
 		String nombre,
 		String razonSocial,
-		String nit,
 		String cuit,
 		String direccion,
 		String actividadEconomica,
@@ -67,7 +65,6 @@ public class Empresa {
 	) {
 		this.nombre = nombre;
 		this.razonSocial = razonSocial;
-		this.nit = nit;
 		this.cuit = cuit;
 		this.direccion = direccion;
 		this.actividadEconomica = actividadEconomica;
@@ -82,7 +79,6 @@ public class Empresa {
 	public static Empresa crear(
 		String nombre,
 		String razonSocial,
-		String nit,
 		String cuit,
 		String direccion,
 		String actividadEconomica,
@@ -92,7 +88,6 @@ public class Empresa {
 		return new Empresa(
 			nombre,
 			razonSocial,
-			nit,
 			cuit,
 			direccion,
 			actividadEconomica,
@@ -104,7 +99,7 @@ public class Empresa {
 	}
 
 	public static Empresa crear(String nombre, String cuit, String correoElectronico) {
-		return new Empresa(nombre, nombre, cuit, cuit, "", "", correoElectronico, null, 0, null);
+		return new Empresa(nombre, nombre, cuit, "", "", correoElectronico, null, 0, null);
 	}
 	public Long getId() {
 		return id;
@@ -118,10 +113,6 @@ public class Empresa {
 
 	public String getRazonSocial() {
 		return razonSocial;
-	}
-
-	public String getNit() {
-		return nit;
 	}
 
 	public String getDireccion() {
@@ -156,6 +147,10 @@ public class Empresa {
 		return vehiculosAsignadosJson;
 	}
 
+	public String getServiciosPostRadicacionJson() {
+		return serviciosPostRadicacionJson;
+	}
+
 	public Rubro getRubro() {
 		return rubro;
 	}
@@ -177,7 +172,6 @@ public class Empresa {
 	public void actualizarDatos(
 		String nombre,
 		String razonSocial,
-		String nit,
 		String cuit,
 		String direccion,
 		String actividadEconomica,
@@ -186,7 +180,6 @@ public class Empresa {
 	) {
 		this.nombre = nombre;
 		this.razonSocial = razonSocial;
-		this.nit = nit;
 		this.cuit = cuit;
 		this.direccion = direccion;
 		this.actividadEconomica = actividadEconomica;
@@ -195,15 +188,16 @@ public class Empresa {
 	}
 
 	public void actualizarDatos(String nombre, String cuit, String correoElectronico) {
-		actualizarDatos(nombre, nombre, cuit, cuit, this.direccion, this.actividadEconomica, correoElectronico, this.telefono);
+		actualizarDatos(nombre, nombre, cuit, this.direccion, this.actividadEconomica, correoElectronico, this.telefono);
 	}
 
 	public void asignarRubro(Rubro rubro) {
 		this.rubro = rubro;
 	}
 
-	public void actualizarServiciosPostRadicacion(Integer cantidadEmpleados, String vehiculosAsignadosJson) {
+	public void actualizarServiciosPostRadicacion(Integer cantidadEmpleados, String vehiculosAsignadosJson, String serviciosPostRadicacionJson) {
 		this.cantidadEmpleados = cantidadEmpleados;
 		this.vehiculosAsignadosJson = vehiculosAsignadosJson;
+		this.serviciosPostRadicacionJson = serviciosPostRadicacionJson;
 	}
 }

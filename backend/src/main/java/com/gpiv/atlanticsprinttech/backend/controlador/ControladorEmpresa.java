@@ -86,7 +86,6 @@ public class ControladorEmpresa {
 		return Empresa.crear(
 			solicitud.nombre(),
 			solicitud.razonSocial(),
-			solicitud.nit(),
 			solicitud.cuit(),
 			solicitud.direccion(),
 			solicitud.actividadEconomica(),
@@ -101,7 +100,6 @@ public class ControladorEmpresa {
             empresa.getId(),
             empresa.getNombre(),
 			empresa.getRazonSocial(),
-			empresa.getNit(),
             empresa.getCuit(),
 			empresa.getDireccion(),
 			empresa.getActividadEconomica(),

@@ -259,7 +259,8 @@ const ModuloRadicaciones = (() => {
         // EMPRESA: ocultar toda la barra de tabs, mostrar panel-b directamente.
         if (navTabs) navTabs.classList.add('d-none');
         document.getElementById('btnNuevaSolicitudRad')?.classList.remove('d-none');
-        document.getElementById('btnNuevaSolicitudRadListado')?.classList.remove('d-none');
+        document.getElementById('btnNuevaSolicitudRadPanelA')?.classList.add('d-none');
+        document.getElementById('btnNuevaSolicitudRadListado')?.classList.add('d-none');
         const panelB = document.getElementById('panel-rad-b');
         if (panelB) {
             panelB.classList.add('show', 'active');
@@ -412,7 +413,8 @@ const ModuloRadicaciones = (() => {
 
         const respuesta = await ApiCliente.parche(`/api/radicaciones/${id}/estado`, { estado, comentario });
         if (!respuesta?.ok) {
-            mostrarAlerta('No se pudo actualizar el estado.', 'danger');
+            const err = await respuesta?.json().catch(() => ({}));
+            mostrarAlerta(err?.mensaje || err?.message || 'No se pudo actualizar el estado.', 'danger');
             return;
         }
         mostrarAlerta('Estado actualizado correctamente.');

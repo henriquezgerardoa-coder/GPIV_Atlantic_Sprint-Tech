@@ -8,7 +8,6 @@ public record RespuestaEmpresaDetalleAdmin(
     Long id,
     String nombre,
     String razonSocial,
-    String nit,
     String cuit,
     String telefono,
     String direccion,

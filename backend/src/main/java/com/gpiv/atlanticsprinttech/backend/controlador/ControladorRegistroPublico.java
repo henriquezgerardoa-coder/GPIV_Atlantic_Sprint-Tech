@@ -1,7 +1,9 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioUsuario;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaOperacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudConsultaPublicaMensajeria;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRegistroPublico;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudReenvioVerificacion;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/public")
 public class ControladorRegistroPublico {
     private final ServicioUsuario servicioUsuario;
+    private final ServicioMensajeria servicioMensajeria;
 
-    public ControladorRegistroPublico(ServicioUsuario servicioUsuario) {
+    public ControladorRegistroPublico(ServicioUsuario servicioUsuario, ServicioMensajeria servicioMensajeria) {
         this.servicioUsuario = servicioUsuario;
+        this.servicioMensajeria = servicioMensajeria;
     }
 
     @PostMapping("/registro")
@@ -53,6 +57,21 @@ public class ControladorRegistroPublico {
     ) {
         servicioUsuario.reenviarCorreoVerificacion(solicitud.correoElectronico(), obtenerIpCliente(request));
         return new RespuestaOperacion("Te enviamos un nuevo correo de verificacion");
+    }
+
+    @PostMapping("/consulta")
+    public ResponseEntity<RespuestaOperacion> enviarConsultaPublica(
+        @Valid @RequestBody SolicitudConsultaPublicaMensajeria solicitud
+    ) {
+        servicioMensajeria.crearConsultaPublica(
+            solicitud.nombreOEmpresa(),
+            solicitud.correoElectronico(),
+            solicitud.telefono(),
+            solicitud.asunto(),
+            solicitud.mensaje()
+        );
+        return ResponseEntity.created(URI.create("/index.html"))
+            .body(new RespuestaOperacion("Consulta enviada correctamente. Te responderemos a la brevedad."));
     }
 
     private String obtenerIpCliente(HttpServletRequest request) {

@@ -6,10 +6,8 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSoli
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioProyecto;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
-import com.gpiv.atlanticsprinttech.entities.dominio.HitoObra;
-import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
-import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
-import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
+import com.gpiv.atlanticsprinttech.entities.dominio.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;

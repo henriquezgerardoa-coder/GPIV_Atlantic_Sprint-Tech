@@ -57,7 +57,6 @@ class AplicacionGestionGpivPruebas {
         SolicitudEmpresa nuevaEmpresa = crearSolicitudEmpresa(
             "Empresa Uno",
             "Empresa Uno SA",
-            "NIT-UNO-001",
             "20-12345678-9",
             "contacto@empresa.com"
         );
@@ -84,7 +83,6 @@ class AplicacionGestionGpivPruebas {
         SolicitudEmpresa empresaActualizada = crearSolicitudEmpresa(
             "Empresa Uno SA",
             "Empresa Uno Sociedad Anonima",
-            "NIT-UNO-001",
             "20-12345678-9",
             "nuevo@empresa.com"
         );
@@ -182,7 +180,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Panel Admin", "Empresa Panel Admin SA", "NIT-PANEL-001", "20-98989898-9", "panel.admin@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Panel Admin", "Empresa Panel Admin SA", "20-98989898-9", "panel.admin@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -252,7 +250,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Solo Lectura", "Empresa Solo Lectura SA", "NIT-SL-001", "20-51515151-5", "sl@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Solo Lectura", "Empresa Solo Lectura SA", "20-51515151-5", "sl@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -267,7 +265,7 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(put("/api/empresas/{id}", idEmpresa)
                 .with(httpBasic("directivo", "directivo123"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa No Editable", "Empresa No Editable SA", "NIT-SL-001", "20-51515151-5", "sl2@empresa.com")))
+                .content(cuerpoEmpresa("Empresa No Editable", "Empresa No Editable SA", "20-51515151-5", "sl2@empresa.com")))
             .andExpect(status().isForbidden());
 
         mockMvc.perform(delete("/api/empresas/{id}", idEmpresa)
@@ -283,7 +281,7 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(put("/api/empresas/{id}", idEmpresa)
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Editable Admin", "Empresa Editable Admin SA", "NIT-SL-001", "20-51515151-5", "sl3@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Editable Admin", "Empresa Editable Admin SA", "20-51515151-5", "sl3@empresa.com")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nombre").value("Empresa Editable Admin"));
     }
@@ -293,7 +291,6 @@ class AplicacionGestionGpivPruebas {
         SolicitudEmpresa nuevaEmpresa = crearSolicitudEmpresa(
             "Empresa Dos",
             "Empresa Dos SRL",
-            "NIT-DOS-001",
             "20-98765432-1",
             "dos@empresa.com"
         );
@@ -311,7 +308,6 @@ class AplicacionGestionGpivPruebas {
                 .content(objectMapper.writeValueAsString(crearSolicitudEmpresa(
                     "Empresa Dos Reintento",
                     "Empresa Dos Reintento SRL",
-                    "NIT-DOS-002",
                     "20-98765432-2",
                     "dos2@empresa.com"
                 ))))
@@ -323,7 +319,6 @@ class AplicacionGestionGpivPruebas {
         SolicitudEmpresa nuevaEmpresa = crearSolicitudEmpresa(
             "Empresa Lotes",
             "Empresa Lotes SRL",
-            "NIT-LOTES-001",
             "20-55555555-5",
             "lotes@empresa.com"
         );
@@ -395,7 +390,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Asignacion Lote", "Empresa Asignacion Lote SA", "NIT-ASIG-001", "20-90909090-9", "asignacion@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Asignacion Lote", "Empresa Asignacion Lote SA", "20-90909090-9", "asignacion@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -427,7 +422,6 @@ class AplicacionGestionGpivPruebas {
         SolicitudEmpresa nuevaEmpresa = crearSolicitudEmpresa(
             "Empresa Tres",
             "Empresa Tres SRL",
-            "NIT-TRES-001",
             "20-33333333-3",
             "tres@empresa.com"
         );
@@ -459,7 +453,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresaA = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa A", "Empresa A SA", "NIT-EMP-A", "20-11111111-1", "a@empresa.com")))
+                .content(cuerpoEmpresa("Empresa A", "Empresa A SA", "20-11111111-1", "a@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -470,7 +464,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresaB = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa B", "Empresa B SA", "NIT-EMP-B", "20-22222222-2", "b@empresa.com")))
+                .content(cuerpoEmpresa("Empresa B", "Empresa B SA", "20-22222222-2", "b@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -500,7 +494,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresaA = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Lote A", "Empresa Lote A SA", "NIT-LOT-A", "20-71111111-1", "lotea@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Lote A", "Empresa Lote A SA", "20-71111111-1", "lotea@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -511,7 +505,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresaB = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Lote B", "Empresa Lote B SA", "NIT-LOT-B", "20-72222222-2", "loteb@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Lote B", "Empresa Lote B SA", "20-72222222-2", "loteb@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -564,7 +558,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresaA = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Editable", "Empresa Editable SA", "NIT-EDIT-001", "20-77777777-7", "editable@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Editable", "Empresa Editable SA", "20-77777777-7", "editable@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -575,7 +569,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresaB = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa No Editable", "Empresa No Editable SA", "NIT-EDIT-002", "20-66666666-6", "noeditable@empresa.com")))
+                .content(cuerpoEmpresa("Empresa No Editable", "Empresa No Editable SA", "20-66666666-6", "noeditable@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -595,7 +589,6 @@ class AplicacionGestionGpivPruebas {
                 .content(cuerpoEmpresa(
                     "Empresa Editable Actualizada",
                     "Empresa Editable Actualizada SA",
-                    "NIT-EDIT-001",
                     "20-77777777-7",
                     "editable.actualizada@empresa.com"
                 )))
@@ -606,7 +599,7 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(put("/api/empresas/{id}", idEmpresaB)
                 .with(httpBasic("empresa_edita", "EmpresaEdita123"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Intento Invalido", "Intento Invalido SA", "NIT-EDIT-002", "20-66666666-6", "x@empresa.com")))
+                .content(cuerpoEmpresa("Intento Invalido", "Intento Invalido SA", "20-66666666-6", "x@empresa.com")))
             .andExpect(status().isForbidden());
     }
 
@@ -647,7 +640,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Formulario", "Empresa Formulario SRL", "NIT-FORM-001", "20-33334444-5", "formulario@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Formulario", "Empresa Formulario SRL", "20-33334444-5", "formulario@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -723,7 +716,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Estados", "Empresa Estados SA", "NIT-EST-001", "20-88889999-5", "estados@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Estados", "Empresa Estados SA", "20-88889999-5", "estados@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -758,10 +751,14 @@ class AplicacionGestionGpivPruebas {
         };
 
         for (String estado : estados) {
+            String payload = "{\"estado\":\"" + estado + "\",\"comentario\":\"Cambio de estado de prueba\""
+                + ("APROBADA".equals(estado) ? ",\"fechaPlazo\":\"2099-12-31\"" : "")
+                + "}";
+
             mockMvc.perform(patch("/api/radicaciones/{id}/estado", idRadicacion)
                     .with(httpBasic("admin", "admin12345"))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"estado\":\"" + estado + "\",\"comentario\":\"Cambio de estado de prueba\"}"))
+                    .content(payload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value(estado));
         }
@@ -778,7 +775,7 @@ class AplicacionGestionGpivPruebas {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Servicios", "Empresa Servicios SA", "NIT-SRV-001", "20-45454545-4", "servicios@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Servicios", "Empresa Servicios SA", "20-45454545-4", "servicios@empresa.com")))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -816,7 +813,7 @@ class AplicacionGestionGpivPruebas {
         mockMvc.perform(patch("/api/radicaciones/{id}/estado", idRadicacion)
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"estado\":\"APROBADA\",\"comentario\":\"Aprobada por mesa\"}"))
+                .content("{\"estado\":\"APROBADA\",\"comentario\":\"Aprobada por mesa\",\"fechaPlazo\":\"2099-12-31\"}"))
             .andExpect(status().isOk());
 
         mockMvc.perform(patch("/api/radicaciones/{id}/estado", idRadicacion)
@@ -831,6 +828,14 @@ class AplicacionGestionGpivPruebas {
                 .content("""
                     {
                       "cantidadEmpleados": 42,
+                      "solicitaAguaCruda": true,
+                      "consumoAguaCrudaM3": 220.5,
+                      "consumoLuzKwh": 1450,
+                      "consumoGasM3": 380,
+                      "consumoInternetMbps": 300,
+                      "consumosAdicionales": [
+                        {"nombre":"Comedor","consumoEstimado":1,"unidad":"unidad","detalle":"Turno dia"}
+                      ],
                       "vehiculos": [
                         {"placa":"ABC123","tipo":"CAMION","descripcion":"Carga"},
                         {"placa":"DEF456","tipo":"AUTO","descripcion":"Visitas"}
@@ -839,18 +844,23 @@ class AplicacionGestionGpivPruebas {
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.cantidadEmpleados").value(42))
-            .andExpect(jsonPath("$.vehiculos.length()").value(2));
+            .andExpect(jsonPath("$.vehiculos.length()").value(2))
+            .andExpect(jsonPath("$.solicitaAguaCruda").value(true))
+            .andExpect(jsonPath("$.consumoLuzKwh").value(1450.0))
+            .andExpect(jsonPath("$.consumosAdicionales.length()").value(1));
 
         mockMvc.perform(get("/api/empresas/{id}/servicios-post-radicacion", idEmpresa)
                 .with(httpBasic("empresa_servicios", "EmpresaServ123")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.cantidadEmpleados").value(42))
-            .andExpect(jsonPath("$.vehiculos[0].placa").value("ABC123"));
+            .andExpect(jsonPath("$.vehiculos[0].placa").value("ABC123"))
+            .andExpect(jsonPath("$.solicitaAguaCruda").value(true))
+            .andExpect(jsonPath("$.consumoAguaCrudaM3").value(220.5));
 
         mockMvc.perform(put("/api/empresas/{id}", idEmpresa)
                 .with(httpBasic("empresa_servicios", "EmpresaServ123"))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(cuerpoEmpresa("Empresa Servicios Editada", "Empresa Servicios SA", "NIT-SRV-001", "20-45454545-4", "servicios2@empresa.com")))
+                .content(cuerpoEmpresa("Empresa Servicios Editada", "Empresa Servicios SA", "20-45454545-4", "servicios2@empresa.com")))
             .andExpect(status().isConflict());
     }
 
@@ -861,19 +871,13 @@ class AplicacionGestionGpivPruebas {
 
         mockMvc.perform(post("/api/public/registro")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"correoElectronico\":\"" + correo + "\",\"clave\":\"" + clave + "\",\"confirmacionClave\":\"" + clave + "\"}"))
+                .content("{\"nombreUsuario\":\"registro_publico_1\",\"correoElectronico\":\"" + correo + "\",\"clave\":\"" + clave + "\",\"confirmacionClave\":\"" + clave + "\"}"))
             .andExpect(status().isCreated());
 
         Usuario usuario = repositorioUsuario.findByCorreoElectronicoIgnoreCase(correo)
             .orElseThrow();
 
-        mockMvc.perform(get("/api/yo")
-                .with(httpBasic(correo, clave)))
-            .andExpect(status().isUnauthorized());
-
-        mockMvc.perform(get("/api/public/verificacion")
-                .param("token", usuario.getTokenVerificacionEmail()))
-            .andExpect(status().isOk());
+        assertEquals(true, usuario.isEmailVerificado());
 
         mockMvc.perform(get("/api/yo")
                 .with(httpBasic(correo, clave)))
@@ -881,17 +885,41 @@ class AplicacionGestionGpivPruebas {
             .andExpect(jsonPath("$.nombreUsuario").value(usuario.getNombreUsuario()));
     }
 
+    @Test
+    void empresaNoDebeAccederAProyectosInfraestructuraYMonitor() throws Exception {
+        mockMvc.perform(get("/api/proyectos")
+                .with(httpBasic("empresa", "empresa12345")))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/infraestructura")
+                .with(httpBasic("empresa", "empresa12345")))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/monitor/expedientes")
+                .with(httpBasic("empresa", "empresa12345")))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void empresaNoDebeAccederACensoNiCambioDeRubro() throws Exception {
+        mockMvc.perform(get("/api/cambios-rubro")
+                .with(httpBasic("empresa", "empresa12345")))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/empresas/{empresaId}/censo", 1L)
+                .with(httpBasic("empresa", "empresa12345")))
+            .andExpect(status().isForbidden());
+    }
+
     private SolicitudEmpresa crearSolicitudEmpresa(
         String nombre,
         String razonSocial,
-        String nit,
         String cuit,
         String correoElectronico
     ) {
         return new SolicitudEmpresa(
             nombre,
             razonSocial,
-            nit,
             cuit,
             "Direccion " + nombre,
             "Actividad " + nombre,
@@ -904,13 +932,11 @@ class AplicacionGestionGpivPruebas {
     private String cuerpoEmpresa(
         String nombre,
         String razonSocial,
-        String nit,
         String cuit,
         String correoElectronico
     ) {
         return "{\"nombre\":\"" + nombre + "\","
             + "\"razonSocial\":\"" + razonSocial + "\","
-            + "\"nit\":\"" + nit + "\","
             + "\"cuit\":\"" + cuit + "\","
             + "\"direccion\":\"Direccion " + nombre + "\","
             + "\"actividadEconomica\":\"Actividad " + nombre + "\","
@@ -919,6 +945,12 @@ class AplicacionGestionGpivPruebas {
             + "\"cantidadEmpleados\":0}";
     }
 }
+
+
+
+
+
+
 
 
 

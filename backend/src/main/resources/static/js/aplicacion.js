@@ -83,14 +83,13 @@ const ConfiguracionInicial = (() => {
         const campos = {
             nombre:             document.getElementById('ciNombre').value.trim(),
             razonSocial:        document.getElementById('ciRazonSocial').value.trim(),
-            nit:                document.getElementById('ciNit').value.trim(),
             cuit:               document.getElementById('ciCuit').value.trim(),
             direccion:          document.getElementById('ciDireccion').value.trim(),
             actividadEconomica: document.getElementById('ciActividad').value.trim(),
             correoElectronico:  document.getElementById('ciCorreo').value.trim(),
             telefono:           document.getElementById('ciTelefono').value.trim() || null,
         };
-        if (!campos.nombre || !campos.razonSocial || !campos.nit || !campos.cuit ||
+        if (!campos.nombre || !campos.razonSocial || !campos.cuit ||
             !campos.direccion || !campos.actividadEconomica || !campos.correoElectronico) {
             mostrarAlertaModal('alertaConfiguracionInicial', 'Completá todos los campos obligatorios.');
             return;
@@ -172,6 +171,14 @@ function ocultarAlertaModal(idElemento) {
 ═══════════════════════════════════════════════════ */
 
 function navegarA(seccion) {
+    const esEmpresaExclusivo = Autenticacion.tieneAcceso(['EMPRESA'])
+        && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+    const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor', 'censo', 'cambio-rubro']);
+    if (esEmpresaExclusivo && seccionesRestringidasEmpresa.has(seccion)) {
+        mostrarAlerta('No tienes acceso a esta sección.', 'danger');
+        seccion = 'empresas';
+    }
+
     document.querySelectorAll('.seccion-contenido').forEach(s => s.classList.add('d-none'));
     document.querySelectorAll('.enlace-nav').forEach(a => a.classList.remove('activo'));
 
@@ -189,9 +196,16 @@ function navegarA(seccion) {
         case 'empresas':   ModuloEmpresas.cargar();      break;
         case 'lotes':      ModuloLotes.cargar();         break;
         case 'radicaciones': ModuloRadicaciones.cargar(); break;
+        case 'mensajeria': ModuloMensajeria.cargar();     break;
         case 'informes':   ModuloEstadisticas.cargar();   break;
         case 'usuarios':   ModuloUsuarios.cargar();       break;
         case 'audit-log':  ModuloAuditLog.cargar();       break;
+        case 'censo':         ModuloCenso.cargar();          break;
+        case 'cambio-rubro':  ModuloCambioRubro.cargar();    break;
+        case 'proyectos':     ModuloProyectos.cargar();      break;
+        case 'infraestructura': ModuloInfraestructura.cargar(); break;
+        case 'dashboard':       ModuloDashboard.cargar();       break;
+        case 'monitor':       ModuloMonitor.cargar();        break;
     }
 }
 
@@ -237,8 +251,20 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('itemNavInformes')?.classList.add('d-none');
         document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
         document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));
+        document.getElementById('itemNavCenso')?.classList.add('d-none');
+        document.getElementById('itemNavCensoMovil')?.classList.add('d-none');
+        document.getElementById('itemNavCambioRubro')?.classList.add('d-none');
+        document.getElementById('itemNavCambioRubroMovil')?.classList.add('d-none');
         document.getElementById('itemNavAuditLog')?.classList.add('d-none');
         document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
+        document.getElementById('itemNavInfraestructura')?.classList.add('d-none');
+        document.getElementById('itemNavInfraestructuraMovil')?.classList.add('d-none');
+        document.getElementById('itemNavMonitor')?.classList.add('d-none');
+        document.getElementById('itemNavMonitorMovil')?.classList.add('d-none');
+        document.getElementById('itemNavProyectos')?.classList.add('d-none');
+        document.getElementById('itemNavProyectosMovil')?.classList.add('d-none');
+        document.getElementById('itemNavDashboard')?.classList.add('d-none');
+        document.getElementById('itemNavDashboardMovil')?.classList.add('d-none');
     }
 
     if (esEmpresaExclusivo) {
@@ -249,6 +275,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón cerrar sesión
     document.getElementById('btnCerrarSesion').addEventListener('click', Autenticacion.cerrarSesion);
+
+    // Indicador de mensajes no leídos en el menú principal
+    ModuloMensajeria.actualizarIndicadorNav?.();
+    setInterval(() => ModuloMensajeria.actualizarIndicadorNav?.(), 60000);
 
     // Cambiar mi propia contraseña
     document.getElementById('formMiClave').addEventListener('submit', async (e) => {
@@ -333,8 +363,20 @@ function ocultarAccesosEmpresaRestringidos() {
     document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
     document.getElementById('itemNavInformes')?.classList.add('d-none');
     document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
+    document.getElementById('itemNavCenso')?.classList.add('d-none');
+    document.getElementById('itemNavCensoMovil')?.classList.add('d-none');
+    document.getElementById('itemNavCambioRubro')?.classList.add('d-none');
+    document.getElementById('itemNavCambioRubroMovil')?.classList.add('d-none');
     document.getElementById('itemNavAuditLog')?.classList.add('d-none');
     document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
+    document.getElementById('itemNavInfraestructura')?.classList.add('d-none');
+    document.getElementById('itemNavInfraestructuraMovil')?.classList.add('d-none');
+    document.getElementById('itemNavMonitor')?.classList.add('d-none');
+    document.getElementById('itemNavMonitorMovil')?.classList.add('d-none');
+    document.getElementById('itemNavProyectos')?.classList.add('d-none');
+    document.getElementById('itemNavProyectosMovil')?.classList.add('d-none');
+    document.getElementById('itemNavDashboard')?.classList.add('d-none');
+    document.getElementById('itemNavDashboardMovil')?.classList.add('d-none');
 
     document.querySelectorAll("a.enlace-nav[onclick*='navegarA(\"panel\")'], a.enlace-nav[onclick*='navegarA(\"lotes\")'], a.enlace-nav[onclick*=\"navegarA('panel')\"], a.enlace-nav[onclick*=\"navegarA('lotes')\"]")
         .forEach(el => el.closest('.nav-item')?.classList.add('d-none'));

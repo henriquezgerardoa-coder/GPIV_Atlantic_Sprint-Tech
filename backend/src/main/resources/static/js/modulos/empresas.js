@@ -5,6 +5,15 @@ const ModuloEmpresas = (() => {
     let empresaPropia = null;
     let vehiculosEmpresaPropia = [];
     let serviciosHabilitados = false;
+    const serviciosPostAdminPorEmpresa = new Map();
+    let detalleServiciosPostRadicacion = {
+        solicitaAguaCruda: false,
+        consumoAguaCrudaM3: null,
+        consumoLuzKwh: null,
+        consumoGasM3: null,
+        consumoInternetMbps: null,
+        consumosAdicionales: []
+    };
 
     // ─── Punto de entrada ───────────────────────────────────────────────────────
 
@@ -134,7 +143,7 @@ const ModuloEmpresas = (() => {
     function construirDetalleDesdeEmpresaBasica(empresa) {
         return {
             id: empresa?.id, nombre: empresa?.nombre, razonSocial: empresa?.razonSocial,
-            nit: empresa?.nit, cuit: empresa?.cuit, telefono: empresa?.telefono,
+            cuit: empresa?.cuit, telefono: empresa?.telefono,
             direccion: empresa?.direccion, actividadEconomica: empresa?.actividadEconomica,
             correoElectronico: empresa?.correoElectronico, totalEmpleados: empresa?.cantidadEmpleados ?? 0,
             totalVehiculos: 0, vehiculos: [], lotes: [], fechaRegistro: null, statusEmpresa: null, estadoExpediente: null, usuarioAsociado: null
@@ -156,7 +165,6 @@ const ModuloEmpresas = (() => {
         const usuario = detalle?.usuarioAsociado;
         setTexto('detEmpresaNombre', detalle?.nombre);
         setTexto('detEmpresaRazonSocial', detalle?.razonSocial);
-        setTexto('detEmpresaNit', detalle?.nit);
         setTexto('detEmpresaCuit', detalle?.cuit);
         setTexto('detEmpresaTelefono', detalle?.telefono);
         setTexto('detEmpresaCorreo', detalle?.correoElectronico);
@@ -223,10 +231,26 @@ const ModuloEmpresas = (() => {
             const servicios = await respServ.json();
             vehiculosEmpresaPropia = servicios.vehiculos || [];
             empresaPropia._cantidadEmpleados = servicios.cantidadEmpleados ?? 0;
+            detalleServiciosPostRadicacion = {
+                solicitaAguaCruda: servicios.solicitaAguaCruda === true,
+                consumoAguaCrudaM3: servicios.consumoAguaCrudaM3 ?? null,
+                consumoLuzKwh: servicios.consumoLuzKwh ?? null,
+                consumoGasM3: servicios.consumoGasM3 ?? null,
+                consumoInternetMbps: servicios.consumoInternetMbps ?? null,
+                consumosAdicionales: servicios.consumosAdicionales || []
+            };
         } else {
             serviciosHabilitados = false;
             vehiculosEmpresaPropia = parsearVehiculosDesdeTexto(empresaPropia.vehiculosAsignadosJson || '');
             empresaPropia._cantidadEmpleados = empresaPropia.cantidadEmpleados ?? 0;
+            detalleServiciosPostRadicacion = {
+                solicitaAguaCruda: false,
+                consumoAguaCrudaM3: null,
+                consumoLuzKwh: null,
+                consumoGasM3: null,
+                consumoInternetMbps: null,
+                consumosAdicionales: []
+            };
         }
         actualizarBotonServicios();
         actualizarIndicadoresEmpresaPropia();
@@ -241,11 +265,11 @@ const ModuloEmpresas = (() => {
             : 'Disponible cuando su radicación alcance el estado Radicada';
     }
 
+
     function renderizarPanelEmpresaPropia(emp) {
         setTexto('empNombrePropio', emp.nombre || '-');
         setTexto('empRazonSocialPropio', emp.razonSocial || '-');
         setTexto('empCuitPropio', emp.cuit || '-');
-        setTexto('empNitPropio', emp.nit || '-');
         setTexto('empActividadPropia', emp.actividadEconomica || '-');
         setTexto('empDireccionPropia', emp.direccion || '-');
         setTexto('empCorreoPropio', emp.correoElectronico || '-');
@@ -308,7 +332,8 @@ const ModuloEmpresas = (() => {
         const nuevaCantidad = (empresaPropia._cantidadEmpleados ?? 0) + agregar;
         const respuesta = await ApiCliente.parche(`/api/empresas/${empresaPropia.id}/servicios-post-radicacion`, {
             cantidadEmpleados: nuevaCantidad,
-            vehiculos: vehiculosEmpresaPropia
+            vehiculos: vehiculosEmpresaPropia,
+            ...detalleServiciosPostRadicacion
         });
         if (!respuesta?.ok) {
             const error = await respuesta?.json().catch(() => ({}));
@@ -436,7 +461,8 @@ const ModuloEmpresas = (() => {
 
         const respuesta = await ApiCliente.parche(`/api/empresas/${empresaPropia.id}/servicios-post-radicacion`, {
             cantidadEmpleados: empresaPropia._cantidadEmpleados ?? 0,
-            vehiculos: nuevosVehiculos
+            vehiculos: nuevosVehiculos,
+            ...detalleServiciosPostRadicacion
         });
         if (!respuesta?.ok) {
             const error = await respuesta?.json().catch(() => ({}));
@@ -455,7 +481,8 @@ const ModuloEmpresas = (() => {
         const nuevosVehiculos = vehiculosEmpresaPropia.filter((_, i) => i !== indice);
         const respuesta = await ApiCliente.parche(`/api/empresas/${empresaPropia.id}/servicios-post-radicacion`, {
             cantidadEmpleados: empresaPropia._cantidadEmpleados ?? 0,
-            vehiculos: nuevosVehiculos
+            vehiculos: nuevosVehiculos,
+            ...detalleServiciosPostRadicacion
         });
         if (!respuesta?.ok) {
             mostrarAlerta('No se pudo quitar el vehículo.', 'danger');
@@ -472,10 +499,18 @@ const ModuloEmpresas = (() => {
     function abrirServiciosModal() {
         const modal = asegurarModalServicios();
         setTexto('servEmpresaNombreModal', empresaPropia?.nombre || '-');
-        const campoEmpleados = document.getElementById('campoServEmpleados');
-        if (campoEmpleados) campoEmpleados.value = empresaPropia?._cantidadEmpleados ?? 0;
-        const campoVehiculos = document.getElementById('campoServVehiculos');
-        if (campoVehiculos) campoVehiculos.value = serializarVehiculosEnTexto(vehiculosEmpresaPropia);
+        const checkAguaCruda = document.getElementById('campoServSolicitaAguaCruda');
+        if (checkAguaCruda) checkAguaCruda.checked = detalleServiciosPostRadicacion.solicitaAguaCruda === true;
+        const campoAguaCruda = document.getElementById('campoServConsumoAguaCruda');
+        if (campoAguaCruda) campoAguaCruda.value = detalleServiciosPostRadicacion.consumoAguaCrudaM3 ?? '';
+        const campoLuz = document.getElementById('campoServConsumoLuz');
+        if (campoLuz) campoLuz.value = detalleServiciosPostRadicacion.consumoLuzKwh ?? '';
+        const campoGas = document.getElementById('campoServConsumoGas');
+        if (campoGas) campoGas.value = detalleServiciosPostRadicacion.consumoGasM3 ?? '';
+        const campoInternet = document.getElementById('campoServConsumoInternet');
+        if (campoInternet) campoInternet.value = detalleServiciosPostRadicacion.consumoInternetMbps ?? '';
+        const campoAdicionales = document.getElementById('campoServConsumosAdicionales');
+        if (campoAdicionales) campoAdicionales.value = serializarConsumosAdicionales(detalleServiciosPostRadicacion.consumosAdicionales || []);
         bootstrap.Modal.getOrCreateInstance(modal).show();
     }
 
@@ -493,15 +528,33 @@ const ModuloEmpresas = (() => {
                             <div class="modal-body">
                                 <div id="alertaServiciosEmpresaModal" class="alert alert-danger alerta-modal d-none"></div>
                                 <p class="text-muted small mb-3">Empresa: <strong id="servEmpresaNombreModal">-</strong></p>
-                                <p class="small text-muted">Disponibles con radicación en estado <strong>RADICADA</strong>.</p>
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Cantidad total de empleados</label>
-                                    <input id="campoServEmpleados" type="number" min="0" class="form-control" value="0">
+                                <hr>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="campoServSolicitaAguaCruda">
+                                    <label class="form-check-label" for="campoServSolicitaAguaCruda">Solicitar agua cruda</label>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Vehículos</label>
-                                    <small class="text-muted d-block mb-1">Una línea por vehículo: <code>PATENTE|TIPO|DESCRIPCION</code></small>
-                                    <textarea id="campoServVehiculos" rows="4" class="form-control" placeholder="ABC123|CAMION|Unidad principal"></textarea>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Consumo estimado de agua cruda (m3/mes)</label>
+                                        <input id="campoServConsumoAguaCruda" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 180.50">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Consumo estimado de luz (kWh/mes)</label>
+                                        <input id="campoServConsumoLuz" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 1200">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Consumo estimado de gas (m3/mes)</label>
+                                        <input id="campoServConsumoGas" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 320">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Consumo estimado de internet (Mbps)</label>
+                                        <input id="campoServConsumoInternet" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 200">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label fw-semibold">Servicios adicionales (futuro)</label>
+                                    <small class="text-muted d-block mb-1">Una línea por servicio: <code>NOMBRE|CONSUMO|UNIDAD|DETALLE</code></small>
+                                    <textarea id="campoServConsumosAdicionales" rows="3" class="form-control" placeholder="Comedor|1|unidad|Servicio diario"></textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -520,13 +573,14 @@ const ModuloEmpresas = (() => {
 
     async function guardarServiciosModal() {
         if (!empresaPropia?.id) return;
-        const cantidadEmpleados = Number.parseInt(document.getElementById('campoServEmpleados')?.value || '0', 10);
-        const vehiculos = parsearVehiculosDesdeTexto(document.getElementById('campoServVehiculos')?.value || '');
-        if (vehiculos.some(v => !v.placa || !v.tipo)) {
-            mostrarAlertaModal('alertaServiciosEmpresaModal', 'Cada vehículo debe tener patente y tipo.');
-            return;
-        }
-        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaPropia.id}/servicios-post-radicacion`, { cantidadEmpleados, vehiculos });
+        const cantidadEmpleados = empresaPropia?._cantidadEmpleados ?? 0;
+        const vehiculos = vehiculosEmpresaPropia;
+        const payloadServicios = construirPayloadServiciosPostRadicacion();
+        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaPropia.id}/servicios-post-radicacion`, {
+            cantidadEmpleados,
+            vehiculos,
+            ...payloadServicios
+        });
         if (!respuesta?.ok) {
             const error = await respuesta?.json().catch(() => ({}));
             mostrarAlertaModal('alertaServiciosEmpresaModal', error?.message || 'No se pudieron guardar los servicios.');
@@ -534,6 +588,7 @@ const ModuloEmpresas = (() => {
         }
         empresaPropia._cantidadEmpleados = cantidadEmpleados;
         vehiculosEmpresaPropia = vehiculos;
+        detalleServiciosPostRadicacion = payloadServicios;
         actualizarIndicadoresEmpresaPropia();
         bootstrap.Modal.getInstance(document.getElementById('modalServiciosEmpresa'))?.hide();
         mostrarAlerta('Servicios actualizados correctamente.');
@@ -545,7 +600,7 @@ const ModuloEmpresas = (() => {
         const cuerpo = document.getElementById('cuerpoTablaEmpresas');
         if (!cuerpo) return;
         if (empresas.length === 0) {
-            cuerpo.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin empresas registradas</td></tr>';
+            cuerpo.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin empresas registradas</td></tr>';
             return;
         }
         const puedeEditar  = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'EMPRESA']);
@@ -555,7 +610,6 @@ const ModuloEmpresas = (() => {
                 <td class="text-muted">${e.id}</td>
                 <td class="fw-semibold">${e.nombre}</td>
                 <td>${e.razonSocial || '-'}</td>
-                <td>${e.nit || '-'}</td>
                 <td>${e.cuit}</td>
                 <td>${e.correoElectronico}</td>
                 <td class="text-center">
@@ -568,11 +622,34 @@ const ModuloEmpresas = (() => {
             </tr>`).join('');
     }
 
-    function abrirCreacion() {
+    async function abrirCreacion() {
         modoEdicion = false; idEdicion = null;
         document.getElementById('tituloModalEmpresa').textContent = 'Nueva empresa';
         document.getElementById('formularioEmpresa').reset();
         ocultarAlertaModal('alertaModalEmpresa');
+
+        // Mostrar lista de empresas existentes como referencia
+        const panel  = document.getElementById('panelEmpresasExistentes');
+        const cuerpo = document.getElementById('cuerpoEmpresasExistentes');
+        try {
+            const lista = empresas.length > 0
+                ? empresas
+                : await ApiCliente.obtener('/api/empresas').then(r => r.ok ? r.json() : []);
+            if (lista && lista.length > 0) {
+                cuerpo.innerHTML = lista.map(e => `
+                    <tr>
+                        <td>${e.nombre || '-'}</td>
+                        <td>${e.cuit || '-'}</td>
+                        <td>${e.correoElectronico || '-'}</td>
+                    </tr>`).join('');
+                panel.classList.remove('d-none');
+            } else {
+                panel.classList.add('d-none');
+            }
+        } catch (_) {
+            panel.classList.add('d-none');
+        }
+
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa')).show();
     }
 
@@ -582,7 +659,6 @@ const ModuloEmpresas = (() => {
         document.getElementById('tituloModalEmpresa').textContent = 'Editar datos de empresa';
         document.getElementById('campoNombreEmpresa').value = empresaPropia.nombre;
         document.getElementById('campoRazonSocialEmpresa').value = empresaPropia.razonSocial || '';
-        document.getElementById('campoNitEmpresa').value = empresaPropia.nit || '';
         document.getElementById('campoCuitEmpresa').value = empresaPropia.cuit;
         document.getElementById('campoDireccionEmpresa').value = empresaPropia.direccion || '';
         document.getElementById('campoActividadEconomicaEmpresa').value = empresaPropia.actividadEconomica || '';
@@ -599,7 +675,6 @@ const ModuloEmpresas = (() => {
         document.getElementById('tituloModalEmpresa').textContent = 'Editar empresa';
         document.getElementById('campoNombreEmpresa').value = empresa.nombre;
         document.getElementById('campoRazonSocialEmpresa').value = empresa.razonSocial || '';
-        document.getElementById('campoNitEmpresa').value = empresa.nit || '';
         document.getElementById('campoCuitEmpresa').value = empresa.cuit;
         document.getElementById('campoDireccionEmpresa').value = empresa.direccion || '';
         document.getElementById('campoActividadEconomicaEmpresa').value = empresa.actividadEconomica || '';
@@ -613,14 +688,13 @@ const ModuloEmpresas = (() => {
         const datos = {
             nombre:             document.getElementById('campoNombreEmpresa').value.trim(),
             razonSocial:        document.getElementById('campoRazonSocialEmpresa').value.trim(),
-            nit:                document.getElementById('campoNitEmpresa').value.trim(),
             cuit:               document.getElementById('campoCuitEmpresa').value.trim(),
             direccion:          document.getElementById('campoDireccionEmpresa').value.trim(),
             actividadEconomica: document.getElementById('campoActividadEconomicaEmpresa').value.trim(),
             correoElectronico:  document.getElementById('campoCorreoEmpresa').value.trim(),
             telefono:           document.getElementById('campoTelefonoEmpresa').value.trim()
         };
-        if (!datos.nombre || !datos.razonSocial || !datos.nit || !datos.cuit || !datos.direccion || !datos.actividadEconomica || !datos.correoElectronico) {
+        if (!datos.nombre || !datos.razonSocial || !datos.cuit || !datos.direccion || !datos.actividadEconomica || !datos.correoElectronico) {
             mostrarAlertaModal('alertaModalEmpresa', 'Todos los campos son obligatorios.');
             return;
         }
@@ -675,8 +749,16 @@ const ModuloEmpresas = (() => {
             return;
         }
         const datos = await respuesta.json();
-        document.getElementById('campoCantidadEmpleadosPost').value = datos.cantidadEmpleados ?? 0;
-        document.getElementById('campoVehiculosPost').value = serializarVehiculosEnTexto(datos.vehiculos);
+        serviciosPostAdminPorEmpresa.set(String(empresaId), {
+            cantidadEmpleados: datos.cantidadEmpleados ?? 0,
+            vehiculos: datos.vehiculos || []
+        });
+        document.getElementById('campoSolicitaAguaCrudaPost').checked = datos.solicitaAguaCruda === true;
+        document.getElementById('campoConsumoAguaCrudaPost').value = datos.consumoAguaCrudaM3 ?? '';
+        document.getElementById('campoConsumoLuzPost').value = datos.consumoLuzKwh ?? '';
+        document.getElementById('campoConsumoGasPost').value = datos.consumoGasM3 ?? '';
+        document.getElementById('campoConsumoInternetPost').value = datos.consumoInternetMbps ?? '';
+        document.getElementById('campoConsumosAdicionalesPost').value = serializarConsumosAdicionales(datos.consumosAdicionales || []);
         mostrarAlerta('Servicios post-radicación cargados correctamente.');
     }
 
@@ -684,18 +766,44 @@ const ModuloEmpresas = (() => {
         const selector = document.getElementById('selectorEmpresaServiciosPost');
         const empresaId = selector?.value;
         if (!empresaId) { mostrarAlerta('Seleccione una empresa.', 'danger'); return; }
-        const cantidadEmpleados = Number.parseInt(document.getElementById('campoCantidadEmpleadosPost').value || '0', 10);
-        const vehiculos = parsearVehiculosDesdeTexto(document.getElementById('campoVehiculosPost').value || '');
-        if (vehiculos.some(v => !v.placa || !v.tipo)) {
-            mostrarAlerta('Cada vehículo debe tener placa y tipo.', 'danger');
-            return;
+        let baseServicios = serviciosPostAdminPorEmpresa.get(String(empresaId));
+        if (!baseServicios) {
+            const respuestaBase = await ApiCliente.obtener(`/api/empresas/${empresaId}/servicios-post-radicacion`);
+            if (!respuestaBase?.ok) {
+                const errorBase = await respuestaBase?.json().catch(() => ({}));
+                mostrarAlerta(errorBase?.mensaje || errorBase?.message || 'Primero consulta los servicios actuales de la empresa.', 'warning');
+                return;
+            }
+            const datosBase = await respuestaBase.json();
+            baseServicios = {
+                cantidadEmpleados: datosBase.cantidadEmpleados ?? 0,
+                vehiculos: datosBase.vehiculos || []
+            };
+            serviciosPostAdminPorEmpresa.set(String(empresaId), baseServicios);
         }
-        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaId}/servicios-post-radicacion`, { cantidadEmpleados, vehiculos });
+        const payloadServicios = {
+            solicitaAguaCruda: document.getElementById('campoSolicitaAguaCrudaPost')?.checked === true,
+            consumoAguaCrudaM3: parsearNumeroOpcional(document.getElementById('campoConsumoAguaCrudaPost')?.value),
+            consumoLuzKwh: parsearNumeroOpcional(document.getElementById('campoConsumoLuzPost')?.value),
+            consumoGasM3: parsearNumeroOpcional(document.getElementById('campoConsumoGasPost')?.value),
+            consumoInternetMbps: parsearNumeroOpcional(document.getElementById('campoConsumoInternetPost')?.value),
+            consumosAdicionales: parsearConsumosAdicionales(document.getElementById('campoConsumosAdicionalesPost')?.value || '')
+        };
+        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaId}/servicios-post-radicacion`, {
+            cantidadEmpleados: baseServicios.cantidadEmpleados ?? 0,
+            vehiculos: baseServicios.vehiculos || [],
+            ...payloadServicios
+        });
         if (!respuesta?.ok) {
             const error = await respuesta?.json().catch(() => ({}));
             mostrarAlerta(error?.message || 'No se pudieron guardar los servicios post-radicación.', 'danger');
             return;
         }
+        const datosActualizados = await respuesta.json().catch(() => ({}));
+        serviciosPostAdminPorEmpresa.set(String(empresaId), {
+            cantidadEmpleados: datosActualizados?.cantidadEmpleados ?? baseServicios.cantidadEmpleados ?? 0,
+            vehiculos: datosActualizados?.vehiculos || baseServicios.vehiculos || []
+        });
         mostrarAlerta('Servicios post-radicación actualizados correctamente.');
         await cargar();
     }
@@ -711,6 +819,42 @@ const ModuloEmpresas = (() => {
 
     function serializarVehiculosEnTexto(vehiculos) {
         return (vehiculos || []).map(v => `${v.placa}|${v.tipo}|${v.descripcion || ''}`).join('\n');
+    }
+
+    function construirPayloadServiciosPostRadicacion() {
+        return {
+            solicitaAguaCruda: document.getElementById('campoServSolicitaAguaCruda')?.checked === true,
+            consumoAguaCrudaM3: parsearNumeroOpcional(document.getElementById('campoServConsumoAguaCruda')?.value),
+            consumoLuzKwh: parsearNumeroOpcional(document.getElementById('campoServConsumoLuz')?.value),
+            consumoGasM3: parsearNumeroOpcional(document.getElementById('campoServConsumoGas')?.value),
+            consumoInternetMbps: parsearNumeroOpcional(document.getElementById('campoServConsumoInternet')?.value),
+            consumosAdicionales: parsearConsumosAdicionales(document.getElementById('campoServConsumosAdicionales')?.value || '')
+        };
+    }
+
+    function parsearNumeroOpcional(valor) {
+        if (valor === null || valor === undefined || String(valor).trim() === '') return null;
+        const numero = Number.parseFloat(String(valor).replace(',', '.'));
+        return Number.isFinite(numero) ? numero : null;
+    }
+
+    function parsearConsumosAdicionales(texto) {
+        return (texto || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+            const [nombre, consumoEstimado, unidad, detalle] = l.split('|').map(v => (v || '').trim());
+            return {
+                nombre,
+                consumoEstimado: parsearNumeroOpcional(consumoEstimado),
+                unidad: unidad || null,
+                detalle: detalle || null
+            };
+        }).filter(item => item.nombre);
+    }
+
+    function serializarConsumosAdicionales(consumos) {
+        return (consumos || []).map(c => {
+            const consumo = c?.consumoEstimado ?? '';
+            return `${c?.nombre || ''}|${consumo}|${c?.unidad || ''}|${c?.detalle || ''}`;
+        }).join('\n');
     }
 
     function setTexto(id, valor) {
