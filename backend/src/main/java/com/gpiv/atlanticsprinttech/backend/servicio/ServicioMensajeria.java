@@ -9,6 +9,8 @@ public interface ServicioMensajeria {
 
     List<ConversacionMensajeria> listar(String identificadorIngreso);
 
+    List<ParConversacion> listarConConMensajes(String identificadorIngreso);
+
     ConversacionMensajeria obtenerPorId(String identificadorIngreso, Long id);
 
     List<MensajeMensajeria> listarMensajes(String identificadorIngreso, Long conversacionId);

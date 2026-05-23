@@ -154,7 +154,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El rol EMPRESA no puede eliminar empresas");
 		}
 		Empresa empresaActual = obtenerPorIdInterno(id);
-		if (repositorioLote.existsByEmpresaId(id)) {
+		if (repositorioLote.existsByEmpresa_Id(id)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar la empresa porque tiene lotes asociados");
 		}
 		String datosEmpresa = empresaActual.getNombre() + " | CUIT=" + empresaActual.getCuit();

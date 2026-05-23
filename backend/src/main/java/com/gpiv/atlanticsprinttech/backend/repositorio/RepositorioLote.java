@@ -10,13 +10,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface RepositorioLote extends JpaRepository<Lote, Long> {
 
-    boolean existsByEmpresaIdAndCodigo(Long empresaId, String codigo);
+    boolean existsByEmpresa_IdAndCodigo(Long empresaId, String codigo);
 
     boolean existsByEmpresaIsNullAndCodigo(String codigo);
 
-    Optional<Lote> findByEmpresaIdAndCodigo(Long empresaId, String codigo);
+    Optional<Lote> findByEmpresa_IdAndCodigo(Long empresaId, String codigo);
 
-    boolean existsByEmpresaId(Long empresaId);
+    boolean existsByEmpresa_Id(Long empresaId);
 
     @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa WHERE l.id = :id")
     Optional<Lote> findByIdConEmpresa(@Param("id") Long id);

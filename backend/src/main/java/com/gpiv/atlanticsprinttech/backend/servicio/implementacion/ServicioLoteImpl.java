@@ -181,7 +181,7 @@ public class ServicioLoteImpl implements ServicioLote {
         }
 
         if (loteActual == null) {
-            if (repositorioLote.existsByEmpresaIdAndCodigo(empresaId, codigoNuevo)) {
+            if (repositorioLote.existsByEmpresa_IdAndCodigo(empresaId, codigoNuevo)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote con ese codigo para la empresa");
             }
             return;
@@ -189,7 +189,7 @@ public class ServicioLoteImpl implements ServicioLote {
 
         boolean cambioEmpresa = loteActual.cambioDeEmpresa(empresaId);
         boolean cambioCodigo = !loteActual.getCodigo().equals(codigoNuevo);
-        if ((cambioEmpresa || cambioCodigo) && repositorioLote.existsByEmpresaIdAndCodigo(empresaId, codigoNuevo)) {
+        if ((cambioEmpresa || cambioCodigo) && repositorioLote.existsByEmpresa_IdAndCodigo(empresaId, codigoNuevo)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote con ese codigo para la empresa");
         }
     }

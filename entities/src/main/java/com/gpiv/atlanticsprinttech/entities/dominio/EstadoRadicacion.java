@@ -41,5 +41,12 @@ public enum EstadoRadicacion {
 	public boolean permiteActaRubrica() {
 		return this == APROBADA || this == RADICADA;
 	}
+
+	public int etapa() {
+		return switch (this) {
+			case PENDIENTE, EN_REVISION, REQUIERE_INFORMACION_ADICIONAL -> 2;
+			case APROBADA, RADICADA, RECHAZADA, CANCELADA -> 3;
+		};
+	}
 }
 

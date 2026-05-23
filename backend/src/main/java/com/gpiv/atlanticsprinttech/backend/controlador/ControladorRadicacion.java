@@ -2,18 +2,20 @@ package com.gpiv.atlanticsprinttech.backend.controlador;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gpiv.atlanticsprinttech.backend.mapeador.MapeadorRadicacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDocumentoRadicacion;
-import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaHistorialRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudAsignacionLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudCambioEstadoRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudObservacionRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
+import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
-import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionHistorial;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.TipoDocumentoRadicacion;
 import jakarta.validation.Valid;
@@ -39,10 +41,16 @@ import org.springframework.web.multipart.MultipartFile;
 public class ControladorRadicacion {
 
     private final ServicioRadicacion servicioRadicacion;
+    private final MapeadorRadicacion mapeador;
     private final ObjectMapper objectMapper;
 
-    public ControladorRadicacion(ServicioRadicacion servicioRadicacion, ObjectMapper objectMapper) {
+    public ControladorRadicacion(
+        ServicioRadicacion servicioRadicacion,
+        MapeadorRadicacion mapeador,
+        ObjectMapper objectMapper
+    ) {
         this.servicioRadicacion = servicioRadicacion;
+        this.mapeador = mapeador;
         this.objectMapper = objectMapper;
     }
 
@@ -54,17 +62,20 @@ public class ControladorRadicacion {
         @RequestParam(value = "hasta", required = false) LocalDate hasta
     ) {
         return servicioRadicacion.listar(autenticacion.getName(), estado, desde, hasta).stream()
-            .map(this::crearRespuesta)
+            .map(mapeador::toRespuesta)
             .toList();
     }
 
     @GetMapping("/{id}")
     public RespuestaRadicacion obtenerPorId(@PathVariable Long id, Authentication autenticacion) {
-        return crearRespuesta(servicioRadicacion.obtenerPorId(autenticacion.getName(), id));
+        return mapeador.toRespuesta(servicioRadicacion.obtenerPorId(autenticacion.getName(), id));
     }
 
     @PostMapping
-    public ResponseEntity<RespuestaRadicacion> crear(@Valid @RequestBody SolicitudRadicacion solicitud, Authentication autenticacion) {
+    public ResponseEntity<RespuestaRadicacion> crear(
+        @Valid @RequestBody SolicitudRadicacion solicitud,
+        Authentication autenticacion
+    ) {
         RadicacionSolicitud creada = servicioRadicacion.crear(
             autenticacion.getName(),
             solicitud.tipoSolicitud(),
@@ -72,7 +83,9 @@ public class ControladorRadicacion {
             solicitud.usoEstimativo(),
             solicitud.relevamientoPedidoLotes()
         );
-        return ResponseEntity.created(URI.create("/api/radicaciones/" + creada.getId())).body(crearRespuesta(creada));
+        return ResponseEntity
+            .created(URI.create("/api/radicaciones/" + creada.getId()))
+            .body(mapeador.toRespuesta(creada));
     }
 
     @PatchMapping("/{id}/estado")
@@ -90,7 +103,7 @@ public class ControladorRadicacion {
             solicitud.fechaPlazo(),
             solicitud.fechaAprobacion()
         );
-        return crearRespuesta(actualizada);
+        return mapeador.toRespuesta(actualizada);
     }
 
     @PostMapping("/{id}/observaciones")
@@ -112,22 +125,33 @@ public class ControladorRadicacion {
         Authentication autenticacion
     ) throws Exception {
         RadicacionDocumento documento = servicioRadicacion.adjuntarDocumento(
-            autenticacion.getName(),
-            id,
-            tipoDocumento,
-            descripcion,
-            archivo.getOriginalFilename(),
-            archivo.getContentType(),
-            archivo.getBytes()
+            autenticacion.getName(), id, tipoDocumento, descripcion,
+            archivo.getOriginalFilename(), archivo.getContentType(), archivo.getBytes()
         );
-        return crearRespuestaDocumento(documento);
+        return mapeador.toDocumentoRespuesta(documento);
     }
 
     @GetMapping("/{id}/documentos")
-    public List<RespuestaDocumentoRadicacion> listarDocumentos(@PathVariable Long id, Authentication autenticacion) {
+    public List<RespuestaDocumentoRadicacion> listarDocumentos(
+        @PathVariable Long id,
+        Authentication autenticacion
+    ) {
         return servicioRadicacion.listarDocumentos(autenticacion.getName(), id).stream()
-            .map(this::crearRespuestaDocumento)
+            .map(mapeador::toDocumentoRespuesta)
             .toList();
+    }
+
+    @GetMapping("/{id}/documentos/{docId}")
+    public ResponseEntity<byte[]> verDocumento(
+        @PathVariable Long id,
+        @PathVariable Long docId,
+        Authentication autenticacion
+    ) {
+        RadicacionDocumento doc = servicioRadicacion.obtenerDocumento(autenticacion.getName(), id, docId);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(doc.getMimeType()))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getNombreArchivo().replace("\"", "") + "\"")
+            .body(doc.getContenido());
     }
 
     @GetMapping("/{id}/documentos/{docId}/descargar")
@@ -137,27 +161,27 @@ public class ControladorRadicacion {
         Authentication autenticacion
     ) {
         RadicacionDocumento doc = servicioRadicacion.obtenerDocumento(autenticacion.getName(), id, docId);
-        String contentDisposition = "attachment; filename=\"" + doc.getNombreArchivo().replace("\"", "") + "\"";
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(doc.getMimeType()))
-            .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getNombreArchivo().replace("\"", "") + "\"")
             .body(doc.getContenido());
     }
 
     @GetMapping("/{id}/historial")
-    public List<RespuestaHistorialRadicacion> listarHistorial(@PathVariable Long id, Authentication autenticacion) {
+    public List<RespuestaHistorialRadicacion> listarHistorial(
+        @PathVariable Long id,
+        Authentication autenticacion
+    ) {
         return servicioRadicacion.listarHistorial(autenticacion.getName(), id).stream()
-            .map(this::crearRespuestaHistorial)
+            .map(mapeador::toHistorialRespuesta)
             .toList();
     }
 
     @GetMapping("/{id}/relevamiento")
     public ResponseEntity<JsonNode> obtenerRelevamiento(@PathVariable Long id, Authentication autenticacion) {
-        RadicacionSolicitud radicacion = servicioRadicacion.obtenerPorId(autenticacion.getName(), id);
-        String json = radicacion.getRelevamientoPedidoLotesJson();
-        if (json == null || json.isBlank()) {
-            return ResponseEntity.noContent().build();
-        }
+        String json = servicioRadicacion.obtenerPorId(autenticacion.getName(), id)
+            .getRelevamientoPedidoLotesJson();
+        if (json == null || json.isBlank()) return ResponseEntity.noContent().build();
         try {
             return ResponseEntity.ok(objectMapper.readTree(json));
         } catch (Exception e) {
@@ -167,20 +191,10 @@ public class ControladorRadicacion {
 
     @GetMapping("/{id}/lote")
     public ResponseEntity<RespuestaLote> obtenerLote(@PathVariable Long id, Authentication autenticacion) {
-        RadicacionSolicitud radicacion = servicioRadicacion.obtenerPorId(autenticacion.getName(), id);
-        var lote = radicacion.getLote();
-        if (lote == null) return ResponseEntity.noContent().build();
-        String estadoAsignacion = lote.getEstadoAsignacion() != null ? lote.getEstadoAsignacion().name() : null;
-        String fechaAsignacion = lote.getFechaAsignacion() != null
-            ? lote.getFechaAsignacion().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE) : null;
-        String nombreEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getNombre() : null;
-        String cuitEmpresa = lote.getEmpresa() != null ? lote.getEmpresa().getCuit() : null;
-        Long empresaId = lote.getEmpresa() != null ? lote.getEmpresa().getId() : null;
-        return ResponseEntity.ok(new RespuestaLote(
-            lote.getId(), lote.getCodigo(), lote.getSuperficieMetrosCuadrados(),
-            lote.isOcupado(), empresaId, nombreEmpresa, cuitEmpresa,
-            estadoAsignacion, fechaAsignacion, lote.getNumeroExpedienteReferencia(), lote.getZona()
-        ));
+        Lote lote = servicioRadicacion.obtenerPorId(autenticacion.getName(), id).getLote();
+        return lote == null
+            ? ResponseEntity.noContent().build()
+            : ResponseEntity.ok(mapeador.toLoteRespuesta(lote));
     }
 
     @PostMapping(value = "/{id}/rubrica", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -190,13 +204,10 @@ public class ControladorRadicacion {
         Authentication autenticacion
     ) throws Exception {
         RadicacionDocumento acta = servicioRadicacion.subirActaRubrica(
-            autenticacion.getName(),
-            id,
-            archivo.getOriginalFilename(),
-            archivo.getContentType(),
-            archivo.getBytes()
+            autenticacion.getName(), id,
+            archivo.getOriginalFilename(), archivo.getContentType(), archivo.getBytes()
         );
-        return crearRespuestaDocumento(acta);
+        return mapeador.toDocumentoRespuesta(acta);
     }
 
     @GetMapping("/{id}/rubrica")
@@ -204,89 +215,19 @@ public class ControladorRadicacion {
         RadicacionDocumento acta = servicioRadicacion.obtenerActaRubrica(autenticacion.getName(), id);
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(acta.getMimeType()))
-            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + acta.getNombreArchivo().replace("\"", "") + "\"")
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                "inline; filename=\"" + acta.getNombreArchivo().replace("\"", "") + "\"")
             .body(acta.getContenido());
     }
 
     @PatchMapping("/{id}/lote")
     public RespuestaRadicacion asignarLote(
         @PathVariable Long id,
-        @RequestBody java.util.Map<String, Long> cuerpo,
+        @Valid @RequestBody SolicitudAsignacionLote solicitud,
         Authentication autenticacion
     ) {
-        Long loteId = cuerpo.get("loteId");
-        if (loteId == null) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                org.springframework.http.HttpStatus.BAD_REQUEST, "Debe indicar el loteId");
-        }
-        return crearRespuesta(servicioRadicacion.asignarLote(autenticacion.getName(), id, loteId));
-    }
-
-    private RespuestaRadicacion crearRespuesta(RadicacionSolicitud radicacion) {
-        Long loteId = radicacion.getLote() != null ? radicacion.getLote().getId() : null;
-        String codigoLote = radicacion.getLote() != null ? radicacion.getLote().getCodigo() : null;
-        String json = radicacion.getRelevamientoPedidoLotesJson();
-        return new RespuestaRadicacion(
-            radicacion.getId(),
-            radicacion.getNumeroRadicado(),
-            radicacion.getEmpresa().getId(),
-            radicacion.getEmpresa().getNombre(),
-            radicacion.getTipoSolicitud(),
-            radicacion.getDescripcion(),
-            radicacion.getUsoEstimativo(),
-            json != null,
-            obtenerEtapaActual(radicacion.getEstado()),
-            radicacion.getEstado(),
-            radicacion.getFechaRadicacion(),
-            radicacion.getFechaUltimaActualizacion(),
-            radicacion.getTiempoEstimadoObraMeses(),
-            radicacion.getFechaPlazo(),
-            radicacion.getFechaAprobacion(),
-            extraerCampoEntero(json, "tiempoRadicacionMeses"),
-            loteId,
-            codigoLote,
-            extraerCampoEntero(json, "necesidadMetrosCuadrados")
-        );
-    }
-
-    private Integer extraerCampoEntero(String json, String campo) {
-        if (json == null || json.isBlank()) return null;
-        try {
-            JsonNode nodo = objectMapper.readTree(json);
-            JsonNode valor = nodo.get(campo);
-            return (valor != null && !valor.isNull()) ? valor.asInt() : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private Integer obtenerEtapaActual(EstadoRadicacion estado) {
-        return switch (estado) {
-            case PENDIENTE, EN_REVISION, REQUIERE_INFORMACION_ADICIONAL -> 2;
-            case APROBADA, RADICADA, RECHAZADA, CANCELADA -> 3;
-        };
-    }
-
-    private RespuestaDocumentoRadicacion crearRespuestaDocumento(RadicacionDocumento documento) {
-        return new RespuestaDocumentoRadicacion(
-            documento.getId(),
-            documento.getTipoDocumento(),
-            documento.getNombreArchivo(),
-            documento.getMimeType(),
-            documento.getTamanoBytes(),
-            documento.getDescripcion(),
-            documento.getSubidoPor(),
-            documento.getFechaSubida()
-        );
-    }
-
-    private RespuestaHistorialRadicacion crearRespuestaHistorial(RadicacionHistorial historial) {
-        return new RespuestaHistorialRadicacion(
-            historial.getId(),
-            historial.getEstado(),
-            historial.getComentario(),
-            historial.getUsuario(),
-            historial.getFechaEvento()
+        return mapeador.toRespuesta(
+            servicioRadicacion.asignarLote(autenticacion.getName(), id, solicitud.loteId())
         );
     }
 }

@@ -137,6 +137,26 @@ public class ConversacionMensajeria {
         return fechaUltimaActualizacion;
     }
 
+    public Long getEmpresaId() {
+        return empresa != null ? empresa.getId() : null;
+    }
+
+    public String getNombreEmpresa() {
+        return empresa != null ? empresa.getNombre() : null;
+    }
+
+    public Long getUsuarioResponsableId() {
+        return usuarioResponsable.getId();
+    }
+
+    public String getUsuarioResponsableNombreUsuario() {
+        return usuarioResponsable.getNombreUsuario();
+    }
+
+    public String getUsuarioResponsableNombreCompleto() {
+        return usuarioResponsable.getNombreCompleto();
+    }
+
     public void registrarActividad() {
         this.fechaUltimaActualizacion = LocalDateTime.now();
     }

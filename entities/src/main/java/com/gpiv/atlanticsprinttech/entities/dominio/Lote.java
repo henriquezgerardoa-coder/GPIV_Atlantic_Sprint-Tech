@@ -101,6 +101,27 @@ public class Lote {
         return zona;
     }
 
+    public Long getEmpresaId() {
+        return empresa != null ? empresa.getId() : null;
+    }
+
+    public String getNombreEmpresa() {
+        return empresa != null ? empresa.getNombre() : null;
+    }
+
+    public String getCuitEmpresa() {
+        return empresa != null ? empresa.getCuit() : null;
+    }
+
+    public String getFechaAsignacionTexto() {
+        return fechaAsignacion != null
+            ? fechaAsignacion.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE) : null;
+    }
+
+    public String getNombreEstadoAsignacion() {
+        return estadoAsignacion != null ? estadoAsignacion.name() : null;
+    }
+
     public boolean esAdjudicable() {
         return !ocupado && empresa == null && estadoAsignacion == null;
     }

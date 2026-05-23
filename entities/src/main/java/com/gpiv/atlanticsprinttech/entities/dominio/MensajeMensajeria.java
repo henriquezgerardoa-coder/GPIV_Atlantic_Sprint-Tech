@@ -88,5 +88,21 @@ public class MensajeMensajeria {
     public boolean esEmisorExterno() {
         return usuarioEmisor == null;
     }
+
+    public Long getEmisorId() {
+        return usuarioEmisor != null ? usuarioEmisor.getId() : null;
+    }
+
+    public String getEmisorNombreUsuario() {
+        return usuarioEmisor != null ? usuarioEmisor.getNombreUsuario() : null;
+    }
+
+    public String getEmisorNombreCompleto() {
+        return usuarioEmisor != null ? usuarioEmisor.getNombreCompleto() : null;
+    }
+
+    public String getFechaEnvioTexto() {
+        return fechaEnvio != null ? fechaEnvio.toString() : null;
+    }
 }
 

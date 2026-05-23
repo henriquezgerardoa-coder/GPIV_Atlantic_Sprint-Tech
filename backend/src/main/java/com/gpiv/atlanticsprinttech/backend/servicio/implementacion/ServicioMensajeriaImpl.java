@@ -4,6 +4,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioConversacionMe
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioMensajeMensajeria;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.backend.servicio.ParConversacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.ConversacionMensajeria;
@@ -53,6 +54,13 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
             return repositorioConversacion.findByEmpresaIdConDetalleOrderByFechaUltimaActualizacionDesc(empresaId);
         }
         return repositorioConversacion.findAllConDetalleOrderByFechaUltimaActualizacionDesc();
+    }
+
+    @Override
+    public List<ParConversacion> listarConConMensajes(String identificadorIngreso) {
+        return listar(identificadorIngreso).stream()
+            .map(c -> new ParConversacion(c, repositorioMensaje.findByConversacionIdConEmisorOrderByFechaEnvioAsc(c.getId())))
+            .toList();
     }
 
     @Override
