@@ -38,6 +38,7 @@ public class ConfiguracionSeguridad {
                 .requestMatchers(HttpMethod.POST, "/api/public/verificacion/reenviar").permitAll()
                 .requestMatchers("/api/yo").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/catalogos/roles").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/catalogos/rubros").authenticated()
                 .requestMatchers("/api/usuarios/mi-clave").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/usuarios/roles").hasRole("ADMINISTRADOR")
                 .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
