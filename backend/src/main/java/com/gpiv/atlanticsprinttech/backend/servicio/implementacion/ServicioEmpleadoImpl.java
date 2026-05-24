@@ -2,7 +2,6 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpleado;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
-import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpleado;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
@@ -26,20 +25,17 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 
 	private final RepositorioEmpleado repositorioEmpleado;
 	private final RepositorioEmpresa repositorioEmpresa;
-	private final RepositorioUsuario repositorioUsuario;
 	private final ServicioContextoUsuario servicioContextoUsuario;
 	private final ServicioAuditLog servicioAuditLog;
 
 	public ServicioEmpleadoImpl(
 		RepositorioEmpleado repositorioEmpleado,
 		RepositorioEmpresa repositorioEmpresa,
-		RepositorioUsuario repositorioUsuario,
 		ServicioContextoUsuario servicioContextoUsuario,
 		ServicioAuditLog servicioAuditLog
 	) {
 		this.repositorioEmpleado = repositorioEmpleado;
 		this.repositorioEmpresa = repositorioEmpresa;
-		this.repositorioUsuario = repositorioUsuario;
 		this.servicioContextoUsuario = servicioContextoUsuario;
 		this.servicioAuditLog = servicioAuditLog;
 	}
@@ -47,21 +43,11 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 	@Override
 	public Empleado crear(Long empresaId, SolicitudEmpleado solicitud, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-
-		// Solo EMPRESA puede crear empleados en su empresa
-		if (!servicioContextoUsuario.esRolEmpresa(usuario)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo los usuarios de EMPRESA pueden crear empleados");
-		}
-
-		Long empresaIdUsuario = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
-		if (!empresaIdUsuario.equals(empresaId)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes crear empleados en otra empresa");
-		}
+		validarEmpresaPropietaria(usuario, empresaId, "crear empleados");
 
 		Empresa empresa = repositorioEmpresa.findById(empresaId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
 
-		// Validar que el CUIT no exista para esta empresa
 		if (repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, solicitud.cuit())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "El CUIT ya está registrado para esta empresa");
 		}
@@ -83,7 +69,7 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 	@Override
 	public RespuestaEmpleado obtenerPorId(Long empresaId, Long empleadoId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		validarAccesoAEmpresa(usuario, empresaId);
+		validarEmpresaPropietaria(usuario, empresaId, "ver empleados");
 
 		Empleado empleado = repositorioEmpleado.findByIdAndEmpresaId(empleadoId, empresaId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empleado no encontrado"));
@@ -94,7 +80,7 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 	@Override
 	public List<RespuestaEmpleado> listarPorEmpresa(Long empresaId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		validarAccesoAEmpresa(usuario, empresaId);
+		validarEmpresaPropietaria(usuario, empresaId, "listar empleados");
 
 		List<Empleado> empleados = repositorioEmpleado.findByEmpresa_Id(empresaId);
 		return empleados.stream()
@@ -106,9 +92,8 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 	public RespuestaEmpleadosCantidad obtenerCantidadPorEmpresa(Long empresaId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 
-		// ADMIN y DIRECTIVO siempre pueden ver la cantidad
 		if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR) && !usuario.tieneRol(RolUsuario.DIRECTIVO)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMIN y DIRECTIVO pueden acceder a este recurso");
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMINISTRADOR o DIRECTIVO pueden acceder a este recurso");
 		}
 
 		Empresa empresa = repositorioEmpresa.findById(empresaId)
@@ -122,21 +107,11 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 	@Override
 	public Empleado actualizar(Long empresaId, Long empleadoId, SolicitudEmpleado solicitud, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-
-		// Solo EMPRESA puede actualizar empleados
-		if (!servicioContextoUsuario.esRolEmpresa(usuario)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo los usuarios de EMPRESA pueden actualizar empleados");
-		}
-
-		Long empresaIdUsuario = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
-		if (!empresaIdUsuario.equals(empresaId)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes actualizar empleados de otra empresa");
-		}
+		validarEmpresaPropietaria(usuario, empresaId, "actualizar empleados");
 
 		Empleado empleado = repositorioEmpleado.findByIdAndEmpresaId(empleadoId, empresaId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empleado no encontrado"));
 
-		// Validar que el nuevo CUIT no exista para esta empresa (si cambió)
 		if (!empleado.getCuit().equals(solicitud.cuit()) &&
 			repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, solicitud.cuit())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "El CUIT ya está registrado para esta empresa");
@@ -160,16 +135,7 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 	@Override
 	public void eliminar(Long empresaId, Long empleadoId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-
-		// Solo EMPRESA puede eliminar empleados
-		if (!servicioContextoUsuario.esRolEmpresa(usuario)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo los usuarios de EMPRESA pueden eliminar empleados");
-		}
-
-		Long empresaIdUsuario = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
-		if (!empresaIdUsuario.equals(empresaId)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes eliminar empleados de otra empresa");
-		}
+		validarEmpresaPropietaria(usuario, empresaId, "eliminar empleados");
 
 		Empleado empleado = repositorioEmpleado.findByIdAndEmpresaId(empleadoId, empresaId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empleado no encontrado"));
@@ -185,14 +151,14 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 		repositorioEmpleado.deleteById(empleadoId);
 	}
 
-	private void validarAccesoAEmpresa(Usuario usuario, Long empresaId) {
-		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
-			Long empresaIdUsuario = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
-			if (!empresaIdUsuario.equals(empresaId)) {
-				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes acceder a empleados de otra empresa");
-			}
-		} else if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR) && !usuario.tieneRol(RolUsuario.DIRECTIVO)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para acceder a los empleados");
+	private void validarEmpresaPropietaria(Usuario usuario, Long empresaId, String accion) {
+		if (!servicioContextoUsuario.esRolEmpresa(usuario)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el rol EMPRESA puede " + accion);
+		}
+
+		Long empresaIdUsuario = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
+		if (!empresaIdUsuario.equals(empresaId)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes " + accion + " de otra empresa");
 		}
 	}
 

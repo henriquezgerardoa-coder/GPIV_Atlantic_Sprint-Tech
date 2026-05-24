@@ -5,7 +5,11 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
-import com.gpiv.atlanticsprinttech.entities.dominio.*;
+import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
+import com.gpiv.atlanticsprinttech.entities.dominio.EstadoCambioRubro;
+import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
+import com.gpiv.atlanticsprinttech.entities.dominio.SolicitudCambioRubro;
+import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -54,7 +58,7 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (!servicioContextoUsuario.esRolEmpresa(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo una empresa puede solicitar cambio de rubro");
+                "Solo el rol EMPRESA puede solicitar cambio de rubro");
         }
         Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
 
@@ -100,7 +104,7 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMIN o DIRECTIVO pueden resolver solicitudes de cambio de rubro");
+                "Solo ADMINISTRADOR o DIRECTIVO pueden resolver solicitudes de cambio de rubro");
         }
 
         SolicitudCambioRubro solicitud = repositorioSolicitud.findByIdConDetalle(solicitudId)

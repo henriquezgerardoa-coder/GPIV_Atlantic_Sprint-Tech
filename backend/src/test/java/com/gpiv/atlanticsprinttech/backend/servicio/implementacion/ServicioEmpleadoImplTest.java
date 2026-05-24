@@ -2,7 +2,6 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpleado;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
-import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpleadosCantidad;
@@ -39,8 +38,6 @@ class ServicioEmpleadoImplTest {
 	@Mock
 	private RepositorioEmpresa repositorioEmpresa;
 
-	@Mock
-	private RepositorioUsuario repositorioUsuario;
 
 	@Mock
 	private ServicioContextoUsuario servicioContextoUsuario;

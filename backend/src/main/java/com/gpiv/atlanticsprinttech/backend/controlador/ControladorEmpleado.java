@@ -41,13 +41,7 @@ public class ControladorEmpleado {
 	) {
 		Empleado empleadoCreado = servicioEmpleado.crear(empresaId, solicitud, autenticacion.getName());
 		URI location = URI.create("/api/empresas/" + empresaId + "/empleados/" + empleadoCreado.getId());
-		return ResponseEntity.created(location)
-			.body(new RespuestaEmpleado(
-				empleadoCreado.getId(),
-				empleadoCreado.getCuit(),
-				empleadoCreado.getNombre(),
-				empleadoCreado.getFechaRegistro()
-			));
+		return ResponseEntity.created(location).body(toRespuesta(empleadoCreado));
 	}
 
 	/**
@@ -100,12 +94,7 @@ public class ControladorEmpleado {
 		Authentication autenticacion
 	) {
 		Empleado empleadoActualizado = servicioEmpleado.actualizar(empresaId, empleadoId, solicitud, autenticacion.getName());
-		return new RespuestaEmpleado(
-			empleadoActualizado.getId(),
-			empleadoActualizado.getCuit(),
-			empleadoActualizado.getNombre(),
-			empleadoActualizado.getFechaRegistro()
-		);
+		return toRespuesta(empleadoActualizado);
 	}
 
 	/**
@@ -120,6 +109,15 @@ public class ControladorEmpleado {
 	) {
 		servicioEmpleado.eliminar(empresaId, empleadoId, autenticacion.getName());
 		return ResponseEntity.noContent().build();
+	}
+
+	private RespuestaEmpleado toRespuesta(Empleado empleado) {
+		return new RespuestaEmpleado(
+			empleado.getId(),
+			empleado.getCuit(),
+			empleado.getNombre(),
+			empleado.getFechaRegistro()
+		);
 	}
 }
 

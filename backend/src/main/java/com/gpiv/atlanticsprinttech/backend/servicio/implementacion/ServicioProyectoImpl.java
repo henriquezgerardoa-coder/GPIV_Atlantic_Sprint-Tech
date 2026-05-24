@@ -6,7 +6,11 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSoli
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioProyecto;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
-import com.gpiv.atlanticsprinttech.entities.dominio.*;
+import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
+import com.gpiv.atlanticsprinttech.entities.dominio.HitoObra;
+import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
+import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -77,7 +81,7 @@ public class ServicioProyectoImpl implements ServicioProyecto {
 
         if (radicacionId != null) {
             RadicacionSolicitud radicacion = repositorioRadicacion.findById(radicacionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Radicación no encontrada"));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Radicacion no encontrada"));
             proyecto.vincularRadicacion(radicacion);
         }
 
