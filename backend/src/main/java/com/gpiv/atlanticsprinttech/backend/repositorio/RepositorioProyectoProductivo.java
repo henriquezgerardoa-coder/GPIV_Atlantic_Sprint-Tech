@@ -41,6 +41,8 @@ public interface RepositorioProyectoProductivo extends JpaRepository<ProyectoPro
         """)
     Optional<ProyectoProductivo> findByIdConDetalle(@Param("id") Long id);
 
+    boolean existsBySolicitudOrigenId(Long solicitudId);
+
     long countByEstadoNotIn(List<EstadoProyecto> estados);
 
     @Query("""

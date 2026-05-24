@@ -34,7 +34,7 @@ public class ProyectoProductivo {
     @Column(nullable = false, length = 40)
     private EstadoProyecto estado;
 
-    @Column(nullable = false, length = 1000)
+    @Column(length = 1000)
     private String descripcion;
 
     @Column(name = "fecha_inicio_real")

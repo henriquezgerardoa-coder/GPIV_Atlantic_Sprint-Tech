@@ -26,7 +26,7 @@ public class RadicacionDocumento {
     private RadicacionSolicitud radicacion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_documento", nullable = false, length = 20)
+    @Column(name = "tipo_documento", nullable = false, length = 30)
     private TipoDocumentoRadicacion tipoDocumento;
 
     @Column(name = "nombre_archivo", nullable = false, length = 200)

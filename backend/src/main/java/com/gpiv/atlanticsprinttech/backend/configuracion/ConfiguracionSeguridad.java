@@ -42,7 +42,7 @@ public class ConfiguracionSeguridad {
                 .requestMatchers("/api/usuarios/mi-clave").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/usuarios/roles").hasRole("ADMINISTRADOR")
                 .requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
-                .requestMatchers(HttpMethod.GET,   "/api/cambios-rubro").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
+                .requestMatchers(HttpMethod.GET,   "/api/cambios-rubro").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "EMPRESA")
                 .requestMatchers(HttpMethod.POST,  "/api/cambios-rubro").hasRole("EMPRESA")
                 .requestMatchers(HttpMethod.PATCH, "/api/cambios-rubro/*/resolver").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
                 .requestMatchers("/api/empresas/*/censo/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
@@ -63,7 +63,8 @@ public class ConfiguracionSeguridad {
                 // R-14: informes/estadisticas solo para ADMINISTRADOR y DIRECTIVO (lectura legislativa).
                 // El rol EMPRESA no accede a estadisticas globales.
                 .requestMatchers("/api/estadisticas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
-                .requestMatchers("/api/proyectos/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
+                .requestMatchers(HttpMethod.GET, "/api/proyectos", "/api/proyectos/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "EMPRESA")
+                .requestMatchers("/api/proyectos", "/api/proyectos/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
                 .requestMatchers("/api/infraestructura/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
                 .requestMatchers("/api/monitor/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
                 .requestMatchers(HttpMethod.GET, "/api/audit-log/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")

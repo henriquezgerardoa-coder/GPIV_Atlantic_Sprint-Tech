@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionDocumento;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
@@ -17,6 +18,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamient
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
+import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionHistorial;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
@@ -50,6 +52,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private final RepositorioRadicacionDocumento repositorioRadicacionDocumento;
     private final RepositorioEmpresa repositorioEmpresa;
     private final RepositorioLote repositorioLote;
+    private final RepositorioProyectoProductivo repositorioProyecto;
     private final ServicioContextoUsuario servicioContextoUsuario;
     private final ServicioAuditLog servicioAuditLog;
     private final ObjectMapper objectMapper;
@@ -60,6 +63,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         RepositorioRadicacionDocumento repositorioRadicacionDocumento,
         RepositorioEmpresa repositorioEmpresa,
         RepositorioLote repositorioLote,
+        RepositorioProyectoProductivo repositorioProyecto,
         ServicioContextoUsuario servicioContextoUsuario,
         ServicioAuditLog servicioAuditLog,
         ObjectMapper objectMapper
@@ -69,6 +73,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         this.repositorioRadicacionDocumento = repositorioRadicacionDocumento;
         this.repositorioEmpresa = repositorioEmpresa;
         this.repositorioLote = repositorioLote;
+        this.repositorioProyecto = repositorioProyecto;
         this.servicioContextoUsuario = servicioContextoUsuario;
         this.servicioAuditLog = servicioAuditLog;
         this.objectMapper = objectMapper;
@@ -228,6 +233,9 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             estado.name(),
             obtenerIpActual()
         );
+        if (estado == EstadoRadicacion.APROBADA && !repositorioProyecto.existsBySolicitudOrigenId(actualizada.getId())) {
+            crearProyectoDesdeRadicacion(actualizada, usuario);
+        }
         return actualizada;
     }
 
@@ -386,6 +394,21 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         return repositorioRadicacionDocumento
             .findTopByRadicacionIdAndTipoDocumentoOrderByFechaSubidaDesc(radicacionId, TipoDocumentoRadicacion.ACTA_RUBRICA)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Acta de rúbrica no encontrada para este expediente"));
+    }
+
+    private void crearProyectoDesdeRadicacion(RadicacionSolicitud radicacion, Usuario responsable) {
+        String nombre = (radicacion.getProyectoProductivo() != null && !radicacion.getProyectoProductivo().isBlank())
+            ? radicacion.getProyectoProductivo()
+            : "Proyecto - " + radicacion.getEmpresa().getNombre();
+        ProyectoProductivo proyecto = ProyectoProductivo.crear(
+            nombre,
+            radicacion.getDescripcion(),
+            null,
+            radicacion.getFechaPlazo(),
+            responsable
+        );
+        proyecto.iniciarProyecto(radicacion);
+        repositorioProyecto.save(proyecto);
     }
 
     private String generarNumeroRadicado() {

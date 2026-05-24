@@ -13,8 +13,8 @@ public record RespuestaProyecto(
     BigDecimal montoInversion,
     String fechaCreacion,
     Long radicacionId,
-    String empresaNombre,
-    String responsableNombre,
+    String nombreEmpresa,
+    String responsableSeguimiento,
     double avanceFisico,
     boolean tieneHitosVencidos,
     List<RespuestaHitoObra> hitos

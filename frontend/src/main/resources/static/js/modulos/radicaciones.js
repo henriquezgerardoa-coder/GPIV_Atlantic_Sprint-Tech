@@ -139,17 +139,31 @@ const ModuloRadicaciones = (() => {
         document.getElementById('bloqueHistorialExpedienteRad')?.classList.add('d-none');
     }
 
+    const TRANSICIONES_VALIDAS_RAD = {
+        PENDIENTE:                       ['EN_REVISION', 'RECHAZADA', 'CANCELADA'],
+        EN_REVISION:                     ['APROBADA', 'RECHAZADA', 'REQUIERE_INFORMACION_ADICIONAL', 'CANCELADA'],
+        REQUIERE_INFORMACION_ADICIONAL:  ['EN_REVISION', 'RECHAZADA', 'CANCELADA'],
+        APROBADA:                        ['RADICADA'],
+        RADICADA:                        [],
+        RECHAZADA:                       [],
+        CANCELADA:                       []
+    };
+    const NOMBRES_ESTADO_RAD = {
+        EN_REVISION:                    'En revisión',
+        APROBADA:                       'Aprobada',
+        RADICADA:                       'Radicada',
+        RECHAZADA:                      'Rechazada',
+        REQUIERE_INFORMACION_ADICIONAL: 'Requiere información adicional',
+        CANCELADA:                      'Cancelada'
+    };
+
     function opcionesEstadoGestion(estadoActual) {
-        const estados = [
-            { valor: 'EN_REVISION', texto: 'En revisión' },
-            { valor: 'APROBADA', texto: 'Aprobada' },
-            { valor: 'RADICADA', texto: 'Radicada' },
-            { valor: 'RECHAZADA', texto: 'Rechazada' },
-            { valor: 'REQUIERE_INFORMACION_ADICIONAL', texto: 'Requiere información adicional' },
-            { valor: 'CANCELADA', texto: 'Cancelada' }
-        ];
-        return estados
-            .map(e => `<option value="${e.valor}" ${e.valor === estadoActual ? 'selected' : ''}>${e.texto}</option>`)
+        const siguientes = TRANSICIONES_VALIDAS_RAD[estadoActual] || [];
+        if (siguientes.length === 0) {
+            return '<option value="" disabled>Sin cambios de estado posibles</option>';
+        }
+        return siguientes
+            .map(v => `<option value="${v}">${NOMBRES_ESTADO_RAD[v] || v}</option>`)
             .join('');
     }
 
@@ -358,6 +372,7 @@ const ModuloRadicaciones = (() => {
         document.getElementById('bloqueAdjuntoRadicacion')?.classList.add('d-none');
         actualizarVisibilidadRelevamiento();
         limpiarBorradorPersistido();
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevaSolicitudRadicacion'))?.hide();
         mostrarAlerta('Radicación creada correctamente.');
         await cargar();
     }
@@ -555,9 +570,22 @@ const ModuloRadicaciones = (() => {
             setTexto('detRadFechaPlazo', detalle?.fechaPlazo || '-');
         }
 
-        document.getElementById('bloqueCambiarEstadoRadAdmin')?.classList.toggle('d-none', !esGestor);
+        const tieneTransiciones = (TRANSICIONES_VALIDAS_RAD[detalle?.estado] || []).length > 0;
+        document.getElementById('bloqueCambiarEstadoRadAdmin')?.classList.toggle('d-none', !esGestor || !tieneTransiciones);
         document.getElementById('bloqueObservacionRadAdmin')?.classList.toggle('d-none', !esGestor);
         document.getElementById('bloqueAdjuntarDocRadModal')?.classList.toggle('d-none', !esEmpresa);
+
+        const obs = document.getElementById('campoObservacionesRadAdmin');
+        if (obs) obs.value = '';
+        // Limpiar campos de plazo y documento de estado antes de toggle para no interferir con su visibilidad
+        const campoFecha = document.getElementById('campoPlazoFecha');
+        if (campoFecha) campoFecha.value = '';
+        const campoMeses = document.getElementById('campoPlazoMeses');
+        if (campoMeses) campoMeses.value = '';
+        const display = document.getElementById('campoPlazoCalculadoDisplay');
+        if (display) display.textContent = '-';
+        const archivoEstado = document.getElementById('archivoDocumentoEstadoRad');
+        if (archivoEstado) archivoEstado.value = '';
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
         if (selector) {
@@ -569,15 +597,6 @@ const ModuloRadicaciones = (() => {
             actualizarRequisitoObservacion(selector.value);
             toggleCamposPlazo(selector.value);
         }
-        const obs = document.getElementById('campoObservacionesRadAdmin');
-        if (obs) obs.value = '';
-        // Limpiar campos de plazo
-        const campoFecha = document.getElementById('campoPlazoFecha');
-        if (campoFecha) campoFecha.value = '';
-        const campoMeses = document.getElementById('campoPlazoMeses');
-        if (campoMeses) campoMeses.value = '';
-        const display = document.getElementById('campoPlazoCalculadoDisplay');
-        if (display) display.textContent = '-';
 
         // Sección de lote
         renderizarSeccionLote(loteAsignado, detalle?.necesidadMetrosCuadrados);
@@ -889,6 +908,27 @@ const ModuloRadicaciones = (() => {
             }
             calcularFechaPlazo();
         }
+
+        const estadoActual = radicacionDetalleAdmin?.estado;
+        const requiereDoc = (estado === 'APROBADA' && estadoActual !== 'APROBADA')
+                         || (estado === 'RADICADA'  && estadoActual !== 'RADICADA');
+        const wrapperDoc = document.getElementById('wrapperDocumentoEstadoRad');
+        if (wrapperDoc) wrapperDoc.classList.toggle('d-none', !requiereDoc);
+        if (!requiereDoc) {
+            const arch = document.getElementById('archivoDocumentoEstadoRad');
+            if (arch) arch.value = '';
+        }
+        const labelDoc = document.getElementById('labelDocumentoEstadoRad');
+        const ayudaDoc = document.getElementById('ayudaDocumentoEstadoRad');
+        if (labelDoc && ayudaDoc) {
+            if (estado === 'APROBADA') {
+                labelDoc.innerHTML = 'Rúbrica de aprobación (PDF) <span class="text-danger">*</span>';
+                ayudaDoc.textContent = 'Suba el acta de rúbrica firmada por el Directorio.';
+            } else if (estado === 'RADICADA') {
+                labelDoc.innerHTML = 'Certificación de radicación (PDF) <span class="text-danger">*</span>';
+                ayudaDoc.textContent = 'Suba el certificado de radicación correspondiente.';
+            }
+        }
     }
 
     function calcularFechaPlazo() {
@@ -956,6 +996,18 @@ const ModuloRadicaciones = (() => {
             }
         }
 
+        const requiereDocumento = nuevoEstado === 'APROBADA' || nuevoEstado === 'RADICADA';
+        const archivoDocEstado = document.getElementById('archivoDocumentoEstadoRad')?.files[0];
+        if (requiereDocumento && !archivoDocEstado) {
+            const etiqueta = nuevoEstado === 'APROBADA' ? 'rúbrica de aprobación' : 'certificación de radicación';
+            mostrarAlerta(`Debe adjuntar el PDF de ${etiqueta} para continuar.`, 'danger');
+            return;
+        }
+        if (requiereDocumento && archivoDocEstado && !archivoDocEstado.name.toLowerCase().endsWith('.pdf')) {
+            mostrarAlerta('Solo se permiten archivos PDF para este documento.', 'danger');
+            return;
+        }
+
         let fechaPlazo = null;
         if (fechaAprobacion && tiempoEstimadoObraMeses) {
             const d = new Date(fechaAprobacion + 'T00:00:00');
@@ -978,6 +1030,33 @@ const ModuloRadicaciones = (() => {
             const err = await respuesta?.json().catch(() => ({}));
             mostrarAlerta(err?.mensaje || err?.message || 'No se pudo actualizar el estado del expediente.', 'danger');
             return;
+        }
+
+        if (requiereDocumento && archivoDocEstado) {
+            const formData = new FormData();
+            if (nuevoEstado === 'APROBADA') {
+                formData.append('archivo', archivoDocEstado);
+                const respDoc = await ApiCliente.subirArchivo(`/api/radicaciones/${radicacionDetalleAdmin.id}/rubrica`, formData);
+                if (!respDoc?.ok) {
+                    const err = await respDoc?.json().catch(() => ({}));
+                    mostrarAlerta(`Estado actualizado, pero no se pudo adjuntar la rúbrica: ${err?.mensaje || 'intente subirla manualmente'}`, 'warning');
+                    bootstrap.Modal.getInstance(document.getElementById('modalDetalleRadicacionAdmin'))?.hide();
+                    await cargar();
+                    return;
+                }
+            } else {
+                formData.append('tipoDocumento', 'CERTIFICACION_RADICACION');
+                formData.append('descripcion', 'Certificación de radicación');
+                formData.append('archivo', archivoDocEstado);
+                const respDoc = await ApiCliente.subirArchivo(`/api/radicaciones/${radicacionDetalleAdmin.id}/documentos`, formData);
+                if (!respDoc?.ok) {
+                    const err = await respDoc?.json().catch(() => ({}));
+                    mostrarAlerta(`Estado actualizado, pero no se pudo adjuntar la certificación: ${err?.mensaje || 'intente subirla manualmente'}`, 'warning');
+                    bootstrap.Modal.getInstance(document.getElementById('modalDetalleRadicacionAdmin'))?.hide();
+                    await cargar();
+                    return;
+                }
+            }
         }
 
         mostrarAlerta('Estado del expediente actualizado correctamente.');
@@ -1369,15 +1448,7 @@ const ModuloRadicaciones = (() => {
     }
 
     function formatearEstado(estado) {
-        const m = {
-            PENDIENTE: 'Pendiente',
-            EN_REVISION: 'En revisión',
-            APROBADA: 'Aprobada',
-            RADICADA: 'Radicada',
-            RECHAZADA: 'Rechazada',
-            REQUIERE_INFORMACION_ADICIONAL: 'Requiere información adicional',
-            CANCELADA: 'Cancelada'
-        };
+        const m = { PENDIENTE: 'Pendiente', ...NOMBRES_ESTADO_RAD };
         return m[estado] || estado;
     }
 
