@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpleado;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
@@ -38,6 +39,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ServicioEmpresaImpl implements ServicioEmpresa {
+	private final RepositorioEmpleado repositorioEmpleado;
 	private final RepositorioEmpresa repositorioEmpresa;
 	private final RepositorioLote repositorioLote;
 	private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
@@ -48,6 +50,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	private final ObjectMapper objectMapper;
 
 	public ServicioEmpresaImpl(
+		RepositorioEmpleado repositorioEmpleado,
 		RepositorioEmpresa repositorioEmpresa,
 		RepositorioLote repositorioLote,
 		RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
@@ -57,6 +60,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		ServicioAuditLog servicioAuditLog,
 		ObjectMapper objectMapper
 	) {
+		this.repositorioEmpleado = repositorioEmpleado;
 		this.repositorioEmpresa = repositorioEmpresa;
 		this.repositorioLote = repositorioLote;
 		this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
@@ -214,7 +218,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getStatus(),
 			empresa.getActividadEconomica(),
 			empresa.getCorreoElectronico(),
-			empresa.getCantidadEmpleados() == null ? 0 : empresa.getCantidadEmpleados(),
+			(int) repositorioEmpleado.countByEmpresaId(empresaId),
 			vehiculos.size(),
 			estadoExpediente,
 			rubro != null ? rubro.getId() : null,
@@ -241,7 +245,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		DatosServiciosPostRadicacion datos = leerDatosServiciosPostRadicacion(empresa);
 		return new RespuestaServiciosPostRadicacion(
 			empresa.getId(),
-			empresa.getCantidadEmpleados() == null ? 0 : empresa.getCantidadEmpleados(),
+			(int) repositorioEmpleado.countByEmpresaId(empresaId),
 			leerVehiculos(empresa.getVehiculosAsignadosJson()),
 			datos.solicitaAguaCruda(),
 			datos.consumoAguaCrudaM3(),
