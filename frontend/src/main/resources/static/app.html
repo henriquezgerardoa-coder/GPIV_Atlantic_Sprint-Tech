@@ -937,7 +937,7 @@
                                 <div class="fs-4 fw-bold" id="empCantidadEmpleados">0</div>
                             </div>
                             <button class="btn btn-outline-primary btn-sm" onclick="ModuloEmpresas.abrirAgregarEmpleados()">
-                                <i class="bi bi-person-plus me-1"></i>Agregar
+                                <i class="bi bi-people me-1"></i>Gestionar nómina
                             </button>
                         </div>
                     </div>
@@ -2095,7 +2095,7 @@
                                     <select id="selectorNuevoEstadoRadAdmin" class="form-select form-select-sm" onchange="ModuloRadicaciones.toggleCamposPlazo(this.value)"></select>
                                 </div>
                                 <div class="col-md-8">
-                                    <label for="campoObservacionesRadAdmin" class="form-label small">Observaciones</label>
+                                    <label for="campoObservacionesRadAdmin" class="form-label small" id="labelObservacionesRadAdmin">Observaciones</label>
                                     <textarea id="campoObservacionesRadAdmin" class="form-control form-control-sm" rows="2" placeholder="Ingrese observaciones para el cambio"></textarea>
                                 </div>
                                 <div class="col-md-4 d-none" id="wrapperCampoPlazoFecha">
@@ -2117,6 +2117,26 @@
                                 </div>
                             </div>
                             <small id="ayudaObservacionesRadAdmin" class="text-muted">Para estados Rechazada/Cancelada la observación es obligatoria.</small>
+                        </div>
+                    </div>
+
+                    <!-- Agregar observación sin cambiar estado (solo gestores) -->
+                    <div class="card border-0 bg-light mb-3 d-none" id="bloqueObservacionRadAdmin">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i>Agregar observación</h6>
+                            <div id="alertaObservacionRadAdmin" class="alert alert-danger d-none mb-2"></div>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-9">
+                                    <textarea id="campoObservacionRadAdmin" class="form-control form-control-sm" rows="2"
+                                              maxlength="1000" placeholder="Nota o comentario interno sobre el expediente..."></textarea>
+                                </div>
+                                <div class="col-md-3 d-grid">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            onclick="ModuloRadicaciones.registrarObservacion()">
+                                        <i class="bi bi-save me-1"></i>Guardar nota
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2142,7 +2162,7 @@
                             <h6 class="text-muted">Historial y observaciones</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm">
-                                    <thead><tr><th>Fecha</th><th>Estado</th><th>Observación</th><th>Usuario</th></tr></thead>
+                                    <thead><tr><th>Fecha</th><th>Estado ant.</th><th>Estado nuevo</th><th>Observación</th><th>Usuario</th></tr></thead>
                                     <tbody id="cuerpoHistorialDetalleRadAdmin"><tr><td colspan="4" class="text-muted">Sin historial</td></tr></tbody>
                                 </table>
                             </div>
@@ -2476,6 +2496,12 @@
                                 <input class="form-check-input check-rol-usuario" type="checkbox" id="rolDirectivo" value="DIRECTIVO">
                                 <label class="form-check-label" for="rolDirectivo">
                                     <span class="badge bg-warning text-dark">DIRECTIVO</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input check-rol-usuario" type="checkbox" id="rolSecretario" value="SECRETARIO">
+                                <label class="form-check-label" for="rolSecretario">
+                                    <span class="badge bg-info text-dark">SECRETARIO</span>
                                 </label>
                             </div>
                             <div class="form-check">

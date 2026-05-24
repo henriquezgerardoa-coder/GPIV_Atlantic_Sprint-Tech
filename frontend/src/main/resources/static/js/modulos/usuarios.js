@@ -7,6 +7,7 @@ const ModuloUsuarios = (() => {
     const COLOR_ROL = {
         ADMINISTRADOR: 'bg-danger',
         DIRECTIVO:     'bg-warning text-dark',
+        SECRETARIO:    'bg-info text-dark',
         EMPRESA:       'bg-secondary'
     };
 

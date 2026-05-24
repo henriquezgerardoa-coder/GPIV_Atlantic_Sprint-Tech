@@ -4,6 +4,8 @@ const ModuloEmpresas = (() => {
     let idEdicion = null;
     let empresaPropia = null;
     let vehiculosEmpresaPropia = [];
+    let empleadosEmpresaPropia = [];
+    let empleadoEnEdicion = null;
     let serviciosHabilitados = false;
     const serviciosPostAdminPorEmpresa = new Map();
     let detalleServiciosPostRadicacion = {
@@ -283,69 +285,180 @@ const ModuloEmpresas = (() => {
         setTexto('empCantidadVehiculos', `${vehiculosEmpresaPropia.length}`);
     }
 
-    // ─── Agregar empleados ────────────────────────────────────────────────────────
+    // ─── Gestión de nómina de empleados ──────────────────────────────────────────
 
     function abrirAgregarEmpleados() {
-        const actual = empresaPropia?._cantidadEmpleados ?? 0;
-        const modal = asegurarModalAgregarEmpleados(actual);
+        empleadoEnEdicion = null;
+        const modal = asegurarModalGestionEmpleados();
+        limpiarFormEmpleado();
         bootstrap.Modal.getOrCreateInstance(modal).show();
+        cargarListadoEmpleados();
     }
 
-    function asegurarModalAgregarEmpleados(cantidadActual) {
-        let m = document.getElementById('modalAgregarEmpleados');
+    function asegurarModalGestionEmpleados() {
+        let m = document.getElementById('modalGestionEmpleados');
         if (!m) {
             document.body.insertAdjacentHTML('beforeend', `
-                <div class="modal fade" id="modalAgregarEmpleados" tabindex="-1">
-                    <div class="modal-dialog modal-sm">
+                <div class="modal fade" id="modalGestionEmpleados" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title"><i class="bi bi-person-plus me-2 text-primary"></i>Agregar empleados</h5>
+                                <h5 class="modal-title"><i class="bi bi-people me-2 text-primary"></i>Nómina de empleados</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <div id="alertaAgregarEmpleados" class="alert alert-danger alerta-modal d-none"></div>
-                                <p class="text-muted small mb-3">Empleados actuales: <strong id="empActualEnModal">0</strong></p>
-                                <label class="form-label fw-semibold">Cantidad a agregar</label>
-                                <input id="campoAgregarEmpleados" type="number" min="1" class="form-control" value="1">
+                                <div id="alertaGestionEmpleados" class="alert alert-danger alerta-modal d-none"></div>
+                                <div id="contenedorListaEmpleados" class="mb-3">
+                                    <p class="text-muted small">Cargando...</p>
+                                </div>
+                                <hr class="my-2">
+                                <p class="fw-semibold small mb-2" id="tituloFormEmpleado">Nuevo empleado</p>
+                                <div class="row g-2 align-items-end">
+                                    <input type="hidden" id="idEmpleadoEdicion">
+                                    <div class="col-md-4">
+                                        <label class="form-label small">CUIT <span class="text-danger">*</span> <span class="text-muted">(11 dígitos)</span></label>
+                                        <input id="campoCuitEmpleado" type="text" maxlength="11" class="form-control form-control-sm" placeholder="20xxxxxxxxx">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label small">Nombre completo <span class="text-danger">*</span></label>
+                                        <input id="campoNombreEmpleado" type="text" maxlength="120" class="form-control form-control-sm" placeholder="Nombre y apellido">
+                                    </div>
+                                    <div class="col-md-3 d-grid">
+                                        <button type="button" class="btn btn-primary btn-sm" onclick="ModuloEmpresas.guardarEmpleado()">
+                                            <i class="bi bi-check-lg me-1"></i>Guardar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.confirmarAgregarEmpleados()">
-                                    <i class="bi bi-check-lg me-1"></i>Confirmar
-                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="ModuloEmpresas.cancelarEdicionEmpleado()">Cancelar edición</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                             </div>
                         </div>
                     </div>
                 </div>`);
-            m = document.getElementById('modalAgregarEmpleados');
+            m = document.getElementById('modalGestionEmpleados');
         }
-        setTexto('empActualEnModal', `${cantidadActual}`);
-        const campo = document.getElementById('campoAgregarEmpleados');
-        if (campo) campo.value = '1';
         return m;
     }
 
-    async function confirmarAgregarEmpleados() {
-        const agregar = Number.parseInt(document.getElementById('campoAgregarEmpleados')?.value || '0', 10);
-        if (!empresaPropia?.id || isNaN(agregar) || agregar < 1) {
-            mostrarAlertaModal('alertaAgregarEmpleados', 'Ingrese una cantidad válida (mínimo 1).');
-            return;
-        }
-        const nuevaCantidad = (empresaPropia._cantidadEmpleados ?? 0) + agregar;
-        const respuesta = await ApiCliente.parche(`/api/empresas/${empresaPropia.id}/servicios-post-radicacion`, {
-            cantidadEmpleados: nuevaCantidad,
-            vehiculos: vehiculosEmpresaPropia,
-            ...detalleServiciosPostRadicacion
-        });
+    async function cargarListadoEmpleados() {
+        if (!empresaPropia?.id) return;
+        const contenedor = document.getElementById('contenedorListaEmpleados');
+        if (contenedor) contenedor.innerHTML = '<p class="text-muted small">Cargando...</p>';
+
+        const respuesta = await ApiCliente.obtener(`/api/empresas/${empresaPropia.id}/empleados`);
         if (!respuesta?.ok) {
-            const error = await respuesta?.json().catch(() => ({}));
-            mostrarAlertaModal('alertaAgregarEmpleados', error?.message || 'No se pudo actualizar la cantidad de empleados.');
+            if (contenedor) contenedor.innerHTML = '<p class="text-danger small">No se pudo cargar la nómina.</p>';
             return;
         }
-        empresaPropia._cantidadEmpleados = nuevaCantidad;
+        empleadosEmpresaPropia = await respuesta.json();
+        renderizarListadoEmpleados();
+        empresaPropia._cantidadEmpleados = empleadosEmpresaPropia.length;
         actualizarIndicadoresEmpresaPropia();
-        bootstrap.Modal.getInstance(document.getElementById('modalAgregarEmpleados'))?.hide();
-        mostrarAlerta(`Empleados actualizados: ${nuevaCantidad} en total.`);
+    }
+
+    function renderizarListadoEmpleados() {
+        const contenedor = document.getElementById('contenedorListaEmpleados');
+        if (!contenedor) return;
+
+        if (!empleadosEmpresaPropia.length) {
+            contenedor.innerHTML = '<p class="text-muted small">Sin empleados registrados. Agregue el primero con el formulario.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = `
+            <p class="text-muted small mb-2">${empleadosEmpresaPropia.length} empleado${empleadosEmpresaPropia.length !== 1 ? 's' : ''} registrado${empleadosEmpresaPropia.length !== 1 ? 's' : ''}</p>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead><tr><th>CUIT</th><th>Nombre</th><th>Ingreso</th><th class="text-end">Acciones</th></tr></thead>
+                    <tbody>${empleadosEmpresaPropia.map(e => `
+                        <tr>
+                            <td class="font-monospace small">${e.cuit}</td>
+                            <td>${e.nombre}</td>
+                            <td class="text-muted small">${e.fechaRegistro ? String(e.fechaRegistro).slice(0, 10) : '-'}</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-1" title="Editar" onclick="ModuloEmpresas.editarEmpleado(${e.id})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="ModuloEmpresas.eliminarEmpleado(${e.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+    }
+
+    async function guardarEmpleado() {
+        const cuit = document.getElementById('campoCuitEmpleado')?.value?.trim();
+        const nombre = document.getElementById('campoNombreEmpleado')?.value?.trim();
+
+        if (!cuit || !nombre) {
+            mostrarAlertaModal('alertaGestionEmpleados', 'El CUIT y el nombre son obligatorios.');
+            return;
+        }
+        if (!/^\d{11}$/.test(cuit)) {
+            mostrarAlertaModal('alertaGestionEmpleados', 'El CUIT debe tener exactamente 11 dígitos sin guiones ni espacios.');
+            return;
+        }
+
+        const ruta = empleadoEnEdicion
+            ? `/api/empresas/${empresaPropia.id}/empleados/${empleadoEnEdicion}`
+            : `/api/empresas/${empresaPropia.id}/empleados`;
+        const respuesta = empleadoEnEdicion
+            ? await ApiCliente.actualizar(ruta, { cuit, nombre })
+            : await ApiCliente.crear(ruta, { cuit, nombre });
+
+        if (!respuesta?.ok) {
+            const err = await respuesta?.json().catch(() => ({}));
+            mostrarAlertaModal('alertaGestionEmpleados', err?.message || (empleadoEnEdicion ? 'No se pudo actualizar el empleado.' : 'No se pudo registrar el empleado.'));
+            return;
+        }
+
+        mostrarAlerta(empleadoEnEdicion ? 'Empleado actualizado correctamente.' : 'Empleado registrado correctamente.');
+        cancelarEdicionEmpleado();
+        await cargarListadoEmpleados();
+    }
+
+    function editarEmpleado(id) {
+        const emp = empleadosEmpresaPropia.find(e => e.id === id);
+        if (!emp) return;
+        empleadoEnEdicion = id;
+        const campoCuit = document.getElementById('campoCuitEmpleado');
+        const campoNombre = document.getElementById('campoNombreEmpleado');
+        const titulo = document.getElementById('tituloFormEmpleado');
+        if (campoCuit) campoCuit.value = emp.cuit;
+        if (campoNombre) campoNombre.value = emp.nombre;
+        if (titulo) titulo.textContent = `Editando: ${emp.nombre}`;
+        campoCuit?.focus();
+    }
+
+    function cancelarEdicionEmpleado() {
+        limpiarFormEmpleado();
+    }
+
+    function limpiarFormEmpleado() {
+        empleadoEnEdicion = null;
+        const campoCuit = document.getElementById('campoCuitEmpleado');
+        const campoNombre = document.getElementById('campoNombreEmpleado');
+        const titulo = document.getElementById('tituloFormEmpleado');
+        if (campoCuit) campoCuit.value = '';
+        if (campoNombre) campoNombre.value = '';
+        if (titulo) titulo.textContent = 'Nuevo empleado';
+    }
+
+    async function eliminarEmpleado(id) {
+        const emp = empleadosEmpresaPropia.find(e => e.id === id);
+        if (!emp) return;
+        if (!window.confirm(`¿Eliminar al empleado "${emp.nombre}" (CUIT: ${emp.cuit})?`)) return;
+        const respuesta = await ApiCliente.eliminar(`/api/empresas/${empresaPropia.id}/empleados/${id}`);
+        if (!(respuesta?.status === 204 || respuesta?.ok)) {
+            mostrarAlertaModal('alertaGestionEmpleados', 'No se pudo eliminar el empleado.');
+            return;
+        }
+        await cargarListadoEmpleados();
     }
 
     // ─── Listado y alta de vehículos ─────────────────────────────────────────────
@@ -880,7 +993,7 @@ const ModuloEmpresas = (() => {
         confirmarEliminacion, eliminar,
         verDetalleAdmin,
         cargarServiciosPostRadicacion, guardarServiciosPostRadicacion,
-        abrirAgregarEmpleados, confirmarAgregarEmpleados,
+        abrirAgregarEmpleados, guardarEmpleado, editarEmpleado, cancelarEdicionEmpleado, eliminarEmpleado,
         abrirListadoVehiculos, mostrarFormularioVehiculo, ocultarFormularioVehiculo,
         guardarVehiculo, quitarVehiculo,
         abrirServiciosModal, guardarServiciosModal

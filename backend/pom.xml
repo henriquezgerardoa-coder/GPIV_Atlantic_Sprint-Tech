@@ -27,6 +27,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.gpiv</groupId>
+            <artifactId>frontend</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
@@ -52,15 +58,10 @@
         </dependency>
 
         <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <scope>runtime</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-jpa</artifactId>
-            </dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
 
         <dependency>
@@ -87,6 +88,32 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>validar-separacion-frontend-backend</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <resourcecount property="cantidadRecursosEstaticosBackend">
+                                    <fileset dir="${project.basedir}/src/main/resources/static" includes="**/*" erroronmissingdir="false"/>
+                                </resourcecount>
+                                <condition property="hayFrontendEnBackend">
+                                    <not>
+                                        <equals arg1="${cantidadRecursosEstaticosBackend}" arg2="0"/>
+                                    </not>
+                                </condition>
+                                <fail if="hayFrontendEnBackend"
+                                      message="No se permiten recursos de frontend en backend/src/main/resources/static. Ubicarlos en frontend/src/main/resources/static."/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

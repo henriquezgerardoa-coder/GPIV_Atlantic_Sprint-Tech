@@ -491,13 +491,14 @@ const ModuloRadicaciones = (() => {
         modal.show();
 
         try {
-            const [respDetalle, respDocs, respHist, respLoteAsignado, respLotesDisp, respRelevamiento] = await Promise.all([
+            const [respDetalle, respDocs, respHist, respLoteAsignado, respLotesDisp, respRelevamiento, respRubrica] = await Promise.all([
                 ApiCliente.obtener(`/api/radicaciones/${id}`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/historial`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/lote`),
                 ApiCliente.obtener('/api/lotes'),
-                ApiCliente.obtener(`/api/radicaciones/${id}/relevamiento`)
+                ApiCliente.obtener(`/api/radicaciones/${id}/relevamiento`),
+                ApiCliente.obtener(`/api/radicaciones/${id}/rubrica`)
             ]);
             estadoCarga?.classList.add('d-none');
             if (!respDetalle?.ok) {
@@ -517,8 +518,9 @@ const ModuloRadicaciones = (() => {
             lotesDisponibles = todosLosLotes.filter(l => !l.estadoAsignacion);
             const relevamiento = (respRelevamiento?.ok && respRelevamiento.status !== 204)
                 ? await respRelevamiento.json().catch(() => null) : null;
+            const tieneActa = respRubrica?.ok === true;
             radicacionDetalleAdmin = detalle;
-            renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento);
+            renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento, tieneActa);
             contenido?.classList.remove('d-none');
         } catch (e) {
             estadoCarga?.classList.add('d-none');
@@ -528,7 +530,7 @@ const ModuloRadicaciones = (() => {
         }
     }
 
-    function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null) {
+    function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null, tieneActa = false) {
         const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         const esGestor = !esEmpresa && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
 
@@ -554,6 +556,7 @@ const ModuloRadicaciones = (() => {
         }
 
         document.getElementById('bloqueCambiarEstadoRadAdmin')?.classList.toggle('d-none', !esGestor);
+        document.getElementById('bloqueObservacionRadAdmin')?.classList.toggle('d-none', !esGestor);
         document.getElementById('bloqueAdjuntarDocRadModal')?.classList.toggle('d-none', !esEmpresa);
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
@@ -578,6 +581,9 @@ const ModuloRadicaciones = (() => {
 
         // Sección de lote
         renderizarSeccionLote(loteAsignado, detalle?.necesidadMetrosCuadrados);
+
+        // Acta de rúbrica
+        renderizarSeccionActaRubrica(detalle?.id, tieneActa, detalle?.estado);
 
         // Relevamiento
         renderizarRelevamiento(relevamiento);
@@ -722,6 +728,119 @@ const ModuloRadicaciones = (() => {
         }
     }
 
+    async function registrarObservacion() {
+        if (!radicacionDetalleAdmin?.id) return;
+        const alerta = document.getElementById('alertaObservacionRadAdmin');
+        const campo = document.getElementById('campoObservacionRadAdmin');
+        const comentario = campo?.value?.trim();
+
+        alerta?.classList.add('d-none');
+
+        if (!comentario) {
+            if (alerta) { alerta.textContent = 'Ingrese una observación antes de guardar.'; alerta.classList.remove('d-none'); }
+            return;
+        }
+
+        const respuesta = await ApiCliente.crear(`/api/radicaciones/${radicacionDetalleAdmin.id}/observaciones`, { comentario });
+        if (!respuesta?.ok) {
+            const err = await respuesta?.json().catch(() => ({}));
+            if (alerta) { alerta.textContent = err?.mensaje || err?.message || 'No se pudo guardar la observación.'; alerta.classList.remove('d-none'); }
+            return;
+        }
+
+        if (campo) campo.value = '';
+        mostrarAlerta('Observación registrada correctamente.');
+
+        // Refrescar historial en el modal
+        const respHist = await ApiCliente.obtener(`/api/radicaciones/${radicacionDetalleAdmin.id}/historial`);
+        if (respHist?.ok) {
+            const historial = await respHist.json();
+            const cuerpo = document.getElementById('cuerpoHistorialDetalleRadAdmin');
+            if (cuerpo) {
+                cuerpo.innerHTML = historial?.length
+                    ? historial.map(h => `
+                        <tr>
+                            <td>${formatearFechaEvento(h.fechaEvento)}</td>
+                            <td>${h.estadoAnterior ? formatearEstado(h.estadoAnterior) : '<span class="text-muted">-</span>'}</td>
+                            <td>${formatearEstado(h.estado)}</td>
+                            <td>${h.comentario || '-'}</td>
+                            <td>${h.usuario || '-'}</td>
+                        </tr>`).join('')
+                    : '<tr><td colspan="5" class="text-muted">Sin historial</td></tr>';
+            }
+        }
+    }
+
+    function renderizarSeccionActaRubrica(id, tieneActa, estadoRadicacion) {
+        const esAdmin = Autenticacion.tieneAcceso(['ADMINISTRADOR']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esGestorConVista = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const estadosPermitidos = new Set(['APROBADA', 'RADICADA']);
+        const bloque = document.getElementById('bloqueActaRubricaRad');
+        if (!bloque) return;
+
+        const mostrar = esGestorConVista && estadosPermitidos.has(estadoRadicacion);
+        bloque.classList.toggle('d-none', !mostrar);
+        if (!mostrar) return;
+
+        document.getElementById('alertaActaRubricaRad')?.classList.add('d-none');
+
+        const textoEstado = document.getElementById('textoEstadoActaRubrica');
+        const btnVer = document.getElementById('btnVerActaRubrica');
+        const formSubir = document.getElementById('formSubirActaRubrica');
+
+        if (tieneActa) {
+            if (textoEstado) textoEstado.textContent = 'Acta cargada';
+            if (btnVer) {
+                btnVer.href = `/api/radicaciones/${id}/rubrica`;
+                btnVer.classList.remove('d-none');
+            }
+        } else {
+            if (textoEstado) textoEstado.textContent = 'Sin acta cargada';
+            btnVer?.classList.add('d-none');
+        }
+
+        if (formSubir) formSubir.classList.toggle('d-none', !esAdmin);
+        const inputArchivo = document.getElementById('archivoActaRubricaRad');
+        if (inputArchivo) inputArchivo.value = '';
+    }
+
+    async function subirActaRubrica() {
+        if (!radicacionDetalleAdmin?.id) return;
+        const alerta = document.getElementById('alertaActaRubricaRad');
+        const archivo = document.getElementById('archivoActaRubricaRad')?.files[0];
+
+        alerta?.classList.add('d-none');
+
+        if (!archivo) {
+            if (alerta) { alerta.textContent = 'Seleccione un archivo PDF.'; alerta.classList.remove('d-none'); }
+            return;
+        }
+        if (!archivo.name.toLowerCase().endsWith('.pdf')) {
+            if (alerta) { alerta.textContent = 'Solo se permiten archivos PDF.'; alerta.classList.remove('d-none'); }
+            return;
+        }
+        if (archivo.size > 10 * 1024 * 1024) {
+            if (alerta) { alerta.textContent = 'El archivo supera el límite de 10 MB.'; alerta.classList.remove('d-none'); }
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('archivo', archivo);
+
+        const respuesta = await ApiCliente.subirArchivo(`/api/radicaciones/${radicacionDetalleAdmin.id}/rubrica`, formData);
+        if (!respuesta?.ok) {
+            const err = await respuesta?.json().catch(() => ({}));
+            if (alerta) {
+                alerta.textContent = err?.mensaje || err?.message || 'No se pudo subir el acta.';
+                alerta.classList.remove('d-none');
+            }
+            return;
+        }
+
+        renderizarSeccionActaRubrica(radicacionDetalleAdmin.id, true, radicacionDetalleAdmin.estado);
+        mostrarAlerta('Acta de rúbrica cargada correctamente.');
+    }
+
     function mostrarFormAsignacionLote() {
         document.getElementById('formAsignacionLoteRad')?.classList.remove('d-none');
         document.getElementById('btnMostrarFormLoteRad')?.classList.add('d-none');
@@ -792,7 +911,10 @@ const ModuloRadicaciones = (() => {
         if (!label || !campo) return;
         if (estado === 'RECHAZADA') {
             label.textContent = 'Motivo de rechazo';
-            label.innerHTML += ' <span class="text-danger fw-bold">*</span>';
+            const asterisco = document.createElement('span');
+            asterisco.className = 'text-danger fw-bold';
+            asterisco.textContent = ' *';
+            label.appendChild(asterisco);
             campo.placeholder = 'Ingrese el motivo de rechazo (obligatorio)';
             campo.required = true;
         } else {
@@ -1278,7 +1400,9 @@ const ModuloRadicaciones = (() => {
         abrirModalNuevaSolicitud,
         subirDocumentoDesdeModal,
         toggleRubroOtros,
-        toggleAdjuntoRadicacion
+        toggleAdjuntoRadicacion,
+        subirActaRubrica,
+        registrarObservacion
     };
 })();
 
