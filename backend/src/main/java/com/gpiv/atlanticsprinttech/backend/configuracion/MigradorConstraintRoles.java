@@ -1,10 +1,8 @@
 package com.gpiv.atlanticsprinttech.backend.configuracion;
 
-import java.sql.Connection;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -14,28 +12,22 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Order(0)
-public class MigradorConstraintRoles implements CommandLineRunner {
+public class MigradorConstraintRoles extends MigradorBasePostgresql {
 
     private static final Logger logger = LoggerFactory.getLogger(MigradorConstraintRoles.class);
 
-    private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
-
-    public MigradorConstraintRoles(DataSource dataSource, JdbcTemplate jdbcTemplate) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = jdbcTemplate;
+    public MigradorConstraintRoles(DataSource datosConexion, JdbcTemplate plantillaJdbc) {
+        super(datosConexion, plantillaJdbc);
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        try (Connection connection = dataSource.getConnection()) {
-            String producto = connection.getMetaData().getDatabaseProductName();
-            if (producto == null || !producto.toLowerCase().contains("postgresql")) {
-                return;
-            }
-        }
+    protected Logger obtenerLogger() {
+        return logger;
+    }
 
-        jdbcTemplate.execute("""
+    @Override
+    protected void ejecutarMigracion() {
+        plantillaJdbc.execute("""
             DO $$
             BEGIN
                 IF EXISTS (
@@ -67,14 +59,12 @@ public class MigradorConstraintRoles implements CommandLineRunner {
                     BEGIN
                         ALTER TABLE public.usuarios_roles
                         ADD CONSTRAINT usuarios_roles_rol_check
-                        CHECK (rol IN ('ADMINISTRADOR', 'DIRECTIVO', 'EMPRESA'));
+                        CHECK (rol IN ('ADMINISTRADOR', 'DIRECTIVO', 'EMPRESA', 'SECRETARIO', 'TECNICO'));
                     EXCEPTION
                         WHEN duplicate_object THEN NULL;
                     END;
                 END IF;
             END $$;
             """);
-
-        logger.info("Constraint de roles verificado/normalizado para incluir EMPRESA");
     }
 }

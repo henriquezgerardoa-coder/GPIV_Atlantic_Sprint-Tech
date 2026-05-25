@@ -564,6 +564,12 @@ const ModuloRadicaciones = (() => {
             wrapAprobacion.classList.toggle('d-none', !detalle?.fechaAprobacion);
             setTexto('detRadFechaAprobacion', detalle?.fechaAprobacion || '-');
         }
+        setTexto('detRadTiempoSolicitado', detalle?.tiempoSolicitadoMeses ? `${detalle.tiempoSolicitadoMeses} meses` : '-');
+        const wrapTiempoObra = document.getElementById('wrapperDetRadTiempoObra');
+        if (wrapTiempoObra) {
+            wrapTiempoObra.classList.toggle('d-none', !detalle?.tiempoEstimadoObraMeses);
+            setTexto('detRadTiempoObra', detalle?.tiempoEstimadoObraMeses ? `${detalle.tiempoEstimadoObraMeses} meses` : '-');
+        }
         const wrapPlazo = document.getElementById('wrapperDetRadFechaPlazo');
         if (wrapPlazo) {
             wrapPlazo.classList.toggle('d-none', !detalle?.fechaPlazo);
@@ -599,7 +605,7 @@ const ModuloRadicaciones = (() => {
         }
 
         // Sección de lote
-        renderizarSeccionLote(loteAsignado, detalle?.necesidadMetrosCuadrados);
+        renderizarSeccionLote(loteAsignado, detalle?.superficieSolicitadaM2);
 
         // Acta de rúbrica
         renderizarSeccionActaRubrica(detalle?.id, tieneActa, detalle?.estado);
@@ -703,17 +709,16 @@ const ModuloRadicaciones = (() => {
         const formAsignacion = document.getElementById('formAsignacionLoteRad');
         const btnMostrar = document.getElementById('btnMostrarFormLoteRad');
         const alerta = document.getElementById('alertaAsignacionLoteRad');
-        const badgeSuperficie = document.getElementById('detRadSuperficieSolicitada');
+        const wrapperSuperficie = document.getElementById('wrapperDetRadSuperficieSolicitada');
+        const spanSuperficie = document.getElementById('detRadSuperficieSolicitada');
 
         bloqueAsignacion.classList.remove('d-none');
 
-        // Badge con superficie solicitada
-        if (badgeSuperficie) {
-            if (necesidadM2) {
-                badgeSuperficie.textContent = `Superficie solicitada: ${necesidadM2.toLocaleString('es-AR')} m²`;
-                badgeSuperficie.classList.remove('d-none');
-            } else {
-                badgeSuperficie.classList.add('d-none');
+        // Superficie solicitada en el encabezado del detalle
+        if (wrapperSuperficie) {
+            wrapperSuperficie.classList.toggle('d-none', !necesidadM2);
+            if (spanSuperficie && necesidadM2) {
+                spanSuperficie.textContent = `${necesidadM2.toLocaleString('es-AR')} m²`;
             }
         }
 
@@ -888,8 +893,8 @@ const ModuloRadicaciones = (() => {
         }
 
         mostrarAlerta('Lote reservado para la solicitud correctamente.');
-        bootstrap.Modal.getInstance(document.getElementById('modalDetalleRadicacionAdmin'))?.hide();
         await cargar();
+        await verDetalleAdmin(radicacionDetalleAdmin.id);
     }
 
     function toggleCamposPlazo(estado) {

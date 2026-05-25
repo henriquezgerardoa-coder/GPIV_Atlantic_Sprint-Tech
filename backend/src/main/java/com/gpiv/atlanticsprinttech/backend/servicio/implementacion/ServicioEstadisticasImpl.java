@@ -6,11 +6,9 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProduc
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEstadisticas;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDashboardGerencial;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
@@ -32,7 +30,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// R-14: lectura de informes para DIRECTIVO. El acceso a informes completos queda registrado en audit_log.
+// Lectura de informes para DIRECTIVO. El acceso queda registrado en audit_log.
 @Service
 @Transactional(readOnly = true)
 public class ServicioEstadisticasImpl implements ServicioEstadisticas {
@@ -105,7 +103,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             "informe-empresas",
             null,
             "consulta de informe completo de empresas",
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         List<Empresa> empresas = repositorioEmpresa.findAll();
         List<RespuestaInformeEmpresa> resultado = new ArrayList<>();
@@ -136,8 +134,8 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
                 emp.getDireccion(),
                 emp.getCantidadEmpleados(),
                 emp.getFechaRegistro(),
-                ultimaRad.map(r -> r.getFechaRadicacion()).orElse(null),
-                ultimaRad.map(r -> r.getEstado().name()).orElse(null),
+                ultimaRad.map(RadicacionSolicitud::getFechaRadicacion).orElse(null),
+                ultimaRad.map(RadicacionSolicitud::getEstado).map(Enum::name).orElse(null),
                 ultimaRad.map(RadicacionSolicitud::getNumeroRadicado).orElse(null),
                 lotesInforme
             ));
@@ -152,7 +150,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             "informe-lotes",
             null,
             "consulta de informe completo de lotes",
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         List<Lote> lotes = repositorioLote.findAllConEmpresa();
         List<RespuestaInformeLote> resultado = new ArrayList<>();
@@ -271,15 +269,5 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
     private String obtenerUsuarioActual() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return (auth != null && auth.isAuthenticated()) ? auth.getName() : "sistema";
-    }
-
-    private String obtenerIpActual() {
-        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs == null) return "desconocida";
-        HttpServletRequest request = attrs.getRequest();
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return (forwarded != null && !forwarded.isBlank())
-            ? forwarded.split(",")[0].trim()
-            : request.getRemoteAddr();
     }
 }

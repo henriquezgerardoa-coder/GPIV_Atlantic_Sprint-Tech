@@ -7,14 +7,10 @@ import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCorreoVerificacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.RegistroIntentosEnMemoria;
+import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -25,7 +21,10 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -61,7 +60,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     }
     @Override
     public List<Usuario> listar() {
-        return repositorioUsuario.findAll();
+        return repositorioUsuario.findAll(Sort.by(Sort.Direction.ASC, "nombreCompleto"));
     }
     @Override
     public Usuario obtenerPorId(Long id) {
@@ -90,7 +89,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             guardado.getNombreUsuario(),
             null,
             "roles=" + rolesNormalizados + " | activo=" + activo,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         return guardado;
     }
@@ -108,7 +107,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             guardado.getNombreUsuario(),
             anteriorEstado,
             "activo=" + activo + " | roles=" + rolesNormalizados,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         return guardado;
     }
@@ -123,7 +122,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             nombreUsuario,
             datos,
             null,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
     }
     @Override
@@ -135,7 +134,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             obtenerUsuarioActual(), "RESTABLECIMIENTO_CLAVE", "Usuario",
             usuario.getNombreUsuario(),
             null, null,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
     }
     @Override
@@ -151,7 +150,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             nombreUsuario, "CAMBIO_CLAVE_PROPIA", "Usuario",
             nombreUsuario,
             null, null,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
     }
 
@@ -178,7 +177,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             guardado.getNombreUsuario(),
             anteriorPerfil,
             nombreNormalizado + " | " + correoNormalizado,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         return guardado;
     }
@@ -241,7 +240,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             usuario.getNombreUsuario(),
             "email_no_verificado",
             "email_verificado",
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
     }
 
@@ -268,15 +267,6 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         return (auth != null && auth.isAuthenticated()) ? auth.getName() : "sistema";
     }
 
-    private String obtenerIpActual() {
-        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs == null) return "desconocida";
-        HttpServletRequest request = attrs.getRequest();
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return (forwarded != null && !forwarded.isBlank())
-            ? forwarded.split(",")[0].trim()
-            : request.getRemoteAddr();
-    }
 
     private void validarRoles(Set<RolUsuario> roles) {
         if (roles == null || roles.isEmpty()) {

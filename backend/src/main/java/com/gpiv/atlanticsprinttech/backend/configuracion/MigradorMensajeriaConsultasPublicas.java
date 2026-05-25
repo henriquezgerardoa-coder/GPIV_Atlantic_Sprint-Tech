@@ -1,41 +1,33 @@
 package com.gpiv.atlanticsprinttech.backend.configuracion;
 
-import java.sql.Connection;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Asegura columnas de mensajeria para compatibilidad cuando Flyway no esta activo.
+ * Asegura columnas de mensajería para compatibilidad cuando Flyway no está activo.
  */
 @Component
 @Order(1)
-public class MigradorMensajeriaConsultasPublicas implements CommandLineRunner {
+public class MigradorMensajeriaConsultasPublicas extends MigradorBasePostgresql {
 
     private static final Logger logger = LoggerFactory.getLogger(MigradorMensajeriaConsultasPublicas.class);
 
-    private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
-
-    public MigradorMensajeriaConsultasPublicas(DataSource dataSource, JdbcTemplate jdbcTemplate) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = jdbcTemplate;
+    public MigradorMensajeriaConsultasPublicas(DataSource datosConexion, JdbcTemplate plantillaJdbc) {
+        super(datosConexion, plantillaJdbc);
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        try (Connection connection = dataSource.getConnection()) {
-            String producto = connection.getMetaData().getDatabaseProductName();
-            if (producto == null || !producto.toLowerCase().contains("postgresql")) {
-                return;
-            }
-        }
+    protected Logger obtenerLogger() {
+        return logger;
+    }
 
-        jdbcTemplate.execute("""
+    @Override
+    protected void ejecutarMigracion() {
+        plantillaJdbc.execute("""
             DO $$
             BEGIN
                 IF EXISTS (
@@ -75,8 +67,8 @@ public class MigradorMensajeriaConsultasPublicas implements CommandLineRunner {
                 END IF;
             END $$;
             """);
-
-        logger.info("Esquema de mensajeria verificado para consultas publicas");
     }
 }
+
+
 

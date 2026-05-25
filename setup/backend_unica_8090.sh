@@ -16,6 +16,11 @@ obtener_pids_app() {
   pgrep -f 'com.gpiv.atlanticsprinttech.AplicacionGestionGpiv' | sort -u || true
 }
 
+puerto_ocupado() {
+  local puerto="$1"
+  ss -ltn "( sport = :${puerto} )" | grep -q ":${puerto}"
+}
+
 PIDS="$(obtener_pids_app)"
 if [ -n "${PIDS}" ]; then
   echo "Deteniendo instancia(s) previa(s) de la aplicacion: ${PIDS}"
@@ -34,5 +39,16 @@ echo "Iniciando backend en puerto ${PUERTO}..."
 cd "${RAIZ_PROYECTO}"
 echo "Sincronizando modulos (entities/commons/backend)..."
 mvn -q -DskipTests install
-exec mvn -pl backend spring-boot:run -Dspring-boot.run.arguments=--server.port="${PUERTO}"
 
+SPRING_ARGS="--server.port=${PUERTO}"
+MODO_COMPOSE="${BACKEND_DOCKER_COMPOSE:-auto}"
+
+if [ "${MODO_COMPOSE}" = "false" ]; then
+  echo "Docker Compose desactivado por BACKEND_DOCKER_COMPOSE=false"
+  SPRING_ARGS="${SPRING_ARGS} --spring.docker.compose.enabled=false"
+elif [ "${MODO_COMPOSE}" = "auto" ] && puerto_ocupado 5433; then
+  echo "Puerto 5433 ocupado: desactivo Docker Compose para evitar conflicto de arranque."
+  SPRING_ARGS="${SPRING_ARGS} --spring.docker.compose.enabled=false"
+fi
+
+exec mvn -pl backend spring-boot:run "-Dspring-boot.run.arguments=${SPRING_ARGS}"

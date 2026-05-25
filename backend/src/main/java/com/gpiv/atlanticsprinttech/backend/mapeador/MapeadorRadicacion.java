@@ -79,6 +79,7 @@ public class MapeadorRadicacion {
     public RespuestaHistorialRadicacion toHistorialRespuesta(RadicacionHistorial historial) {
         return new RespuestaHistorialRadicacion(
             historial.getId(),
+            historial.getEstadoAnterior(),
             historial.getEstado(),
             historial.getComentario(),
             historial.getUsuario(),

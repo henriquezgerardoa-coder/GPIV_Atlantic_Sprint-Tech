@@ -4,7 +4,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioConversacionMe
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioMensajeMensajeria;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
-import com.gpiv.atlanticsprinttech.backend.servicio.ParConversacion;
+import com.gpiv.atlanticsprinttech.backend.mapeador.ParConversacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.ConversacionMensajeria;

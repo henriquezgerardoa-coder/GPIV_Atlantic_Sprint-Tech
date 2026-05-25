@@ -3,7 +3,7 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesRegistroPublico;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCorreoVerificacion;
-import jakarta.servlet.http.HttpServletRequest;
+import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -13,8 +13,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -51,7 +49,7 @@ public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacio
             logger.info("[MAIL DESHABILITADO] Para {} enviar asunto='{}' cuerpo='{}'", correoDestino, asunto, cuerpo);
             servicioAuditLog.registrarEvento(
                 obtenerUsuarioActual(correoDestino), "ENVIO_CORREO_VERIFICACION", "Usuario",
-                correoDestino, null, "mail_deshabilitado", obtenerIpActual()
+                correoDestino, null, "mail_deshabilitado", UtilRed.obtenerIpActual()
             );
             return;
         }
@@ -71,7 +69,7 @@ public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacio
         javaMailSender.send(mensaje);
         servicioAuditLog.registrarEvento(
             obtenerUsuarioActual(correoDestino), "ENVIO_CORREO_VERIFICACION", "Usuario",
-            correoDestino, null, "enviado", obtenerIpActual()
+            correoDestino, null, "enviado", UtilRed.obtenerIpActual()
         );
     }
 
@@ -81,15 +79,4 @@ public class ServicioCorreoVerificacionImpl implements ServicioCorreoVerificacio
             ? auth.getName()
             : fallback;
     }
-
-    private String obtenerIpActual() {
-        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs == null) return "desconocida";
-        HttpServletRequest request = attrs.getRequest();
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return (forwarded != null && !forwarded.isBlank())
-            ? forwarded.split(",")[0].trim()
-            : request.getRemoteAddr();
-    }
 }
-

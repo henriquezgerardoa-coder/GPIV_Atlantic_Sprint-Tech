@@ -10,14 +10,12 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpleadosCa
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudEmpleado;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empleado;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
+import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -60,7 +58,7 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 			solicitud.cuit(),
 			null,
 			"Empleado: " + solicitud.nombre() + " | CUIT=" + solicitud.cuit(),
-			obtenerIpActual()
+			UtilRed.obtenerIpActual()
 		);
 
 		return guardado;
@@ -126,7 +124,7 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 			solicitud.cuit(),
 			anteriorDatos,
 			"Empleado: " + solicitud.nombre() + " | CUIT=" + solicitud.cuit(),
-			obtenerIpActual()
+			UtilRed.obtenerIpActual()
 		);
 
 		return guardado;
@@ -145,7 +143,7 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 			empleado.getCuit(),
 			"Empleado: " + empleado.getNombre() + " | CUIT=" + empleado.getCuit(),
 			null,
-			obtenerIpActual()
+			UtilRed.obtenerIpActual()
 		);
 
 		repositorioEmpleado.deleteById(empleadoId);
@@ -170,22 +168,4 @@ public class ServicioEmpleadoImpl implements ServicioEmpleado {
 			empleado.getFechaRegistro()
 		);
 	}
-
-	private String obtenerIpActual() {
-		try {
-			ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-			if (attrs != null) {
-				HttpServletRequest request = attrs.getRequest();
-				String ip = request.getHeader("X-Forwarded-For");
-				if (ip == null || ip.isEmpty()) {
-					ip = request.getRemoteAddr();
-				}
-				return ip;
-			}
-		} catch (Exception e) {
-			// Si no se puede obtener la IP, continuamos
-		}
-		return "DESCONOCIDA";
-	}
 }
-

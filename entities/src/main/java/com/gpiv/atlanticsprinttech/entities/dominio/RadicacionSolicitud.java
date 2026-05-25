@@ -266,11 +266,49 @@ public class RadicacionSolicitud {
 		this.fechaPlazo = fechaPlazo;
 	}
 
-	/** Valida que el CUIT de la empresa cumpla el formato XX-XXXXXXXX-X. */
-	public boolean validarCuit() {
-		String cuit = empresa.getCuit();
-		if (cuit == null || cuit.isBlank()) return false;
-		return cuit.matches("\\d{2}-\\d{8}-\\d");
-	}
+        /**
+         * Indica si el plazo de radicación está vencido y el expediente aún está activo.
+         * Encapsula la lógica "plazo pasado y estado no final" para que el llamador no tenga que preguntar.
+         */
+        public boolean esPlazoVencido() {
+                return fechaPlazo != null
+                        && fechaPlazo.isBefore(LocalDate.now())
+                        && !estado.esFinal();
+        }
+
+        /**
+         * Texto del plazo o {@code null} si no hay plazo establecido.
+         */
+        public String getFechaPlazoTexto() {
+                return fechaPlazo != null ? fechaPlazo.toString() : null;
+        }
+
+        /**
+         * Texto de la fecha de aprobación o {@code null} si no fue aprobada.
+         */
+        public String getFechaAprobacionTexto() {
+                return fechaAprobacion != null ? fechaAprobacion.toString() : null;
+        }
+
+        /**
+         * Texto de la fecha de radicación o {@code null} si no fue radicada.
+         */
+        public String getFechaRadicacionTexto() {
+                return fechaRadicacion != null ? fechaRadicacion.toString() : null;
+        }
+
+        /**
+         * Texto de la fecha de última actualización o {@code null}.
+         */
+        public String getFechaUltimaActualizacionTexto() {
+                return fechaUltimaActualizacion != null ? fechaUltimaActualizacion.toString() : null;
+        }
+
+        /** Valida que el CUIT de la empresa cumpla el formato XX-XXXXXXXX-X. */
+        public boolean validarCuit() {
+                String cuit = empresa.getCuit();
+                if (cuit == null || cuit.isBlank()) return false;
+                return cuit.matches("\\d{2}-\\d{8}-\\d");
+        }
 }
 

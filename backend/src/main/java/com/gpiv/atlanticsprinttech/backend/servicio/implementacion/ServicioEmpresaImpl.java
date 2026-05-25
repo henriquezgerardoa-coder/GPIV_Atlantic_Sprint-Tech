@@ -9,9 +9,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaServiciosPostRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaConsumoServicioPostRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaDetalleAdmin;
@@ -24,20 +22,21 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
-import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@Transactional
 public class ServicioEmpresaImpl implements ServicioEmpresa {
 	private final RepositorioEmpleado repositorioEmpleado;
 	private final RepositorioEmpresa repositorioEmpresa;
@@ -78,7 +77,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			Empresa empresa = obtenerPorIdInterno(empresaId);
 			return List.of(empresa);
 		}
-		return repositorioEmpresa.findAll();
+		return repositorioEmpresa.findAllWithRubroOrderByNombre();
 	}
 	@Override
 	public Empresa obtenerPorId(Long id, String identificadorIngreso) {
@@ -109,7 +108,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			guardada.getCuit(),
 			null,
 			guardada.getNombre() + " | CUIT=" + guardada.getCuit(),
-			obtenerIpActual()
+			UtilRed.obtenerIpActual()
 		);
 		return guardada;
 	}
@@ -147,7 +146,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			guardada.getCuit(),
 			anteriorDatos,
 			guardada.getNombre() + " | CUIT=" + guardada.getCuit(),
-			obtenerIpActual()
+			UtilRed.obtenerIpActual()
 		);
 		return guardada;
 	}
@@ -170,15 +169,14 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			cuit,
 			datosEmpresa,
 			null,
-			obtenerIpActual()
+			UtilRed.obtenerIpActual()
 		);
 	}
 
 	@Override
 	public List<RespuestaEmpresaListadoAdmin> listarVistaAdmin(String identificadorIngreso) {
 		validarAccesoAdmin(identificadorIngreso);
-		return repositorioEmpresa.findAll().stream()
-			.sorted(Comparator.comparing(Empresa::getNombre, String.CASE_INSENSITIVE_ORDER))
+		return repositorioEmpresa.findAll(Sort.by(Sort.Direction.ASC, "nombre")).stream()
 			.map(empresa -> new RespuestaEmpresaListadoAdmin(empresa.getId(), empresa.getNombre()))
 			.toList();
 	}
@@ -245,7 +243,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		DatosServiciosPostRadicacion datos = leerDatosServiciosPostRadicacion(empresa);
 		return new RespuestaServiciosPostRadicacion(
 			empresa.getId(),
-			(int) repositorioEmpleado.countByEmpresaId(empresaId),
+			empresa.getCantidadEmpleados(),
 			leerVehiculos(empresa.getVehiculosAsignadosJson()),
 			datos.solicitaAguaCruda(),
 			datos.consumoAguaCrudaM3(),
@@ -268,10 +266,10 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo puedes gestionar servicios despues de la radicacion");
 		}
 
-		List<RespuestaVehiculoEmpresa> vehiculos = (solicitud.vehiculos() == null ? List.<RespuestaVehiculoEmpresa>of() : solicitud.vehiculos()
-			.stream()
-			.map(v -> new RespuestaVehiculoEmpresa(v.placa().trim().toUpperCase(), v.tipo().trim(), v.descripcion() == null ? null : v.descripcion().trim()))
-			.toList());
+		List<RespuestaVehiculoEmpresa> vehiculos = (solicitud.vehiculos() == null ? List.of() : solicitud.vehiculos()
+ 			.stream()
+ 			.map(v -> new RespuestaVehiculoEmpresa(v.placa().trim().toUpperCase(), v.tipo().trim(), v.descripcion() == null ? null : v.descripcion().trim()))
+ 			.toList());
 		validarVehiculos(vehiculos);
 
 		Empresa empresa = obtenerPorIdInterno(empresaId);
@@ -290,7 +288,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			guardada.getCuit(),
 			anteriorServicios,
 			"empleados=" + guardada.getCantidadEmpleados() + " | vehiculos=" + vehiculos.size(),
-			obtenerIpActual()
+			UtilRed.obtenerIpActual()
 		);
 		return new RespuestaServiciosPostRadicacion(
 			guardada.getId(),
@@ -367,18 +365,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		}
 	}
 
-	private String obtenerIpActual() {
-		var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-		if (attrs == null) return "desconocida";
-		HttpServletRequest request = attrs.getRequest();
-		String forwarded = request.getHeader("X-Forwarded-For");
-		return (forwarded != null && !forwarded.isBlank())
-			? forwarded.split(",")[0].trim()
-			: request.getRemoteAddr();
-	}
-
 	private Empresa obtenerPorIdInterno(Long id) {
-		return repositorioEmpresa.findById(id)
+		return repositorioEmpresa.findByIdWithRubro(id)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
 	}
 
@@ -441,7 +429,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			return List.of();
 		}
 		try {
-			return objectMapper.readValue(json, new TypeReference<List<RespuestaVehiculoEmpresa>>() {
+			return objectMapper.readValue(json, new TypeReference<>() {
 			});
 		} catch (Exception ex) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo leer la lista de vehiculos");

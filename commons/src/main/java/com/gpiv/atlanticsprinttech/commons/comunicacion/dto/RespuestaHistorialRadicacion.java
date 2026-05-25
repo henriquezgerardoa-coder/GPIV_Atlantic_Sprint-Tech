@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public record RespuestaHistorialRadicacion(
     Long id,
+    EstadoRadicacion estadoAnterior,
     EstadoRadicacion estado,
     String comentario,
     String usuario,

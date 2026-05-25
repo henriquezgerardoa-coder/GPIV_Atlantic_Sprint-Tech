@@ -23,8 +23,8 @@
 
         <!-- Logo y título -->
         <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="#">
-            <i class="bi bi-building-gear fs-5"></i>
-            <span>GPIV</span>
+            <img src="img/logo.png" alt="ENREPAVI" style="height:48px;width:auto;object-fit:contain;">
+            <span>ENREPAVI</span>
             <span class="d-none d-md-inline text-white-50 fw-normal small">Gestión Parque Industrial</span>
         </a>
 
@@ -144,7 +144,10 @@
 <!-- Versión offcanvas para móviles -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSidebar" style="width:240px;">
     <div class="offcanvas-header bg-primary text-white">
-        <h6 class="offcanvas-title"><i class="bi bi-building-gear me-2"></i>GPIV</h6>
+        <h6 class="offcanvas-title d-flex align-items-center gap-2">
+                    <img src="img/logo.png" alt="ENREPAVI" style="height:36px;width:auto;object-fit:contain;">
+                    ENREPAVI
+                </h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-0">
@@ -1245,14 +1248,12 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Vista solo-lectura para ADMIN/DIRECTIVO: muestra resumen del total -->
-                        <div class="col-12 d-none" id="resumenPersonalGestor"></div>
-                        <!-- Lista completa para EMPRESA -->
+                        <!-- Lista de personal (gestor: solo lectura, empresa: con acciones) -->
                         <div class="col-lg-7" id="bloqueListaPersonal">
                             <h6 class="text-muted mb-2">Nómina de personal registrado</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover">
-                                    <thead class="table-light">
+                                    <thead class="table-light" id="cabeceraTablaPersonal">
                                         <tr>
                                             <th class="ps-3">CUIT</th>
                                             <th>Nombre completo</th>
@@ -2023,7 +2024,8 @@
                 <div id="estadoCargaDetalleRadAdmin" class="text-muted small mb-2 d-none"><span class="spinner-border spinner-border-sm me-2"></span>Cargando detalle...</div>
                 <div id="errorDetalleRadAdmin" class="alert alert-danger d-none"></div>
                 <div id="contenidoDetalleRadAdmin" class="d-none">
-                    <div class="row g-2 mb-3">
+                    <!-- Datos identificatorios y de estado -->
+                    <div class="row g-2 mb-2">
                         <div class="col-md-4"><strong>N° expediente:</strong> <span id="detRadNumero">-</span></div>
                         <div class="col-md-4"><strong>Solicitante:</strong> <span id="detRadSolicitante">-</span></div>
                         <div class="col-md-4"><strong>Tipo trámite:</strong> <span id="detRadTipo">-</span></div>
@@ -2031,11 +2033,30 @@
                         <div class="col-md-4"><strong>Fecha creación:</strong> <span id="detRadFechaCreacion">-</span></div>
                         <div class="col-md-4"><strong>Última modificación:</strong> <span id="detRadFechaModificacion">-</span></div>
                         <div class="col-md-4 d-none" id="wrapperDetRadFechaAprobacion"><strong>Fecha de aprobación:</strong> <span id="detRadFechaAprobacion">-</span></div>
-                        <div class="col-md-4 d-none" id="wrapperDetRadTiempoSolicitado"><strong>Tiempo radicación solicitado:</strong> <span id="detRadTiempoSolicitado">-</span></div>
-                        <div class="col-md-4 d-none" id="wrapperDetRadFechaVencimientoSolicitada"><strong>Vencimiento solicitado:</strong> <span id="detRadFechaVencimientoSolicitada">-</span></div>
-                        <div class="col-md-4 d-none" id="wrapperDetRadTiempoObra"><strong>Tiempo estimado obra (admin):</strong> <span id="detRadTiempoObra">-</span></div>
+                        <div class="col-md-4" id="wrapperDetRadTiempoSolicitado"><strong>Tiempo de radicación:</strong> <span id="detRadTiempoSolicitado">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadTiempoObra"><strong>Plazo otorgado (admin):</strong> <span id="detRadTiempoObra">-</span></div>
                         <div class="col-md-4 d-none" id="wrapperDetRadFechaPlazo"><strong>Fecha plazo (admin):</strong> <span id="detRadFechaPlazo">-</span></div>
-                        <div class="col-md-4 d-none" id="wrapperDetRadSuperficieSolicitada"><strong>Superficie solicitada:</strong> <span id="detRadSuperficieSolicitada">-</span></div>
+                        <div class="col-md-4" id="wrapperDetRadSuperficieSolicitada"><strong>Superficie solicitada:</strong> <span id="detRadSuperficieSolicitada">-</span></div>
+                    </div>
+
+                    <!-- Contenido de la solicitud -->
+                    <div class="card border-0 border-top mb-3 pt-2">
+                        <div class="row g-2 small">
+                            <div class="col-md-8">
+                                <span class="text-muted">Uso estimativo:</span>
+                                <span class="ms-1 fw-semibold" id="detRadUsoEstimativo">-</span>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">Relevamiento adjunto:</span>
+                                <span class="ms-1 fw-semibold" id="detRadRelevamiento">-</span>
+                            </div>
+                            <div class="col-12">
+                                <span class="text-muted d-block mb-1">Descripción de la solicitud:</span>
+                                <div id="detRadDescripcion"
+                                     class="p-2 bg-light rounded"
+                                     style="white-space: pre-wrap; font-size: .875rem; min-height: 2.5rem;">-</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Sección asignación de lote -->

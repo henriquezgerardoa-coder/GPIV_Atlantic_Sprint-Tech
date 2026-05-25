@@ -1,8 +1,8 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
+import com.gpiv.atlanticsprinttech.backend.mapeador.MapeadorAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaAuditLog;
-import com.gpiv.atlanticsprinttech.entities.dominio.AuditLog;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ControladorAuditLog {
 
     private final ServicioAuditLog servicioAuditLog;
+    private final MapeadorAuditLog mapeador;
 
-    public ControladorAuditLog(ServicioAuditLog servicioAuditLog) {
+    public ControladorAuditLog(ServicioAuditLog servicioAuditLog, MapeadorAuditLog mapeador) {
         this.servicioAuditLog = servicioAuditLog;
+        this.mapeador = mapeador;
     }
 
     @GetMapping
@@ -24,28 +26,12 @@ public class ControladorAuditLog {
         @RequestParam(required = false) String entidad,
         @RequestParam(required = false) String usuario
     ) {
-        List<AuditLog> logs;
-        if (entidad != null && !entidad.isBlank()) {
-            logs = servicioAuditLog.filtrarPorEntidad(entidad);
-        } else if (usuario != null && !usuario.isBlank()) {
-            logs = servicioAuditLog.filtrarPorUsuario(usuario);
-        } else {
-            logs = servicioAuditLog.listarTodos();
-        }
-        return logs.stream().map(this::mapear).toList();
-    }
+        var registros = (entidad != null && !entidad.isBlank())
+            ? servicioAuditLog.filtrarPorEntidad(entidad)
+            : (usuario != null && !usuario.isBlank())
+                ? servicioAuditLog.filtrarPorUsuario(usuario)
+                : servicioAuditLog.listarTodos();
 
-    private RespuestaAuditLog mapear(AuditLog log) {
-        return new RespuestaAuditLog(
-            log.getId(),
-            log.getFechaHora(),
-            log.getUsuarioResponsable(),
-            log.getOperacion(),
-            log.getEntidadAfectada(),
-            log.getIdReferencia(),
-            log.getValorAnterior(),
-            log.getValorNuevo(),
-            log.getDireccionIp()
-        );
+        return registros.stream().map(mapeador::aRespuesta).toList();
     }
 }

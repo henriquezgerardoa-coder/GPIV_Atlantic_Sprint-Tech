@@ -1,3 +1,7 @@
+html {
+    scroll-behavior: smooth;
+}
+
 :root {
     --ancho-barra-lateral: 240px;
     --alto-navbar: 56px;
@@ -449,7 +453,7 @@ body.auth-modal-open {
 }
 
 .logo-img {
-    height: 40px;
+    height: 58px;
     width: auto;
     filter: brightness(0) invert(1);
 }

@@ -82,7 +82,7 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         if ("Otros".equalsIgnoreCase(rubroSolicitado.getNombre())
                 && (descripcionOtros == null || descripcionOtros.isBlank())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "Debe especificar cuál es el rubro cuando selecciona 'Otros'");
+                "Debe especificar cual es el rubro cuando selecciona 'Otros'");
         }
 
         String rubroAnteriorNombre = rubroActual != null ? rubroActual.getNombre() : null;

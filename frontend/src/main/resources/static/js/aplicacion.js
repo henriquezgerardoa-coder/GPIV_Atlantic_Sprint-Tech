@@ -271,6 +271,47 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btnNuevoLote')?.classList.add('d-none');
     }
 
+    // SECRETARIO: solo gestiona radicaciones (puede ver empresas y lotes en modo lectura)
+    const esSecretario = Autenticacion.tieneAcceso(['SECRETARIO'])
+        && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+    if (esSecretario) {
+        ['itemNavProyectos', 'itemNavProyectosMovil',
+         'itemNavInfraestructura', 'itemNavInfraestructuraMovil',
+         'itemNavDashboard', 'itemNavDashboardMovil',
+         'itemNavMonitor', 'itemNavMonitorMovil',
+         'itemNavAuditLog', 'itemNavAuditLogMovil',
+         'itemNavInformes', 'itemNavInformesMovil',
+         'itemNavCenso', 'itemNavCensoMovil',
+         'itemNavCambioRubro', 'itemNavCambioRubroMovil',
+         'itemNavMensajeria', 'itemNavMensajeriaMovil',
+         'itemNavUsuarios', 'itemNavUsuariosMovil']
+            .forEach(id => document.getElementById(id)?.classList.add('d-none'));
+        document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
+        document.getElementById('btnNuevoLote')?.classList.add('d-none');
+    }
+
+    // TECNICO: solo gestiona hitos de proyectos productivos
+    const esTecnico = Autenticacion.tieneAcceso(['TECNICO'])
+        && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+    if (esTecnico) {
+        ['itemNavInformes', 'itemNavInformesMovil',
+         'itemNavCenso', 'itemNavCensoMovil',
+         'itemNavAuditLog', 'itemNavAuditLogMovil',
+         'itemNavInfraestructura', 'itemNavInfraestructuraMovil',
+         'itemNavDashboard', 'itemNavDashboardMovil',
+         'itemNavMonitor', 'itemNavMonitorMovil',
+         'itemNavCambioRubro', 'itemNavCambioRubroMovil',
+         'itemNavMensajeria', 'itemNavMensajeriaMovil',
+         'itemNavUsuarios', 'itemNavUsuariosMovil']
+            .forEach(id => document.getElementById(id)?.classList.add('d-none'));
+        document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('nav-empresas')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('nav-lotes')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('nav-radicaciones')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('nav-mensajeria')?.closest('.nav-item')?.classList.add('d-none');
+    }
+
     // Botón cerrar sesión
     document.getElementById('btnCerrarSesion').addEventListener('click', Autenticacion.cerrarSesion);
 
@@ -349,6 +390,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ConfiguracionInicial.mostrar();
     } else if (esEmpresaExclusivo) {
         navegarA('empresas');
+    } else if (esSecretario) {
+        navegarA('radicaciones');
+    } else if (esTecnico) {
+        navegarA('proyectos');
     } else {
         navegarA('panel');
     }

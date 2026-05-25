@@ -36,6 +36,10 @@ public class ServicioContextoUsuario {
 		return usuario.tieneRol(RolUsuario.ADMINISTRADOR);
 	}
 
+	public boolean esRolDirectivo(Usuario usuario) {
+		return usuario.tieneRol(RolUsuario.DIRECTIVO);
+	}
+
 	public Long obtenerEmpresaIdRequerido(Usuario usuario) {
 		if (usuario.getEmpresaId() == null) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El usuario EMPRESA no tiene una empresa asociada");

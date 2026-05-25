@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
+import com.gpiv.atlanticsprinttech.backend.mapeador.MapeadorCenso;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCenso;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaCenso;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaCensoVehiculo;
@@ -8,9 +9,6 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaPersonalCen
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudCenso;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudCensoVehiculo;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudPersonalCenso;
-import com.gpiv.atlanticsprinttech.entities.dominio.Censo;
-import com.gpiv.atlanticsprinttech.entities.dominio.PersonalRegistrado;
-import com.gpiv.atlanticsprinttech.entities.dominio.Vehiculo;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -29,9 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ControladorCenso {
 
     private final ServicioCenso servicioCenso;
+    private final MapeadorCenso mapeador;
 
-    public ControladorCenso(ServicioCenso servicioCenso) {
+    public ControladorCenso(ServicioCenso servicioCenso, MapeadorCenso mapeador) {
         this.servicioCenso = servicioCenso;
+        this.mapeador = mapeador;
     }
 
     // ── Declaraciones anuales ──────────────────────────────────────────────
@@ -39,7 +39,7 @@ public class ControladorCenso {
     @GetMapping
     public List<RespuestaCenso> listarCensos(@PathVariable Long empresaId, Authentication auth) {
         return servicioCenso.listarCensos(auth.getName(), empresaId).stream()
-            .map(this::toRespuestaCenso)
+            .map(mapeador::aRespuesta)
             .toList();
     }
 
@@ -49,7 +49,7 @@ public class ControladorCenso {
         @Valid @RequestBody SolicitudCenso solicitud,
         Authentication auth
     ) {
-        return toRespuestaCenso(servicioCenso.declararCenso(
+        return mapeador.aRespuesta(servicioCenso.declararCenso(
             auth.getName(), empresaId,
             solicitud.anioPeriodo(),
             solicitud.cantidadPersonalRegistrado(),
@@ -63,7 +63,7 @@ public class ControladorCenso {
     @GetMapping("/personal")
     public List<RespuestaPersonalCenso> listarPersonal(@PathVariable Long empresaId, Authentication auth) {
         return servicioCenso.listarPersonal(auth.getName(), empresaId).stream()
-            .map(this::toRespuestaPersonal)
+            .map(mapeador::aRespuestaPersonal)
             .toList();
     }
 
@@ -73,10 +73,9 @@ public class ControladorCenso {
         @Valid @RequestBody SolicitudPersonalCenso solicitud,
         Authentication auth
     ) {
-        LocalDate fechaIngreso = LocalDate.parse(solicitud.fechaIngreso());
-        return toRespuestaPersonal(servicioCenso.agregarPersonal(
+        return mapeador.aRespuestaPersonal(servicioCenso.agregarPersonal(
             auth.getName(), empresaId,
-            solicitud.cuit(), solicitud.nombreCompleto(), fechaIngreso
+            solicitud.cuit(), solicitud.nombreCompleto(), LocalDate.parse(solicitud.fechaIngreso())
         ));
     }
 
@@ -95,7 +94,7 @@ public class ControladorCenso {
     @GetMapping("/vehiculos")
     public List<RespuestaCensoVehiculo> listarVehiculos(@PathVariable Long empresaId, Authentication auth) {
         return servicioCenso.listarVehiculos(auth.getName(), empresaId).stream()
-            .map(this::toRespuestaVehiculo)
+            .map(mapeador::aRespuestaVehiculo)
             .toList();
     }
 
@@ -105,7 +104,7 @@ public class ControladorCenso {
         @Valid @RequestBody SolicitudCensoVehiculo solicitud,
         Authentication auth
     ) {
-        return toRespuestaVehiculo(servicioCenso.agregarVehiculo(
+        return mapeador.aRespuestaVehiculo(servicioCenso.agregarVehiculo(
             auth.getName(), empresaId,
             solicitud.patente(), solicitud.marcaModelo()
         ));
@@ -119,37 +118,5 @@ public class ControladorCenso {
     ) {
         servicioCenso.eliminarVehiculo(auth.getName(), empresaId, vehiculoId);
         return ResponseEntity.ok(new RespuestaOperacion("Vehículo eliminado"));
-    }
-
-    // ── Mapeo a DTOs ───────────────────────────────────────────────────────
-
-    private RespuestaCenso toRespuestaCenso(Censo c) {
-        return new RespuestaCenso(
-            c.getId(),
-            c.getAnioPeriodo(),
-            c.getFechaDeclaracion().toString(),
-            c.getCantidadPersonalRegistrado(),
-            c.getCantidadPersonasNoRegistrado(),
-            c.calcularTotalEmpleados(),
-            c.getObservacion()
-        );
-    }
-
-    private RespuestaPersonalCenso toRespuestaPersonal(PersonalRegistrado p) {
-        return new RespuestaPersonalCenso(
-            p.getId(),
-            p.getCuit(),
-            p.getNombreCompleto(),
-            p.getFechaIngreso().toString()
-        );
-    }
-
-    private RespuestaCensoVehiculo toRespuestaVehiculo(Vehiculo v) {
-        return new RespuestaCensoVehiculo(
-            v.getId(),
-            v.getPatente(),
-            v.getMarcaModelo(),
-            v.validarFormatoPatente()
-        );
     }
 }

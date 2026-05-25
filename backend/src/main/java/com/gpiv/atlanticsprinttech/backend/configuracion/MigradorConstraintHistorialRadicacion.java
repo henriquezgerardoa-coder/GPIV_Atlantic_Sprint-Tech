@@ -1,10 +1,8 @@
 package com.gpiv.atlanticsprinttech.backend.configuracion;
 
-import java.sql.Connection;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -15,28 +13,22 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Order(2)
-public class MigradorConstraintHistorialRadicacion implements CommandLineRunner {
+public class MigradorConstraintHistorialRadicacion extends MigradorBasePostgresql {
 
     private static final Logger logger = LoggerFactory.getLogger(MigradorConstraintHistorialRadicacion.class);
 
-    private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
-
-    public MigradorConstraintHistorialRadicacion(DataSource dataSource, JdbcTemplate jdbcTemplate) {
-        this.dataSource = dataSource;
-        this.jdbcTemplate = jdbcTemplate;
+    public MigradorConstraintHistorialRadicacion(DataSource datosConexion, JdbcTemplate plantillaJdbc) {
+        super(datosConexion, plantillaJdbc);
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        try (Connection connection = dataSource.getConnection()) {
-            String producto = connection.getMetaData().getDatabaseProductName();
-            if (producto == null || !producto.toLowerCase().contains("postgresql")) {
-                return;
-            }
-        }
+    protected Logger obtenerLogger() {
+        return logger;
+    }
 
-        jdbcTemplate.execute("""
+    @Override
+    protected void ejecutarMigracion() {
+        plantillaJdbc.execute("""
             DO $$
             DECLARE
                 constraint_valido BOOLEAN;
@@ -72,8 +64,5 @@ public class MigradorConstraintHistorialRadicacion implements CommandLineRunner 
                 END IF;
             END $$;
             """);
-
-        logger.info("Constraint radicacion_historial_estado_check verificado y corregido si era necesario");
     }
 }
-

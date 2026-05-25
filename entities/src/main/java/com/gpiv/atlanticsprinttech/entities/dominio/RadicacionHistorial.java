@@ -21,6 +21,9 @@ public class RadicacionHistorial {
     @JoinColumn(name = "radicacion_id", nullable = false)
     private RadicacionSolicitud radicacion;
     @Enumerated(EnumType.STRING)
+    @Column(name = "estado_anterior", length = 40)
+    private EstadoRadicacion estadoAnterior;
+    @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 40)
     private EstadoRadicacion estado;
     @Column(name = "comentario", length = 1000)
@@ -31,18 +34,22 @@ public class RadicacionHistorial {
     private LocalDateTime fechaEvento;
     protected RadicacionHistorial() {
     }
-    private RadicacionHistorial(RadicacionSolicitud radicacion, EstadoRadicacion estado, String comentario, String usuario) {
+    private RadicacionHistorial(RadicacionSolicitud radicacion, EstadoRadicacion estadoAnterior, EstadoRadicacion estado, String comentario, String usuario) {
         this.radicacion = radicacion;
+        this.estadoAnterior = estadoAnterior;
         this.estado = estado;
         this.comentario = comentario;
         this.usuario = usuario;
         this.fechaEvento = LocalDateTime.now();
     }
-    public static RadicacionHistorial crear(RadicacionSolicitud radicacion, EstadoRadicacion estado, String comentario, String usuario) {
-        return new RadicacionHistorial(radicacion, estado, comentario, usuario);
+    public static RadicacionHistorial crear(RadicacionSolicitud radicacion, EstadoRadicacion estadoAnterior, EstadoRadicacion estado, String comentario, String usuario) {
+        return new RadicacionHistorial(radicacion, estadoAnterior, estado, comentario, usuario);
     }
     public Long getId() {
         return id;
+    }
+    public EstadoRadicacion getEstadoAnterior() {
+        return estadoAnterior;
     }
     public EstadoRadicacion getEstado() {
         return estado;

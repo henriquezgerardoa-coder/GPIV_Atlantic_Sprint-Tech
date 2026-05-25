@@ -11,9 +11,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSoli
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamientoPedidoLotes;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
@@ -134,13 +132,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             relevamientoPedidoLotesJson
         );
         RadicacionSolicitud guardada = repositorioRadicacionSolicitud.save(nueva);
-        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(guardada, guardada.getEstado(), "Solicitud creada", identificadorIngreso));
+        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(guardada, null, guardada.getEstado(), "Solicitud creada", identificadorIngreso));
         servicioAuditLog.registrarEvento(
             identificadorIngreso, "CREACION", "RadicacionSolicitud",
             guardada.getNumeroRadicado(),
             null,
             guardada.getTipoSolicitud() + " | " + guardada.getEstado().name(),
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         return guardada;
     }
@@ -217,7 +215,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         } catch (IllegalStateException | IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
-        // Solo actualizar plazo cuando se proporciona explícitamente (evita borrar datos al cambiar a RADICADA)
+        // Solo actualizar plazo cuando se proporciona explicitamente (evita borrar datos al cambiar a RADICADA)
         if (tiempoEstimadoObraMeses != null || fechaPlazo != null) {
             radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
         }
@@ -225,13 +223,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         radicacion.sincronizarLote(lote);
         if (lote != null) repositorioLote.save(lote);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
-        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estado, comentario, identificadorIngreso));
+        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estadoAnterior, estado, comentario, identificadorIngreso));
         servicioAuditLog.registrarEvento(
             identificadorIngreso, "CAMBIO_ESTADO", "RadicacionSolicitud",
             actualizada.getNumeroRadicado(),
             estadoAnterior.name(),
             estado.name(),
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         if (estado == EstadoRadicacion.APROBADA && !repositorioProyecto.existsBySolicitudOrigenId(actualizada.getId())) {
             crearProyectoDesdeRadicacion(actualizada, usuario);
@@ -243,13 +241,13 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     @Override
     public void registrarObservacion(String identificadorIngreso, Long id, String comentario) {
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, id);
-        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(radicacion, radicacion.getEstado(), comentario, identificadorIngreso));
+        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(radicacion, null, radicacion.getEstado(), comentario, identificadorIngreso));
         servicioAuditLog.registrarEvento(
             identificadorIngreso, "OBSERVACION", "RadicacionSolicitud",
             radicacion.getNumeroRadicado(),
             null,
             comentario,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
     }
 
@@ -280,6 +278,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         repositorioRadicacionHistorial.save(
             RadicacionHistorial.crear(
                 radicacion,
+                null,
                 radicacion.getEstado(),
                 "Documento cargado: " + nombreArchivo,
                 identificadorIngreso
@@ -290,7 +289,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             radicacion.getNumeroRadicado(),
             null,
             nombreArchivo + " (" + tipoDocumento.name() + ")",
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         return guardado;
     }
@@ -330,7 +329,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         radicacion.asignarLote(lote);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(
-            actualizada, actualizada.getEstado(),
+            actualizada, null, actualizada.getEstado(),
             "Lote asignado: " + lote.getCodigo(), identificadorIngreso
         ));
         servicioAuditLog.registrarEvento(
@@ -338,7 +337,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             actualizada.getNumeroRadicado(),
             codigoAnterior,
             lote.getCodigo(),
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         return actualizada;
     }
@@ -374,7 +373,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         );
         RadicacionDocumento guardada = repositorioRadicacionDocumento.save(acta);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(
-            radicacion, radicacion.getEstado(),
+            radicacion, null, radicacion.getEstado(),
             "Acta de rúbrica cargada: " + nombreArchivo,
             identificadorIngreso
         ));
@@ -383,7 +382,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             radicacion.getNumeroRadicado(),
             null,
             nombreArchivo,
-            obtenerIpActual()
+            UtilRed.obtenerIpActual()
         );
         return guardada;
     }
@@ -421,15 +420,6 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         return candidato;
     }
 
-    private String obtenerIpActual() {
-        var attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs == null) return "desconocida";
-        HttpServletRequest request = attrs.getRequest();
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return (forwarded != null && !forwarded.isBlank())
-            ? forwarded.split(",")[0].trim()
-            : request.getRemoteAddr();
-    }
 
     private void validarArchivo(Long radicacionId, String nombreArchivo, String mimeType, byte[] contenido) {
         if (contenido == null || contenido.length == 0) {

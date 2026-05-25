@@ -30,14 +30,17 @@ const ModuloCenso = (() => {
         document.getElementById('bloqueFormDeclaracion')?.classList.toggle('d-none', _esGestor);
         document.getElementById('bloqueFormPersonal')?.classList.toggle('d-none', _esGestor);
         document.getElementById('bloqueFormVehiculo')?.classList.toggle('d-none', _esGestor);
-        // Para personal: ADMIN/DIRECTIVO ven solo el conteo
-        document.getElementById('resumenPersonalGestor')?.classList.toggle('d-none', !_esGestor);
-        document.getElementById('bloqueListaPersonal')?.classList.toggle('d-none', _esGestor);
+        // Columna Acción en nómina de personal
+        const cabeceraPersonal = document.getElementById('cabeceraTablaPersonal');
+        if (cabeceraPersonal) {
+            const thAccionPersonal = cabeceraPersonal.querySelector('th:last-child');
+            if (thAccionPersonal) thAccionPersonal.classList.toggle('d-none', _esGestor);
+        }
         // Columna Acción en flota vehicular
-        const cabecera = document.getElementById('cabeceraTablaVehiculos');
-        if (cabecera) {
-            const thAccion = cabecera.querySelector('th:last-child');
-            if (thAccion) thAccion.classList.toggle('d-none', _esGestor);
+        const cabeceraVehiculos = document.getElementById('cabeceraTablaVehiculos');
+        if (cabeceraVehiculos) {
+            const thAccionVehiculo = cabeceraVehiculos.querySelector('th:last-child');
+            if (thAccionVehiculo) thAccionVehiculo.classList.toggle('d-none', _esGestor);
         }
     }
 
@@ -109,38 +112,23 @@ const ModuloCenso = (() => {
     async function _cargarPersonal() {
         if (!_empresaId) return;
         const resp = await ApiCliente.obtener(`/api/empresas/${_empresaId}/censo/personal`);
-
-        if (_esGestor) {
-            const resumen = document.getElementById('resumenPersonalGestor');
-            if (!resumen) return;
-            if (!resp?.ok) { resumen.innerHTML = '<p class="text-danger small">Error al cargar personal.</p>'; return; }
-            const datos = await resp.json();
-            resumen.innerHTML = `
-                <div class="card border-0 bg-light">
-                    <div class="card-body text-center py-4">
-                        <i class="bi bi-people-fill text-primary fs-1 mb-2 d-block"></i>
-                        <div class="fs-2 fw-bold">${datos.length}</div>
-                        <small class="text-muted">empleado${datos.length !== 1 ? 's' : ''} registrado${datos.length !== 1 ? 's' : ''} en nómina</small>
-                    </div>
-                </div>`;
-            return;
-        }
-
         const tbody = document.getElementById('cuerpoTablaPersonal');
         if (!tbody) return;
-        if (!resp?.ok) { tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center py-3">Error al cargar personal</td></tr>'; return; }
+        const cols = _esGestor ? 3 : 4;
+        if (!resp?.ok) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-danger text-center py-3">Error al cargar personal</td></tr>`; return; }
         const datos = await resp.json();
-        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center py-3">Sin personal registrado</td></tr>'; return; }
+        if (!datos.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-muted text-center py-3">Sin personal registrado</td></tr>`; return; }
         tbody.innerHTML = datos.map(p => `
             <tr>
                 <td class="ps-3">${p.cuit}</td>
                 <td>${p.nombreCompleto}</td>
                 <td>${p.fechaIngreso ? p.fechaIngreso.substring(0, 10) : '-'}</td>
+                ${_esGestor ? '' : `
                 <td class="text-center">
                     <button class="btn btn-outline-danger btn-sm" onclick="ModuloCenso.eliminarPersonal(${p.id})">
                         <i class="bi bi-trash3"></i>
                     </button>
-                </td>
+                </td>`}
             </tr>`).join('');
     }
 

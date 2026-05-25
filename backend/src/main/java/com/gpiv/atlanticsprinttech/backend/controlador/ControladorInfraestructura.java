@@ -1,12 +1,11 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
+import com.gpiv.atlanticsprinttech.backend.mapeador.MapeadorInfraestructura;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioInfraestructura;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaServicio;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaServicioEvento;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudActualizarServicio;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudCrearServicio;
-import com.gpiv.atlanticsprinttech.entities.dominio.Servicio;
-import com.gpiv.atlanticsprinttech.entities.dominio.ServicioEvento;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -25,20 +24,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class ControladorInfraestructura {
 
     private final ServicioInfraestructura servicio;
+    private final MapeadorInfraestructura mapeador;
 
-    public ControladorInfraestructura(ServicioInfraestructura servicio) {
+    public ControladorInfraestructura(ServicioInfraestructura servicio, MapeadorInfraestructura mapeador) {
         this.servicio = servicio;
+        this.mapeador = mapeador;
     }
 
     @GetMapping
     public List<RespuestaServicio> listar() {
-        return servicio.listar().stream().map(this::toRespuesta).toList();
+        return servicio.listar().stream().map(mapeador::aRespuesta).toList();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public RespuestaServicio crear(@Valid @RequestBody SolicitudCrearServicio solicitud, Authentication auth) {
-        return toRespuesta(servicio.crear(auth.getName(), solicitud.nombre(), solicitud.descripcionTecnica()));
+        return mapeador.aRespuesta(servicio.crear(auth.getName(), solicitud.nombre(), solicitud.descripcionTecnica()));
     }
 
     @PatchMapping("/{id}/estado")
@@ -47,33 +48,11 @@ public class ControladorInfraestructura {
         @Valid @RequestBody SolicitudActualizarServicio solicitud,
         Authentication auth
     ) {
-        return toRespuesta(servicio.actualizarEstado(auth.getName(), id, solicitud.estado(), solicitud.comentario()));
+        return mapeador.aRespuesta(servicio.actualizarEstado(auth.getName(), id, solicitud.estado(), solicitud.comentario()));
     }
 
     @GetMapping("/{id}/historial")
     public List<RespuestaServicioEvento> historial(@PathVariable Long id) {
-        return servicio.listarHistorial(id).stream().map(this::toEvento).toList();
-    }
-
-    private RespuestaServicio toRespuesta(Servicio s) {
-        return new RespuestaServicio(
-            s.getId(),
-            s.getNombre(),
-            s.getDescripcionTecnica(),
-            s.getEstadoActual().name(),
-            s.getUltimoComentario(),
-            s.getUltimoTecnicoResponsable() != null ? s.getUltimoTecnicoResponsable().getNombreCompleto() : null,
-            s.getFechaUltimaActualizacion() != null ? s.getFechaUltimaActualizacion().toString() : null
-        );
-    }
-
-    private RespuestaServicioEvento toEvento(ServicioEvento e) {
-        return new RespuestaServicioEvento(
-            e.getId(),
-            e.getEstado().name(),
-            e.getComentario(),
-            e.getUsuario(),
-            e.getFechaEvento() != null ? e.getFechaEvento().toString() : null
-        );
+        return servicio.listarHistorial(id).stream().map(mapeador::aRespuestaEvento).toList();
     }
 }

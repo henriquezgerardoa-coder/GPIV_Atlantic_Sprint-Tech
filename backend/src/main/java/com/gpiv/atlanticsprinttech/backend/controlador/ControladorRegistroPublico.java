@@ -2,11 +2,11 @@ package com.gpiv.atlanticsprinttech.backend.controlador;
 
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
+import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudConsultaPublicaMensajeria;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRegistroPublico;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudReenvioVerificacion;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.http.ResponseEntity;
@@ -30,15 +30,14 @@ public class ControladorRegistroPublico {
 
     @PostMapping("/registro")
     public ResponseEntity<RespuestaOperacion> registrar(
-        @Valid @RequestBody SolicitudRegistroPublico solicitud,
-        HttpServletRequest request
+        @Valid @RequestBody SolicitudRegistroPublico solicitud
     ) {
         servicioUsuario.registrarPublico(
             solicitud.nombreUsuario(),
             solicitud.correoElectronico(),
             solicitud.clave(),
             solicitud.confirmacionClave(),
-            obtenerIpCliente(request)
+            UtilRed.obtenerIpActual()
         );
         return ResponseEntity.created(URI.create("/index.html"))
             .body(new RespuestaOperacion("Registro exitoso. Revisa tu correo para verificar la cuenta"));
@@ -52,10 +51,9 @@ public class ControladorRegistroPublico {
 
     @PostMapping("/verificacion/reenviar")
     public RespuestaOperacion reenviarVerificacion(
-        @Valid @RequestBody SolicitudReenvioVerificacion solicitud,
-        HttpServletRequest request
+        @Valid @RequestBody SolicitudReenvioVerificacion solicitud
     ) {
-        servicioUsuario.reenviarCorreoVerificacion(solicitud.correoElectronico(), obtenerIpCliente(request));
+        servicioUsuario.reenviarCorreoVerificacion(solicitud.correoElectronico(), UtilRed.obtenerIpActual());
         return new RespuestaOperacion("Te enviamos un nuevo correo de verificacion");
     }
 
@@ -72,14 +70,6 @@ public class ControladorRegistroPublico {
         );
         return ResponseEntity.created(URI.create("/index.html"))
             .body(new RespuestaOperacion("Consulta enviada correctamente. Te responderemos a la brevedad."));
-    }
-
-    private String obtenerIpCliente(HttpServletRequest request) {
-        String encabezado = request.getHeader("X-Forwarded-For");
-        if (encabezado != null && !encabezado.isBlank()) {
-            return encabezado.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }
 

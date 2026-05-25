@@ -48,7 +48,8 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Transactional(readOnly = true)
     public List<ProyectoProductivo> listar(String identificadorIngreso) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+        if (servicioContextoUsuario.esRolEmpresa(usuario) && !servicioContextoUsuario.esRolAdministrador(usuario)
+                && !servicioContextoUsuario.esRolDirectivo(usuario)) {
             Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
             return repositorioProyecto.findByEmpresaIdConDetalle(empresaId);
         }
