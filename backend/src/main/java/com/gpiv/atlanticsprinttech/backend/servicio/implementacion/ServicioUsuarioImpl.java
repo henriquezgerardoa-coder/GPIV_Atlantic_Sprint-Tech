@@ -7,6 +7,7 @@ import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCorreoVerificacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.RegistroIntentosEnMemoria;
+import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
@@ -23,8 +24,6 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -40,6 +39,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     private final PropiedadesRegistroPublico propiedadesRegistroPublico;
     private final RegistroIntentosEnMemoria registroIntentosEnMemoria;
     private final ServicioAuditLog servicioAuditLog;
+    private final ServicioContextoUsuario servicioContextoUsuario;
 
     public ServicioUsuarioImpl(
         RepositorioUsuario repositorioUsuario,
@@ -48,7 +48,8 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         ServicioCorreoVerificacion servicioCorreoVerificacion,
         PropiedadesRegistroPublico propiedadesRegistroPublico,
         RegistroIntentosEnMemoria registroIntentosEnMemoria,
-        ServicioAuditLog servicioAuditLog
+        ServicioAuditLog servicioAuditLog,
+        ServicioContextoUsuario servicioContextoUsuario
     ) {
         this.repositorioUsuario = repositorioUsuario;
         this.repositorioEmpresa = repositorioEmpresa;
@@ -57,15 +58,24 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         this.propiedadesRegistroPublico = propiedadesRegistroPublico;
         this.registroIntentosEnMemoria = registroIntentosEnMemoria;
         this.servicioAuditLog = servicioAuditLog;
+        this.servicioContextoUsuario = servicioContextoUsuario;
     }
     @Override
     public List<Usuario> listar() {
         return repositorioUsuario.findAll(Sort.by(Sort.Direction.ASC, "nombreCompleto"));
     }
     @Override
+    public List<Usuario> listarPorEmpresa(Long empresaId) {
+        return repositorioUsuario.findByEmpresa_IdOrderByIdAsc(empresaId);
+    }
+    @Override
     public Usuario obtenerPorId(Long id) {
         return repositorioUsuario.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+    }
+    @Override
+    public Usuario obtenerPorIdentificador(String identificador) {
+        return obtenerUsuarioPorIdentificador(identificador);
     }
     @Override
     public Usuario crear(String nombreUsuario, String nombreCompleto, String clavePlano, boolean activo, Set<RolUsuario> roles, Long empresaId) {
@@ -82,13 +92,42 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
             activo,
             rolesNormalizados
         );
+        String autorizador = servicioContextoUsuario.obtenerIdentificadorActual();
         usuario.actualizarEmpresa(empresa);
+        usuario.setAutorizadoPor(autorizador);
         Usuario guardado = repositorioUsuario.save(usuario);
         servicioAuditLog.registrarEvento(
-            obtenerUsuarioActual(), "CREACION_USUARIO", "Usuario",
+            autorizador, "CREACION_USUARIO", "Usuario",
             guardado.getNombreUsuario(),
             null,
             "roles=" + rolesNormalizados + " | activo=" + activo,
+            UtilRed.obtenerIpActual()
+        );
+        return guardado;
+    }
+    @Override
+    public Usuario crearComoEmpresa(String nombreUsuario, String nombreCompleto, String clavePlano, Long empresaId, String autorizador) {
+        validarPoliticaClave(clavePlano);
+        if (repositorioUsuario.existsByNombreUsuario(nombreUsuario)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario con ese nombre");
+        }
+        Empresa empresa = repositorioEmpresa.findById(empresaId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa indicada no existe"));
+        Usuario usuario = Usuario.crear(
+            nombreUsuario,
+            nombreCompleto,
+            codificadorClave.encode(clavePlano),
+            true,
+            EnumSet.of(RolUsuario.EMPRESA)
+        );
+        usuario.actualizarEmpresa(empresa);
+        usuario.setAutorizadoPor(autorizador);
+        Usuario guardado = repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            autorizador, "CREACION_USUARIO", "Usuario",
+            guardado.getNombreUsuario(),
+            null,
+            "roles=EMPRESA | autorizadoPor=" + autorizador,
             UtilRed.obtenerIpActual()
         );
         return guardado;
@@ -103,7 +142,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         usuario.actualizarDatos(nombreCompleto, activo, rolesNormalizados, empresa);
         Usuario guardado = repositorioUsuario.save(usuario);
         servicioAuditLog.registrarEvento(
-            obtenerUsuarioActual(), "ACTUALIZACION_USUARIO", "Usuario",
+            servicioContextoUsuario.obtenerIdentificadorActual(), "ACTUALIZACION_USUARIO", "Usuario",
             guardado.getNombreUsuario(),
             anteriorEstado,
             "activo=" + activo + " | roles=" + rolesNormalizados,
@@ -118,7 +157,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         String datos = usuario.getNombreCompleto() + " | roles=" + usuario.getRoles();
         repositorioUsuario.delete(usuario);
         servicioAuditLog.registrarEvento(
-            obtenerUsuarioActual(), "ELIMINACION_USUARIO", "Usuario",
+            servicioContextoUsuario.obtenerIdentificadorActual(), "ELIMINACION_USUARIO", "Usuario",
             nombreUsuario,
             datos,
             null,
@@ -131,7 +170,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         usuario.actualizarClaveAccesoHash(codificadorClave.encode(claveNueva));
         repositorioUsuario.save(usuario);
         servicioAuditLog.registrarEvento(
-            obtenerUsuarioActual(), "RESTABLECIMIENTO_CLAVE", "Usuario",
+            servicioContextoUsuario.obtenerIdentificadorActual(), "RESTABLECIMIENTO_CLAVE", "Usuario",
             usuario.getNombreUsuario(),
             null, null,
             UtilRed.obtenerIpActual()
@@ -261,12 +300,6 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         repositorioUsuario.save(usuario);
         enviarCorreoVerificacion(usuario);
     }
-
-    private String obtenerUsuarioActual() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "sistema";
-    }
-
 
     private void validarRoles(Set<RolUsuario> roles) {
         if (roles == null || roles.isEmpty()) {

@@ -78,7 +78,7 @@ public class ProyectoProductivo {
         this.montoInversion = montoInversion;
         this.fechaEstimadaFin = fechaEstimadaFin;
         this.responsableSeguimiento = responsableSeguimiento;
-        this.estado = EstadoProyecto.PLANIFICADO;
+        this.estado = EstadoProyecto.INICIADO;
         this.fechaCreacion = LocalDateTime.now();
     }
 
@@ -141,7 +141,7 @@ public class ProyectoProductivo {
     }
 
     public void iniciarProyecto(RadicacionSolicitud solicitud) {
-        if (this.estado != EstadoProyecto.PLANIFICADO) {
+        if (this.estado != EstadoProyecto.INICIADO) {
             throw new IllegalStateException("El proyecto ya fue iniciado");
         }
         this.solicitudOrigen = solicitud;

@@ -67,6 +67,32 @@ public class ControladorUsuario {
         return ResponseEntity.created(URI.create("/api/usuarios/" + usuarioCreado.getId()))
             .body(crearRespuesta(usuarioCreado));
     }
+    @GetMapping("/mi-empresa")
+    public List<RespuestaUsuario> listarMiEmpresa(Authentication autenticacion) {
+        Usuario autenticado = servicioUsuario.obtenerPorIdentificador(autenticacion.getName());
+        if (autenticado.getEmpresaId() == null) {
+            return List.of();
+        }
+        return servicioUsuario.listarPorEmpresa(autenticado.getEmpresaId())
+            .stream().map(this::crearRespuesta).toList();
+    }
+    @PostMapping("/empresa")
+    public ResponseEntity<RespuestaUsuario> crearComoEmpresa(@Valid @RequestBody SolicitudUsuario solicitud, Authentication autenticacion) {
+        Usuario autenticado = servicioUsuario.obtenerPorIdentificador(autenticacion.getName());
+        if (autenticado.getEmpresaId() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, "Su usuario no tiene empresa asociada");
+        }
+        Usuario creado = servicioUsuario.crearComoEmpresa(
+            solicitud.nombreUsuario(),
+            solicitud.nombreCompleto(),
+            solicitud.clave(),
+            autenticado.getEmpresaId(),
+            autenticacion.getName()
+        );
+        return ResponseEntity.created(URI.create("/api/usuarios/" + creado.getId()))
+            .body(crearRespuesta(creado));
+    }
     @PutMapping("/{id}")
     public RespuestaUsuario actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudActualizacionUsuario solicitud) {
         Usuario usuarioActualizado = servicioUsuario.actualizar(
@@ -101,7 +127,8 @@ public class ControladorUsuario {
             usuario.isActivo(),
             usuario.getRoles(),
             usuario.getEmpresaId(),
-            null
+            null,
+            usuario.getAutorizadoPor()
         );
     }
 }

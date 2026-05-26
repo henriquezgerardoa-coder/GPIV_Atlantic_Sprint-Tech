@@ -20,7 +20,7 @@ public record RespuestaEmpresaDetalleAdmin(
     String estadoExpediente,
     Long rubroId,
     String rubroNombre,
-    RespuestaUsuarioEmpresaAdmin usuarioAsociado,
+    List<RespuestaUsuarioEmpresaAdmin> usuariosAsociados,
     List<RespuestaVehiculoEmpresa> vehiculos,
     List<LoteResumen> lotes
 ) {
@@ -30,7 +30,7 @@ public record RespuestaEmpresaDetalleAdmin(
         String zona,
         Double superficieMetrosCuadrados,
         String estadoAsignacion,
-        LocalDate fechaAsignacion
+        LocalDate fechaAsignacion,
+        String numeroExpedienteReferencia
     ) {}
 }
-

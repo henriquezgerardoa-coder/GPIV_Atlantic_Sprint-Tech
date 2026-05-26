@@ -53,7 +53,7 @@ public class ControladorCenso {
             auth.getName(), empresaId,
             solicitud.anioPeriodo(),
             solicitud.cantidadPersonalRegistrado(),
-            solicitud.cantidadPersonasNoRegistrado(),
+            solicitud.cantidadPersonalNoRegistrado(),
             solicitud.observacion()
         ));
     }
@@ -106,7 +106,7 @@ public class ControladorCenso {
     ) {
         return mapeador.aRespuestaVehiculo(servicioCenso.agregarVehiculo(
             auth.getName(), empresaId,
-            solicitud.patente(), solicitud.marcaModelo()
+            solicitud.patente(), solicitud.marcaModelo(), solicitud.tipo()
         ));
     }
 

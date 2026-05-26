@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 public record RespuestaUsuarioEmpresaAdmin(
+    String nombreUsuario,
     String nombreCompleto,
     String correoElectronico,
     Set<RolUsuario> roles,
@@ -12,4 +13,3 @@ public record RespuestaUsuarioEmpresaAdmin(
     LocalDateTime fechaUltimoAcceso
 ) {
 }
-

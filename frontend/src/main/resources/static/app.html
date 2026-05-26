@@ -237,6 +237,13 @@
             <p class="text-muted small mb-0">Vista general del estado del parque industrial</p>
         </div>
 
+        <div class="position-relative mb-4 rounded overflow-hidden shadow-sm">
+            <img src="img/Parque.webp" alt="Parque Industrial" style="width:100%;max-height:450px;object-fit:cover;display:block;">
+            <div class="position-absolute top-0 start-0 p-3">
+                <img src="img/logo.png" alt="ENREPAVI" style="max-height:430px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.45));">
+            </div>
+        </div>
+
         <div class="row g-4">
             <!-- Empresas -->
             <div class="col-sm-6 col-xl-3">
@@ -912,9 +919,17 @@
                             <span class="fw-semibold">Actividad económica:</span>
                             <span id="empActividadPropia">-</span>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 d-flex align-items-center gap-2 flex-wrap">
                             <span class="fw-semibold">Rubro:</span>
                             <span id="empRubroPropio">-</span>
+                            <button id="btnSeleccionarRubroInicial" class="btn btn-outline-primary btn-sm d-none"
+                                    onclick="ModuloEmpresas.abrirSeleccionRubroInicial()">
+                                <i class="bi bi-tag me-1"></i>Seleccionar rubro
+                            </button>
+                            <button id="btnSolicitarCambioRubro" class="btn btn-outline-secondary btn-sm d-none"
+                                    onclick="navegarA('cambio-rubro')">
+                                <i class="bi bi-arrow-repeat me-1"></i>Solicitar cambio
+                            </button>
                         </div>
                         <div class="col-md-6">
                             <span class="fw-semibold">Dirección:</span>
@@ -959,6 +974,33 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Usuarios de la empresa -->
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-people me-2 text-primary"></i>Usuarios de la empresa</h6>
+                        <button class="btn btn-primary btn-sm" onclick="ModuloUsuariosEmpresa.abrirCreacion()">
+                            <i class="bi bi-plus-lg me-1"></i>Agregar usuario
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Nombre completo</th>
+                                    <th class="text-center">Estado</th>
+                                    <th>Autorizado por</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoTablaUsuariosEmpresa">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="panelEmpresasGestion">
@@ -987,6 +1029,16 @@
                 </div>
             </div>
         </div>
+
+        <nav id="paginacionEmpresas" class="d-none d-flex justify-content-center align-items-center gap-3 mt-3" aria-label="Paginación empresas">
+            <button id="btnPrevEmpresas" class="btn btn-sm btn-outline-secondary" onclick="ModuloEmpresas.irPagina('prev')">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span id="infoPaginaEmpresas" class="small text-muted"></span>
+            <button id="btnNextEmpresas" class="btn btn-sm btn-outline-secondary" onclick="ModuloEmpresas.irPagina('next')">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </nav>
 
         <div class="card border-0 shadow-sm mt-3">
             <div class="card-body">
@@ -1106,6 +1158,16 @@
                 </div>
             </div>
         </div>
+
+        <nav id="paginacionLotes" class="d-none d-flex justify-content-center align-items-center gap-3 mt-3" aria-label="Paginación lotes">
+            <button id="btnPrevLotes" class="btn btn-sm btn-outline-secondary" onclick="ModuloLotes.irPagina('prev')">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span id="infoPaginaLotes" class="small text-muted"></span>
+            <button id="btnNextLotes" class="btn btn-sm btn-outline-secondary" onclick="ModuloLotes.irPagina('next')">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </nav>
     </section>
 
     <!-- ── SECCIÓN: CENSO ───────────────────────── -->
@@ -1205,10 +1267,11 @@
                                             <th>Registrados</th>
                                             <th>No registrados</th>
                                             <th>Total</th>
+                                            <th>Observación</th>
                                         </tr>
                                     </thead>
                                     <tbody id="cuerpoTablaCenso">
-                                        <tr><td colspan="5" class="text-muted text-center py-3">Sin declaraciones</td></tr>
+                                        <tr><td colspan="6" class="text-muted text-center py-3">Sin declaraciones</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1285,10 +1348,15 @@
                                                    placeholder="ABC123 o AB123CD" maxlength="15">
                                             <div class="form-text">Formato argentino (ABC123) o Mercosur (AB123CD)</div>
                                         </div>
-                                        <div class="mb-3">
+                                        <div class="mb-2">
                                             <label class="form-label small">Marca / Modelo <span class="text-danger">*</span></label>
                                             <input id="campoMarcaModeloVehiculo" class="form-control form-control-sm"
                                                    maxlength="120" placeholder="Ej: Ford Transit 2022">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small">Tipo <span class="text-danger">*</span></label>
+                                            <input id="campoTipoVehiculo" class="form-control form-control-sm"
+                                                   maxlength="80" placeholder="Ej: Camión, Utilitario, Auto">
                                         </div>
                                         <button type="button" class="btn btn-primary btn-sm w-100"
                                                 onclick="ModuloCenso.agregarVehiculo()">
@@ -1306,12 +1374,13 @@
                                         <tr>
                                             <th class="ps-3">Patente</th>
                                             <th>Marca / Modelo</th>
+                                            <th>Tipo</th>
                                             <th class="text-center">Estado</th>
                                             <th class="text-center">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="cuerpoTablaVehiculos">
-                                        <tr><td colspan="4" class="text-muted text-center py-3">Sin vehículos registrados</td></tr>
+                                        <tr><td colspan="5" class="text-muted text-center py-3">Sin vehículos registrados</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1717,10 +1786,13 @@
                 <div class="modal-body">
                     <div id="alertaModalHitos" class="alert alert-danger d-none alerta-modal small"></div>
 
+                    <!-- Detalle general del proyecto -->
+                    <div id="detalleProyectoModal" class="row g-2 mb-3 pb-3 border-bottom small"></div>
+
                     <!-- Lista de hitos -->
                     <div id="listaHitosModal" class="mb-3"></div>
 
-                    <!-- Formulario nuevo hito (solo gestores) -->
+                    <!-- Formulario nuevo hito (solo TECNICO) -->
                     <div id="bloqueFormNuevoHito" class="border-top pt-3 d-none">
                         <h6 class="fw-semibold mb-2"><i class="bi bi-plus-lg me-1 text-primary"></i>Agregar hito</h6>
                         <form id="formNuevoHito">
@@ -1762,10 +1834,10 @@
                     <div id="alertaModalEstado" class="alert alert-danger d-none alerta-modal small"></div>
                     <label for="selectorEstadoProyecto" class="form-label small fw-semibold">Nuevo estado</label>
                     <select id="selectorEstadoProyecto" class="form-select">
-                        <option value="PLANIFICADO">Planificado</option>
+                        <option value="INICIADO">Iniciado</option>
                         <option value="EN_EJECUCION">En ejecución</option>
-                        <option value="PAUSADO">Pausado</option>
-                        <option value="FINALIZADO">Finalizado</option>
+                        <option value="DETENIDO">Detenido</option>
+                        <option value="COMPLETADO">Completado</option>
                         <option value="CANCELADO">Cancelado</option>
                     </select>
                 </div>
@@ -1848,6 +1920,7 @@
                                 <th>Nombre completo</th>
                                 <th>Roles</th>
                                 <th class="text-center">Estado</th>
+                                <th>Autorizado por</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -1970,12 +2043,9 @@
                         <div class="col-md-6"><strong>Estado expediente:</strong> <span id="detEmpresaEstado">-</span></div>
                     </div>
 
-                    <h6 class="text-muted">Usuario asociado</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-6"><strong>Nombre completo:</strong> <span id="detUsuarioNombre">-</span></div>
-                        <div class="col-md-6"><strong>Correo:</strong> <span id="detUsuarioCorreo">-</span></div>
-                        <div class="col-md-6"><strong>Rol:</strong> <span id="detUsuarioRol">-</span></div>
-                        <div class="col-md-6"><strong>Último acceso:</strong> <span id="detUsuarioUltimoAcceso">-</span></div>
+                    <h6 class="text-muted">Usuarios asociados</h6>
+                    <div id="contenidoUsuariosEmpresaAdmin" class="mb-3">
+                        <span class="text-muted fst-italic small"><i class="bi bi-dash-circle me-1"></i>Sin usuarios asociados</span>
                     </div>
 
                     <h6 class="text-muted">Indicadores</h6>
@@ -2562,6 +2632,70 @@
     </div>
 </div>
 
+<!-- Modal: Seleccionar rubro inicial -->
+<div class="modal fade" id="modalRubroInicial" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-tag me-2 text-primary"></i>Seleccionar rubro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalRubroInicial" class="alert alert-danger alerta-modal d-none"></div>
+                <p class="text-muted small mb-3">Esta es la única oportunidad de asignar el rubro directamente. Una vez asignado, cualquier cambio deberá solicitarse formalmente.</p>
+                <div class="mb-3">
+                    <label for="selectorRubroInicial" class="form-label fw-semibold">Rubro <span class="text-danger">*</span></label>
+                    <select id="selectorRubroInicial" class="form-select">
+                        <option value="">Seleccionar rubro...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloEmpresas.confirmarRubroInicial()">
+                    <i class="bi bi-check-lg me-1"></i>Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Agregar usuario de empresa -->
+<div class="modal fade" id="modalUsuarioEmpresa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2 text-primary"></i>Agregar usuario de empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertaModalUsuarioEmpresa" class="alert alert-danger alerta-modal d-none"></div>
+                <form id="formularioUsuarioEmpresa" novalidate>
+                    <div class="mb-3">
+                        <label for="campoNombreUsuarioEmpresa" class="form-label fw-semibold">Nombre de usuario <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreUsuarioEmpresa" placeholder="Ej: jperez" maxlength="60" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoNombreCompletoEmpresa" class="form-label fw-semibold">Nombre completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="campoNombreCompletoEmpresa" placeholder="Ej: Juan Pérez" maxlength="120" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="campoClaveEmpresa" class="form-label fw-semibold">Contraseña <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="campoClaveEmpresa" placeholder="Mínimo 8 caracteres, mayúsculas, minúsculas y números" required>
+                        <div class="form-text text-muted">El usuario tendrá acceso a esta empresa con rol EMPRESA.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="ModuloUsuariosEmpresa.guardar()">
+                    <i class="bi bi-floppy me-1"></i>Agregar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Restablecer contraseña de usuario -->
 <div class="modal fade" id="modalRestablecerClave" tabindex="-1">
     <div class="modal-dialog modal-sm">
@@ -2745,6 +2879,12 @@
                                 <label class="form-label small fw-semibold">Teléfono</label>
                                 <input type="text" class="form-control form-control-sm" id="ciTelefono" placeholder="Opcional">
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Rubro</label>
+                                <select class="form-select form-select-sm" id="ciRubro">
+                                    <option value="">Seleccionar rubro (opcional)...</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -2820,6 +2960,7 @@
 <script src="js/modulos/mensajeria.js"></script>
 <script src="js/modulos/estadisticas.js"></script>
 <script src="js/modulos/usuarios.js"></script>
+<script src="js/modulos/usuarios-empresa.js"></script>
 <script src="js/modulos/audit-log.js"></script>
 <script src="js/modulos/censo.js"></script>
 <script src="js/modulos/cambio-rubro.js"></script>

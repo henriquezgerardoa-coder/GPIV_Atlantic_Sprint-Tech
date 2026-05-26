@@ -1,10 +1,14 @@
 const ModuloCenso = (() => {
     let _empresaId = null;
-    let _esGestor = false;
+    let _esGestor   = false;  // ve selector de empresas (ADMIN, DIRECTIVO, SECRETARIO)
+    let _soloLectura = false; // oculta formularios de carga (ADMIN, DIRECTIVO)
 
     async function cargar() {
-        _esGestor = !Autenticacion.tieneAcceso(['EMPRESA']) ||
-            Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esEmpresaSolo = Autenticacion.tieneAcceso(['EMPRESA'])
+            && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
+        _esGestor   = !esEmpresaSolo;
+        _soloLectura = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO'])
+            && !Autenticacion.tieneAcceso(['SECRETARIO', 'EMPRESA']);
 
         const bloqueSelector = document.getElementById('bloqueSelectorEmpresaCenso');
         const contenido = document.getElementById('contenidoCenso');
@@ -26,21 +30,16 @@ const ModuloCenso = (() => {
     }
 
     function _aplicarVisibilidadRol() {
-        // EMPRESA gestiona sus datos; ADMIN/DIRECTIVO solo lectura
-        document.getElementById('bloqueFormDeclaracion')?.classList.toggle('d-none', _esGestor);
-        document.getElementById('bloqueFormPersonal')?.classList.toggle('d-none', _esGestor);
-        document.getElementById('bloqueFormVehiculo')?.classList.toggle('d-none', _esGestor);
-        // Columna Acción en nómina de personal
+        document.getElementById('bloqueFormDeclaracion')?.classList.toggle('d-none', _soloLectura);
+        document.getElementById('bloqueFormPersonal')?.classList.toggle('d-none', _soloLectura);
+        document.getElementById('bloqueFormVehiculo')?.classList.toggle('d-none', _soloLectura);
         const cabeceraPersonal = document.getElementById('cabeceraTablaPersonal');
         if (cabeceraPersonal) {
-            const thAccionPersonal = cabeceraPersonal.querySelector('th:last-child');
-            if (thAccionPersonal) thAccionPersonal.classList.toggle('d-none', _esGestor);
+            cabeceraPersonal.querySelector('th:last-child')?.classList.toggle('d-none', _soloLectura);
         }
-        // Columna Acción en flota vehicular
         const cabeceraVehiculos = document.getElementById('cabeceraTablaVehiculos');
         if (cabeceraVehiculos) {
-            const thAccionVehiculo = cabeceraVehiculos.querySelector('th:last-child');
-            if (thAccionVehiculo) thAccionVehiculo.classList.toggle('d-none', _esGestor);
+            cabeceraVehiculos.querySelector('th:last-child')?.classList.toggle('d-none', _soloLectura);
         }
     }
 
@@ -69,16 +68,17 @@ const ModuloCenso = (() => {
         const resp = await ApiCliente.obtener(`/api/empresas/${_empresaId}/censo`);
         const tbody = document.getElementById('cuerpoTablaCenso');
         if (!tbody) return;
-        if (!resp?.ok) { tbody.innerHTML = '<tr><td colspan="5" class="text-danger text-center py-3">Error al cargar declaraciones</td></tr>'; return; }
+        if (!resp?.ok) { tbody.innerHTML = '<tr><td colspan="6" class="text-danger text-center py-3">Error al cargar declaraciones</td></tr>'; return; }
         const datos = await resp.json();
-        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center py-3">Sin declaraciones</td></tr>'; return; }
+        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-3">Sin declaraciones</td></tr>'; return; }
         tbody.innerHTML = datos.map(d => `
             <tr>
                 <td class="ps-3 fw-semibold">${d.anioPeriodo}</td>
                 <td>${d.fechaDeclaracion ? d.fechaDeclaracion.substring(0, 10) : '-'}</td>
                 <td>${d.cantidadPersonalRegistrado}</td>
-                <td>${d.cantidadPersonasNoRegistrado}</td>
+                <td>${d.cantidadPersonalNoRegistrado}</td>
                 <td>${d.totalEmpleados}</td>
+                <td class="text-muted small">${d.observacion || '-'}</td>
             </tr>`).join('');
     }
 
@@ -96,7 +96,7 @@ const ModuloCenso = (() => {
         const resp = await ApiCliente.crear(`/api/empresas/${_empresaId}/censo`, {
             anioPeriodo: periodo,
             cantidadPersonalRegistrado: registrado,
-            cantidadPersonasNoRegistrado: noRegistrado,
+            cantidadPersonalNoRegistrado: noRegistrado,
             observacion
         });
         if (!resp?.ok) {
@@ -114,7 +114,7 @@ const ModuloCenso = (() => {
         const resp = await ApiCliente.obtener(`/api/empresas/${_empresaId}/censo/personal`);
         const tbody = document.getElementById('cuerpoTablaPersonal');
         if (!tbody) return;
-        const cols = _esGestor ? 3 : 4;
+        const cols = _soloLectura ? 3 : 4;
         if (!resp?.ok) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-danger text-center py-3">Error al cargar personal</td></tr>`; return; }
         const datos = await resp.json();
         if (!datos.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-muted text-center py-3">Sin personal registrado</td></tr>`; return; }
@@ -123,7 +123,7 @@ const ModuloCenso = (() => {
                 <td class="ps-3">${p.cuit}</td>
                 <td>${p.nombreCompleto}</td>
                 <td>${p.fechaIngreso ? p.fechaIngreso.substring(0, 10) : '-'}</td>
-                ${_esGestor ? '' : `
+                ${_soloLectura ? '' : `
                 <td class="text-center">
                     <button class="btn btn-outline-danger btn-sm" onclick="ModuloCenso.eliminarPersonal(${p.id})">
                         <i class="bi bi-trash3"></i>
@@ -166,20 +166,21 @@ const ModuloCenso = (() => {
         const resp = await ApiCliente.obtener(`/api/empresas/${_empresaId}/censo/vehiculos`);
         const tbody = document.getElementById('cuerpoTablaVehiculos');
         if (!tbody) return;
-        if (!resp?.ok) { tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center py-3">Error al cargar vehículos</td></tr>'; return; }
+        const cols = _soloLectura ? 4 : 5;
+        if (!resp?.ok) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-danger text-center py-3">Error al cargar vehículos</td></tr>`; return; }
         const datos = await resp.json();
-        const cols = _esGestor ? 3 : 4;
         if (!datos.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-muted text-center py-3">Sin vehículos registrados</td></tr>`; return; }
         tbody.innerHTML = datos.map(v => `
             <tr>
                 <td class="ps-3 fw-semibold">${v.patente}</td>
                 <td>${v.marcaModelo}</td>
+                <td>${v.tipo}</td>
                 <td class="text-center">
                     <span class="badge ${v.patenteValida ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'}">
                         ${v.patenteValida ? 'Válida' : 'Formato no estándar'}
                     </span>
                 </td>
-                ${_esGestor ? '' : `
+                ${_soloLectura ? '' : `
                 <td class="text-center">
                     <button class="btn btn-outline-danger btn-sm" onclick="ModuloCenso.eliminarVehiculo(${v.id})">
                         <i class="bi bi-trash3"></i>
@@ -193,11 +194,12 @@ const ModuloCenso = (() => {
         ocultarAlertaModal('alertaVehiculoCenso');
         const patente = document.getElementById('campoPatenteVehiculo').value.trim();
         const marcaModelo = document.getElementById('campoMarcaModeloVehiculo').value.trim();
-        if (!patente || !marcaModelo) {
+        const tipo = document.getElementById('campoTipoVehiculo').value.trim();
+        if (!patente || !marcaModelo || !tipo) {
             mostrarAlertaModal('alertaVehiculoCenso', 'Completá todos los campos obligatorios.');
             return;
         }
-        const resp = await ApiCliente.crear(`/api/empresas/${_empresaId}/censo/vehiculos`, { patente, marcaModelo });
+        const resp = await ApiCliente.crear(`/api/empresas/${_empresaId}/censo/vehiculos`, { patente, marcaModelo, tipo });
         if (!resp?.ok) {
             const err = await resp?.json().catch(() => ({}));
             mostrarAlertaModal('alertaVehiculoCenso', err?.mensaje || 'Error al agregar el vehículo.');

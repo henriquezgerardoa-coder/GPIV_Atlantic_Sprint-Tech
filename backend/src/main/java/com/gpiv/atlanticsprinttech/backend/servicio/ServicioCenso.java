@@ -15,7 +15,7 @@ public interface ServicioCenso {
         Long empresaId,
         int anioPeriodo,
         int cantidadPersonalRegistrado,
-        int cantidadPersonasNoRegistrado,
+        int cantidadPersonalNoRegistrado,
         String observacion
     );
 
@@ -37,7 +37,8 @@ public interface ServicioCenso {
         String identificadorIngreso,
         Long empresaId,
         String patente,
-        String marcaModelo
+        String marcaModelo,
+        String tipo
     );
 
     void eliminarVehiculo(String identificadorIngreso, Long empresaId, Long vehiculoId);

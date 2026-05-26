@@ -21,7 +21,7 @@ public class MapeadorCenso {
             censo.getAnioPeriodo(),
             censo.getFechaDeclaracion().toString(),
             censo.getCantidadPersonalRegistrado(),
-            censo.getCantidadPersonasNoRegistrado(),
+            censo.getCantidadPersonalNoRegistrado(),
             censo.calcularTotalEmpleados(),
             censo.getObservacion()
         );
@@ -41,6 +41,7 @@ public class MapeadorCenso {
             vehiculo.getId(),
             vehiculo.getPatente(),
             vehiculo.getMarcaModelo(),
+            vehiculo.getTipo(),
             vehiculo.validarFormatoPatente()
         );
     }

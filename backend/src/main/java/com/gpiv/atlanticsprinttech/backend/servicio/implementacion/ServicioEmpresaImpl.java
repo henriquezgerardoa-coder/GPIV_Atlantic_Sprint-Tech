@@ -9,6 +9,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.backend.util.JsonUtil;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaServiciosPostRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaConsumoServicioPostRadicacion;
@@ -26,9 +27,8 @@ import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -44,6 +44,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
 	private final RepositorioRadicacionHistorial repositorioRadicacionHistorial;
 	private final RepositorioUsuario repositorioUsuario;
+	private final com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro repositorioRubro;
 	private final ServicioContextoUsuario servicioContextoUsuario;
 	private final ServicioAuditLog servicioAuditLog;
 	private final ObjectMapper objectMapper;
@@ -55,6 +56,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
 		RepositorioRadicacionHistorial repositorioRadicacionHistorial,
 		RepositorioUsuario repositorioUsuario,
+		com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro repositorioRubro,
 		ServicioContextoUsuario servicioContextoUsuario,
 		ServicioAuditLog servicioAuditLog,
 		ObjectMapper objectMapper
@@ -65,6 +67,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
 		this.repositorioRadicacionHistorial = repositorioRadicacionHistorial;
 		this.repositorioUsuario = repositorioUsuario;
+		this.repositorioRubro = repositorioRubro;
 		this.servicioContextoUsuario = servicioContextoUsuario;
 		this.servicioAuditLog = servicioAuditLog;
 		this.objectMapper = objectMapper;
@@ -73,8 +76,10 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	public List<Empresa> listar(String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
-			Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
-			Empresa empresa = obtenerPorIdInterno(empresaId);
+			if (usuario.getEmpresaId() == null) {
+				return repositorioEmpresa.findAllWithRubroOrderByNombre();
+			}
+			Empresa empresa = obtenerPorIdInterno(usuario.getEmpresaId());
 			return List.of(empresa);
 		}
 		return repositorioEmpresa.findAllWithRubroOrderByNombre();
@@ -93,7 +98,6 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	@Override
 	public Empresa crear(Empresa empresa, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		validarNoDirectivoEnMutacion(usuario);
 		if (servicioContextoUsuario.esRolEmpresa(usuario) && usuario.getEmpresaId() != null) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El usuario EMPRESA ya tiene una empresa asociada");
 		}
@@ -115,7 +119,6 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	@Override
 	public Empresa actualizar(Long id, Empresa empresa, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		validarNoDirectivoEnMutacion(usuario);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
 			Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
 			if (!empresaId.equals(id)) {
@@ -151,9 +154,31 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		return guardada;
 	}
 	@Override
+	public void asignarRubroInicial(Long empresaId, Long rubroId, String identificadorIngreso) {
+		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+			Long propiaEmpresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
+			if (!propiaEmpresaId.equals(empresaId)) {
+				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
+			}
+		}
+		Empresa empresa = obtenerPorIdInterno(empresaId);
+		if (empresa.getRubro() != null) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT,
+				"La empresa ya tiene un rubro asignado. Para modificarlo debe solicitar un cambio de rubro");
+		}
+		Rubro rubro = repositorioRubro.findById(rubroId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "El rubro indicado no existe"));
+		empresa.asignarRubro(rubro);
+		repositorioEmpresa.save(empresa);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "ASIGNACION_RUBRO_INICIAL", "Empresa",
+			empresa.getCuit(), null, rubro.getNombre(), UtilRed.obtenerIpActual()
+		);
+	}
+	@Override
 	public void eliminar(Long id, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		validarNoDirectivoEnMutacion(usuario);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El rol EMPRESA no puede eliminar empresas");
 		}
@@ -186,7 +211,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		validarAccesoAdmin(identificadorIngreso);
 		Empresa empresa = obtenerPorIdInterno(empresaId);
 		List<RespuestaVehiculoEmpresa> vehiculos = leerVehiculos(empresa.getVehiculosAsignadosJson());
-		RespuestaUsuarioEmpresaAdmin usuarioAsociado = construirUsuarioAsociado(empresaId);
+		List<RespuestaUsuarioEmpresaAdmin> usuariosAsociados = construirUsuariosAsociados(empresaId);
 		String estadoExpediente = repositorioRadicacionSolicitud.findFirstByEmpresaIdOrderByFechaUltimaActualizacionDesc(empresaId)
 			.map(RadicacionSolicitud::getEstado)
 			.map(Enum::name)
@@ -199,8 +224,9 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 				l.getCodigo(),
 				l.getZona(),
 				l.getSuperficieMetrosCuadrados(),
-				l.getEstadoAsignacion() != null ? l.getEstadoAsignacion().name() : null,
-				l.getFechaAsignacion()
+				Optional.ofNullable(l.getEstadoAsignacion()).map(Enum::name).orElse(null),
+				l.getFechaAsignacion(),
+				l.getNumeroExpedienteReferencia()
 			))
 			.toList();
 
@@ -219,9 +245,9 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			(int) repositorioEmpleado.countByEmpresaId(empresaId),
 			vehiculos.size(),
 			estadoExpediente,
-			rubro != null ? rubro.getId() : null,
-			rubro != null ? rubro.getNombre() : null,
-			usuarioAsociado,
+			Optional.ofNullable(rubro).map(Rubro::getId).orElse(null),
+			Optional.ofNullable(rubro).map(Rubro::getNombre).orElse(null),
+			usuariosAsociados,
 			vehiculos,
 			lotes
 		);
@@ -260,7 +286,6 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		SolicitudServiciosPostRadicacion solicitud,
 		String identificadorIngreso
 	) {
-		validarNoDirectivoEnMutacion(servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso));
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
 		if (!tieneHabilitacionServiciosPostRadicacion(empresaId)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo puedes gestionar servicios despues de la radicacion");
@@ -339,30 +364,22 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		if (json == null || json.isBlank()) {
 			return DatosServiciosPostRadicacion.vacio();
 		}
-		try {
-			DatosServiciosPostRadicacion datos = objectMapper.readValue(json, DatosServiciosPostRadicacion.class);
-			if (datos == null) {
-				return DatosServiciosPostRadicacion.vacio();
-			}
-			return new DatosServiciosPostRadicacion(
-				datos.solicitaAguaCruda(),
-				datos.consumoAguaCrudaM3(),
-				datos.consumoLuzKwh(),
-				datos.consumoGasM3(),
-				datos.consumoInternetMbps(),
-				datos.consumosAdicionales() == null ? List.of() : datos.consumosAdicionales()
-			);
-		} catch (Exception ex) {
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo leer los servicios post-radicacion");
+		DatosServiciosPostRadicacion datos = JsonUtil.leer(objectMapper, json, DatosServiciosPostRadicacion.class);
+		if (datos == null) {
+			return DatosServiciosPostRadicacion.vacio();
 		}
+		return new DatosServiciosPostRadicacion(
+			datos.solicitaAguaCruda(),
+			datos.consumoAguaCrudaM3(),
+			datos.consumoLuzKwh(),
+			datos.consumoGasM3(),
+			datos.consumoInternetMbps(),
+			datos.consumosAdicionales() == null ? List.of() : datos.consumosAdicionales()
+		);
 	}
 
 	private String serializarDatosServiciosPostRadicacion(DatosServiciosPostRadicacion datos) {
-		try {
-			return objectMapper.writeValueAsString(datos);
-		} catch (Exception ex) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo serializar los servicios post-radicacion");
-		}
+		return JsonUtil.escribir(objectMapper, datos);
 	}
 
 	private Empresa obtenerPorIdInterno(Long id) {
@@ -380,47 +397,36 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 
 	private void validarAccesoEmpresa(Long empresaId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
-			Long empresaUsuario = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
-			if (!empresaUsuario.equals(empresaId)) {
-				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes gestionar otra empresa");
-			}
-		}
+		servicioContextoUsuario.exigirAccesoAEmpresa(usuario, empresaId);
 	}
 
 	private void validarAccesoAdmin(String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-		if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMINISTRADOR puede acceder a esta vista");
+		if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR) && !usuario.tieneRol(RolUsuario.SECRETARIO)
+				&& !usuario.tieneRol(RolUsuario.DIRECTIVO)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+				"Solo ADMINISTRADOR, DIRECTIVO o SECRETARIO puede acceder a esta vista");
 		}
 	}
 
-	private void validarNoDirectivoEnMutacion(Usuario usuario) {
-		if (usuario.tieneRol(RolUsuario.DIRECTIVO)) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El rol DIRECTIVO tiene permisos de solo lectura para empresas");
-		}
-	}
-
-	private RespuestaUsuarioEmpresaAdmin construirUsuarioAsociado(Long empresaId) {
+	private List<RespuestaUsuarioEmpresaAdmin> construirUsuariosAsociados(Long empresaId) {
 		return repositorioUsuario.findByEmpresa_IdOrderByIdAsc(empresaId).stream()
 			.filter(usuario -> usuario.tieneRol(RolUsuario.EMPRESA))
-			.findFirst()
 			.map(usuario -> new RespuestaUsuarioEmpresaAdmin(
+				usuario.getNombreUsuario(),
 				usuario.getNombreCompleto(),
 				usuario.getCorreoElectronico(),
 				usuario.getRoles(),
 				usuario.isActivo(),
 				usuario.getFechaUltimoAcceso()
 			))
-			.orElse(null);
+			.toList();
 	}
 
 	private void validarVehiculos(List<RespuestaVehiculoEmpresa> vehiculos) {
-		Set<String> placas = new HashSet<>();
-		for (RespuestaVehiculoEmpresa vehiculo : vehiculos) {
-			if (!placas.add(vehiculo.placa())) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se permiten placas duplicadas");
-			}
+		long placasUnicas = vehiculos.stream().map(RespuestaVehiculoEmpresa::placa).distinct().count();
+		if (placasUnicas != vehiculos.size()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se permiten placas duplicadas");
 		}
 	}
 
@@ -428,20 +434,11 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		if (json == null || json.isBlank()) {
 			return List.of();
 		}
-		try {
-			return objectMapper.readValue(json, new TypeReference<>() {
-			});
-		} catch (Exception ex) {
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo leer la lista de vehiculos");
-		}
+		return JsonUtil.leer(objectMapper, json, new TypeReference<>() {});
 	}
 
 	private String serializarVehiculos(List<RespuestaVehiculoEmpresa> vehiculos) {
-		try {
-			return objectMapper.writeValueAsString(vehiculos);
-		} catch (Exception ex) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo serializar la lista de vehiculos");
-		}
+		return JsonUtil.escribir(objectMapper, vehiculos);
 	}
 
 	private boolean tieneHabilitacionServiciosPostRadicacion(Long empresaId) {

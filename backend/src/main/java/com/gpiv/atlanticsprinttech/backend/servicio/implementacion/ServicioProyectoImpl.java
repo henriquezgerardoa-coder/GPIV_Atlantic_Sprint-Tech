@@ -67,9 +67,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         Long responsableId
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o DIRECTIVO pueden crear proyectos");
+                "Solo el TECNICO puede crear proyectos");
         }
 
         Usuario responsable = null;
@@ -92,9 +92,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public ProyectoProductivo actualizarEstado(String identificadorIngreso, Long proyectoId, String estado) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o DIRECTIVO pueden modificar proyectos");
+                "Solo el TECNICO puede modificar el estado del proyecto");
         }
 
         ProyectoProductivo proyecto = repositorioProyecto.findById(proyectoId)
@@ -119,9 +119,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         LocalDate fechaVencimiento
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o DIRECTIVO pueden gestionar hitos");
+                "Solo el TECNICO puede gestionar hitos");
         }
 
         ProyectoProductivo proyecto = repositorioProyecto.findById(proyectoId)
@@ -136,9 +136,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public HitoObra marcarHitoCumplido(String identificadorIngreso, Long proyectoId, Long hitoId) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o DIRECTIVO pueden marcar hitos como cumplidos");
+                "Solo el TECNICO puede marcar hitos como cumplidos");
         }
 
         HitoObra hito = repositorioHito.findByIdAndProyectoId(hitoId, proyectoId)
@@ -152,9 +152,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public void eliminarHito(String identificadorIngreso, Long proyectoId, Long hitoId) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o DIRECTIVO pueden eliminar hitos");
+                "Solo el TECNICO puede eliminar hitos");
         }
 
         HitoObra hito = repositorioHito.findByIdAndProyectoId(hitoId, proyectoId)

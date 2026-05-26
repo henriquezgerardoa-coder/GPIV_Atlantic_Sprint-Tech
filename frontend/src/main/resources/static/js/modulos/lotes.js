@@ -3,6 +3,9 @@ const ModuloLotes = (() => {
     let empresas = [];
     let modoEdicion = false;
     let idEdicion   = null;
+    let _paginaActual     = 0;
+    let _empresasCargadas = false;
+    const POR_PAGINA = 25;
 
     const ETIQUETA_ESTADO_ASIGNACION = {
         PREADJUDICADO: 'Preadjudicado',
@@ -16,18 +19,23 @@ const ModuloLotes = (() => {
     };
 
     async function cargar() {
-        const [respLotes, respEmpresas] = await Promise.all([
-            ApiCliente.obtener('/api/lotes?tamanio=500'),
-            ApiCliente.obtener('/api/empresas')
-        ]);
+        const respLotes = await ApiCliente.obtener('/api/lotes?tamanio=500');
         if (!respLotes?.ok) { mostrarAlerta('Error al cargar lotes.', 'danger'); return; }
         const lotesData = await respLotes.json();
-        lotes    = lotesData.contenido ?? lotesData;
-        empresas = respEmpresas?.ok ? await respEmpresas.json() : [];
-        poblarSelectorEmpresa();
+        lotes = lotesData.contenido ?? lotesData;
+        _empresasCargadas = false;
+        _paginaActual = 0;
         poblarFiltroSuperficie();
         resetearFiltros();
         renderizarTabla();
+    }
+
+    async function _cargarEmpresasSiNecesario() {
+        if (_empresasCargadas) return;
+        const resp = await ApiCliente.obtener('/api/empresas');
+        empresas = resp?.ok ? await resp.json() : [];
+        _empresasCargadas = true;
+        poblarSelectorEmpresa();
     }
 
     function poblarSelectorEmpresa() {
@@ -53,6 +61,7 @@ const ModuloLotes = (() => {
     }
 
     function filtrar() {
+        _paginaActual = 0;
         renderizarTabla();
     }
 
@@ -80,11 +89,16 @@ const ModuloLotes = (() => {
 
         if (filtrados.length === 0) {
             cuerpo.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin lotes para los filtros seleccionados</td></tr>';
+            _actualizarPaginacion(0, 0);
             return;
         }
 
-        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-        cuerpo.innerHTML = filtrados.map(l => `
+        const totalPaginas = Math.ceil(filtrados.length / POR_PAGINA);
+        if (_paginaActual >= totalPaginas) _paginaActual = totalPaginas - 1;
+        const pagina = filtrados.slice(_paginaActual * POR_PAGINA, (_paginaActual + 1) * POR_PAGINA);
+
+        const puedeEditar = Autenticacion.tieneAcceso(['SECRETARIO']);
+        cuerpo.innerHTML = pagina.map(l => `
             <tr>
                 <td class="text-muted">${l.id}</td>
                 <td class="fw-semibold">${l.codigo}</td>
@@ -116,18 +130,40 @@ const ModuloLotes = (() => {
                     </button>` : '<span class="text-muted small">Sin permisos</span>'}
                 </td>
             </tr>`).join('');
+
+        _actualizarPaginacion(filtrados.length, totalPaginas);
     }
 
-    function abrirCreacion() {
+    function _actualizarPaginacion(total, totalPaginas) {
+        const nav    = document.getElementById('paginacionLotes');
+        const info   = document.getElementById('infoPaginaLotes');
+        const btnPrev = document.getElementById('btnPrevLotes');
+        const btnNext = document.getElementById('btnNextLotes');
+        if (!nav) return;
+        if (totalPaginas <= 1) { nav.classList.add('d-none'); return; }
+        nav.classList.remove('d-none');
+        if (info) info.textContent = `Página ${_paginaActual + 1} de ${totalPaginas}  (${total} lotes)`;
+        if (btnPrev) btnPrev.disabled = _paginaActual === 0;
+        if (btnNext) btnNext.disabled = _paginaActual === totalPaginas - 1;
+    }
+
+    function irPagina(dir) {
+        if (dir === 'prev' && _paginaActual > 0) _paginaActual--;
+        else if (dir === 'next') _paginaActual++;
+        renderizarTabla();
+    }
+
+    async function abrirCreacion() {
         modoEdicion = false;
         idEdicion   = null;
         document.getElementById('tituloModalLote').textContent = 'Nuevo lote';
         document.getElementById('formularioLote').reset();
         ocultarAlertaModal('alertaModalLote');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalLote')).show();
+        await _cargarEmpresasSiNecesario();
     }
 
-    function abrirEdicion(id) {
+    async function abrirEdicion(id) {
         const lote = lotes.find(l => l.id === id);
         if (!lote) return;
         modoEdicion = true;
@@ -136,12 +172,13 @@ const ModuloLotes = (() => {
         document.getElementById('campoCodigoLote').value                    = lote.codigo;
         document.getElementById('campoSuperficieLote').value                = lote.superficieMetrosCuadrados;
         document.getElementById('campoOcupadoLote').checked                 = lote.ocupado;
-        document.getElementById('selectorEmpresaLote').value                = lote.empresaId ?? '';
         document.getElementById('selectorEstadoAsignacionLote').value       = lote.estadoAsignacion || '';
         document.getElementById('campoExpedienteReferenciaLote').value      = lote.numeroExpedienteReferencia || '';
         document.getElementById('selectorZonaLote').value                   = lote.zona || '';
         ocultarAlertaModal('alertaModalLote');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalLote')).show();
+        await _cargarEmpresasSiNecesario();
+        document.getElementById('selectorEmpresaLote').value = lote.empresaId ?? '';
     }
 
     async function abrirDetalle(id) {
@@ -244,5 +281,5 @@ const ModuloLotes = (() => {
         }
     }
 
-    return { cargar, filtrar, abrirCreacion, abrirEdicion, abrirDetalle, guardar, confirmarEliminacion, eliminar };
+    return { cargar, filtrar, irPagina, abrirCreacion, abrirEdicion, abrirDetalle, guardar, confirmarEliminacion, eliminar };
 })();

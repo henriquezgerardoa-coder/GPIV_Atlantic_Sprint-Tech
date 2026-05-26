@@ -14,8 +14,8 @@ public record SolicitudCenso(
     @Min(value = 0, message = "La cantidad de personal registrado no puede ser negativa")
     int cantidadPersonalRegistrado,
 
-    @Min(value = 0, message = "La cantidad de personas no registradas no puede ser negativa")
-    int cantidadPersonasNoRegistrado,
+    @Min(value = 0, message = "La cantidad de personal no registrado no puede ser negativa")
+    int cantidadPersonalNoRegistrado,
 
     @Size(max = 500, message = "La observación no puede superar 500 caracteres")
     String observacion

@@ -6,8 +6,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProduc
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEstadisticas;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDashboardGerencial;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
@@ -19,9 +18,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,19 +37,22 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
     private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
     private final RepositorioProyectoProductivo repositorioProyecto;
     private final ServicioAuditLog servicioAuditLog;
+    private final ServicioContextoUsuario servicioContextoUsuario;
 
     public ServicioEstadisticasImpl(
         RepositorioEmpresa repositorioEmpresa,
         RepositorioLote repositorioLote,
         RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
         RepositorioProyectoProductivo repositorioProyecto,
-        ServicioAuditLog servicioAuditLog
+        ServicioAuditLog servicioAuditLog,
+        ServicioContextoUsuario servicioContextoUsuario
     ) {
         this.repositorioEmpresa = repositorioEmpresa;
         this.repositorioLote = repositorioLote;
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
         this.repositorioProyecto = repositorioProyecto;
         this.servicioAuditLog = servicioAuditLog;
+        this.servicioContextoUsuario = servicioContextoUsuario;
     }
 
     @Override
@@ -64,13 +64,11 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         long lotesAdjudicados    = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.ADJUDICADO);
         long lotesDesadjudicados = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.DESADJUDICADO);
 
-        List<Object[]> porEstado = repositorioRadicacionSolicitud.contarPorEstado();
-        Map<String, Long> radicacionesPorEstado = new HashMap<>();
-        for (Object[] fila : porEstado) {
-            EstadoRadicacion estado = (EstadoRadicacion) fila[0];
-            long conteo = (long) fila[1];
-            radicacionesPorEstado.put(estado.name(), conteo);
-        }
+        Map<String, Long> radicacionesPorEstado = repositorioRadicacionSolicitud.contarPorEstado().stream()
+            .collect(Collectors.toMap(
+                fila -> ((EstadoRadicacion) fila[0]).name(),
+                fila -> (long) fila[1]
+            ));
 
         long totalRadicaciones = radicacionesPorEstado.values().stream().mapToLong(Long::longValue).sum();
         long pendientes  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.PENDIENTE.name(), 0L);
@@ -99,92 +97,56 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
     @Override
     public List<RespuestaInformeEmpresa> obtenerInformeEmpresas() {
         servicioAuditLog.registrarEvento(
-            obtenerUsuarioActual(), "ACCESO_INFORME", "Empresa",
+            servicioContextoUsuario.obtenerIdentificadorActual(), "ACCESO_INFORME", "Empresa",
             "informe-empresas",
             null,
             "consulta de informe completo de empresas",
             UtilRed.obtenerIpActual()
         );
         List<Empresa> empresas = repositorioEmpresa.findAll();
-        List<RespuestaInformeEmpresa> resultado = new ArrayList<>();
-        for (Empresa emp : empresas) {
-            List<Lote> lotes = repositorioLote.findAllByEmpresaIdConEmpresa(emp.getId());
-            Optional<RadicacionSolicitud> ultimaRad =
-                repositorioRadicacionSolicitud.findFirstByEmpresaIdOrderByFechaUltimaActualizacionDesc(emp.getId());
-
-            List<RespuestaInformeEmpresa.LoteInforme> lotesInforme = lotes.stream()
-                .map(l -> new RespuestaInformeEmpresa.LoteInforme(
-                    l.getId(),
-                    l.getCodigo(),
-                    l.getSuperficieMetrosCuadrados(),
-                    l.getEstadoAsignacion() != null ? l.getEstadoAsignacion().name() : null,
-                    l.getZona(),
-                    l.getFechaAsignacion()
-                ))
-                .toList();
-
-            resultado.add(new RespuestaInformeEmpresa(
-                emp.getId(),
-                emp.getNombre(),
-                emp.getCuit(),
-                emp.getRazonSocial(),
-                emp.getActividadEconomica(),
-                emp.getCorreoElectronico(),
-                emp.getTelefono(),
-                emp.getDireccion(),
-                emp.getCantidadEmpleados(),
-                emp.getFechaRegistro(),
-                ultimaRad.map(RadicacionSolicitud::getFechaRadicacion).orElse(null),
-                ultimaRad.map(RadicacionSolicitud::getEstado).map(Enum::name).orElse(null),
-                ultimaRad.map(RadicacionSolicitud::getNumeroRadicado).orElse(null),
-                lotesInforme
-            ));
-        }
-        return resultado;
+        return empresas.stream().map(this::aInformeEmpresa).toList();
     }
 
     @Override
     public List<RespuestaInformeLote> obtenerInformeLotes() {
         servicioAuditLog.registrarEvento(
-            obtenerUsuarioActual(), "ACCESO_INFORME", "Lote",
+            servicioContextoUsuario.obtenerIdentificadorActual(), "ACCESO_INFORME", "Lote",
             "informe-lotes",
             null,
             "consulta de informe completo de lotes",
             UtilRed.obtenerIpActual()
         );
         List<Lote> lotes = repositorioLote.findAllConEmpresa();
-        List<RespuestaInformeLote> resultado = new ArrayList<>();
-        for (Lote l : lotes) {
+        Map<String, RadicacionSolicitud> radPorNumero = repositorioRadicacionSolicitud
+            .buscarFiltrado(null, null, null, null).stream()
+            .filter(r -> r.getNumeroRadicado() != null)
+            .collect(Collectors.toMap(RadicacionSolicitud::getNumeroRadicado, r -> r, (a, b) -> a));
+        return lotes.stream().map(l -> {
             Empresa emp = l.getEmpresa();
             java.time.LocalDate fechaPlazo = null;
             if (l.getNumeroExpedienteReferencia() != null && !l.getNumeroExpedienteReferencia().isBlank()) {
-                Optional<RadicacionSolicitud> rad = repositorioRadicacionSolicitud
-                    .buscarFiltrado(emp != null ? emp.getId() : null, null, null, null)
-                    .stream()
-                    .filter(r -> l.getNumeroExpedienteReferencia().equals(r.getNumeroRadicado()))
-                    .findFirst();
-                fechaPlazo = rad.map(RadicacionSolicitud::getFechaPlazo).orElse(null);
+                fechaPlazo = Optional.ofNullable(radPorNumero.get(l.getNumeroExpedienteReferencia()))
+                    .map(RadicacionSolicitud::getFechaPlazo).orElse(null);
             }
-            resultado.add(new RespuestaInformeLote(
+            return new RespuestaInformeLote(
                 l.getId(),
                 l.getCodigo(),
                 l.getSuperficieMetrosCuadrados(),
                 l.isOcupado(),
-                l.getEstadoAsignacion() != null ? l.getEstadoAsignacion().name() : null,
+                Optional.ofNullable(l.getEstadoAsignacion()).map(Enum::name).orElse(null),
                 l.getZona(),
                 emp != null ? emp.getNombre() : null,
                 emp != null ? emp.getCuit() : null,
                 l.getFechaAsignacion(),
                 l.getNumeroExpedienteReferencia(),
                 fechaPlazo
-            ));
-        }
-        return resultado;
+            );
+        }).toList();
     }
 
     @Override
     public RespuestaDashboardGerencial obtenerDashboardGerencial() {
-        List<EstadoProyecto> estadosFinalesProyecto = List.of(EstadoProyecto.FINALIZADO, EstadoProyecto.CANCELADO);
+        List<EstadoProyecto> estadosFinalesProyecto = List.of(EstadoProyecto.COMPLETADO, EstadoProyecto.CANCELADO);
         List<EstadoRadicacion> estadosFinalesRad = List.of(
             EstadoRadicacion.RADICADA, EstadoRadicacion.RECHAZADA, EstadoRadicacion.CANCELADA
         );
@@ -199,11 +161,12 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             .sum();
 
         // Distribución por rubro
-        Map<String, Long> conteoPorRubro = new LinkedHashMap<>();
-        for (Empresa e : empresas) {
-            String nombreRubro = e.getRubro() != null ? e.getRubro().getNombre() : "Sin rubro";
-            conteoPorRubro.merge(nombreRubro, 1L, Long::sum);
-        }
+        Map<String, Long> conteoPorRubro = empresas.stream()
+            .collect(Collectors.groupingBy(
+                e -> Optional.ofNullable(e.getRubro()).map(r -> r.getNombre()).orElse("Sin rubro"),
+                LinkedHashMap::new,
+                Collectors.counting()
+            ));
         List<RespuestaDashboardGerencial.ItemRubro> distribucionRubro = conteoPorRubro.entrySet().stream()
             .sorted(Comparator.comparingLong(Map.Entry<String, Long>::getValue).reversed())
             .map(entry -> new RespuestaDashboardGerencial.ItemRubro(entry.getKey(), entry.getValue()))
@@ -266,8 +229,25 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         );
     }
 
-    private String obtenerUsuarioActual() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "sistema";
+    private RespuestaInformeEmpresa aInformeEmpresa(Empresa emp) {
+        List<Lote> lotes = repositorioLote.findAllByEmpresaIdConEmpresa(emp.getId());
+        Optional<RadicacionSolicitud> ultimaRad =
+            repositorioRadicacionSolicitud.findFirstByEmpresaIdOrderByFechaUltimaActualizacionDesc(emp.getId());
+        List<RespuestaInformeEmpresa.LoteInforme> lotesInforme = lotes.stream()
+            .map(l -> new RespuestaInformeEmpresa.LoteInforme(
+                l.getId(), l.getCodigo(), l.getSuperficieMetrosCuadrados(),
+                Optional.ofNullable(l.getEstadoAsignacion()).map(Enum::name).orElse(null),
+                l.getZona(), l.getFechaAsignacion()
+            ))
+            .toList();
+        return new RespuestaInformeEmpresa(
+            emp.getId(), emp.getNombre(), emp.getCuit(), emp.getRazonSocial(),
+            emp.getActividadEconomica(), emp.getCorreoElectronico(), emp.getTelefono(), emp.getDireccion(),
+            emp.getCantidadEmpleados(), emp.getFechaRegistro(),
+            ultimaRad.map(RadicacionSolicitud::getFechaRadicacion).orElse(null),
+            ultimaRad.map(RadicacionSolicitud::getEstado).map(Enum::name).orElse(null),
+            ultimaRad.map(RadicacionSolicitud::getNumeroRadicado).orElse(null),
+            lotesInforme
+        );
     }
 }

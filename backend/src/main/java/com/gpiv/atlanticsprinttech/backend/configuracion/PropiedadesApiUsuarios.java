@@ -23,6 +23,7 @@ public class PropiedadesApiUsuarios {
     public static class Semilla {
         private Credencial admin = new Credencial();
         private Credencial directivo = new Credencial();
+        private Credencial secretario = new Credencial();
         private Credencial empresa = new Credencial();
         public Credencial getAdmin() {
             return admin;
@@ -35,6 +36,12 @@ public class PropiedadesApiUsuarios {
         }
         public void setDirectivo(Credencial directivo) {
             this.directivo = directivo;
+        }
+        public Credencial getSecretario() {
+            return secretario;
+        }
+        public void setSecretario(Credencial secretario) {
+            this.secretario = secretario;
         }
         public Credencial getEmpresa() {
             return empresa;

@@ -20,6 +20,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionHistorial;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.TipoDocumentoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.time.LocalDate;
@@ -351,8 +352,8 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         byte[] contenido
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolAdministrador(usuario)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el Administrador puede cargar el Acta de Rúbrica");
+        if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el Secretario o Administrador puede cargar el Acta de Rubrica");
         }
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, radicacionId);
         radicacion.validarPermiteActaRubrica();

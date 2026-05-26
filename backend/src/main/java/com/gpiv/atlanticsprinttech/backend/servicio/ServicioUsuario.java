@@ -7,8 +7,11 @@ import java.util.Set;
 
 public interface ServicioUsuario {
     List<Usuario> listar();
+    List<Usuario> listarPorEmpresa(Long empresaId);
     Usuario obtenerPorId(Long id);
+    Usuario obtenerPorIdentificador(String identificador);
     Usuario crear(String nombreUsuario, String nombreCompleto, String clavePlano, boolean activo, Set<RolUsuario> roles, Long empresaId);
+    Usuario crearComoEmpresa(String nombreUsuario, String nombreCompleto, String clavePlano, Long empresaId, String autorizador);
     Usuario actualizar(Long id, String nombreCompleto, boolean activo, Set<RolUsuario> roles, Long empresaId);
     void eliminar(Long id);
     void restablecerClave(Long id, String claveNueva);

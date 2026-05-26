@@ -23,6 +23,11 @@ import org.springframework.web.server.ResponseStatusException;
 @Transactional
 public class ServicioCensoImpl implements ServicioCenso {
 
+    private static final int ANIO_MINIMO = 2000;
+    private static final String PATRON_CUIT = "\\d{2}-\\d{8}-\\d";
+    private static final String PATRON_PATENTE_ARGENTINA = "[A-Z]{3}\\d{3}";
+    private static final String PATRON_PATENTE_MERCOSUR = "[A-Z]{2}\\d{3}[A-Z]{2}";
+
     private final RepositorioCenso repositorioCenso;
     private final RepositorioPersonalRegistrado repositorioPersonal;
     private final RepositorioVehiculo repositorioVehiculo;
@@ -55,23 +60,22 @@ public class ServicioCensoImpl implements ServicioCenso {
         Long empresaId,
         int anioPeriodo,
         int cantidadPersonalRegistrado,
-        int cantidadPersonasNoRegistrado,
+        int cantidadPersonalNoRegistrado,
         String observacion
     ) {
         verificarAcceso(identificadorIngreso, empresaId);
         int anioActual = Year.now().getValue();
-        if (anioPeriodo < 2000 || anioPeriodo > anioActual) {
+        if (anioPeriodo < ANIO_MINIMO || anioPeriodo > anioActual) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "El año de período debe estar entre 2000 y " + anioActual);
+                "El año de período debe estar entre " + ANIO_MINIMO + " y " + anioActual);
         }
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
 
-        // Si ya existe un censo para ese período lo reemplaza
         repositorioCenso.findByEmpresaIdAndAnioPeriodo(empresaId, anioPeriodo)
             .ifPresent(repositorioCenso::delete);
 
-        Censo nuevo = Censo.crear(empresa, anioPeriodo, cantidadPersonalRegistrado, cantidadPersonasNoRegistrado,
+        Censo nuevo = Censo.crear(empresa, anioPeriodo, cantidadPersonalRegistrado, cantidadPersonalNoRegistrado,
             observacion == null || observacion.isBlank() ? null : observacion.trim());
         return repositorioCenso.save(nuevo);
     }
@@ -92,7 +96,7 @@ public class ServicioCensoImpl implements ServicioCenso {
     ) {
         verificarAcceso(identificadorIngreso, empresaId);
         String cuitNormalizado = cuit.trim();
-        if (!cuitNormalizado.matches("\\d{2}-\\d{8}-\\d")) {
+        if (!cuitNormalizado.matches(PATRON_CUIT)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "El CUIT debe tener el formato XX-XXXXXXXX-X");
         }
@@ -130,11 +134,12 @@ public class ServicioCensoImpl implements ServicioCenso {
         String identificadorIngreso,
         Long empresaId,
         String patente,
-        String marcaModelo
+        String marcaModelo,
+        String tipo
     ) {
         verificarAcceso(identificadorIngreso, empresaId);
         String patenteNormalizada = patente.trim().toUpperCase().replace("-", "").replace(" ", "");
-        if (!patenteNormalizada.matches("[A-Z]{3}\\d{3}") && !patenteNormalizada.matches("[A-Z]{2}\\d{3}[A-Z]{2}")) {
+        if (!patenteNormalizada.matches(PATRON_PATENTE_ARGENTINA) && !patenteNormalizada.matches(PATRON_PATENTE_MERCOSUR)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Formato de patente inválido. Use el formato argentino (ABC123) o Mercosur (AB123CD)");
         }
@@ -144,7 +149,7 @@ public class ServicioCensoImpl implements ServicioCenso {
         }
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
-        Vehiculo vehiculo = Vehiculo.crear(empresa, patenteNormalizada, marcaModelo.trim());
+        Vehiculo vehiculo = Vehiculo.crear(empresa, patenteNormalizada, marcaModelo.trim(), tipo.trim());
         return repositorioVehiculo.save(vehiculo);
     }
 
@@ -158,12 +163,6 @@ public class ServicioCensoImpl implements ServicioCenso {
 
     private void verificarAcceso(String identificadorIngreso, Long empresaId) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
-            Long miEmpresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
-            if (!miEmpresaId.equals(empresaId)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Solo puede acceder al censo de su propia empresa");
-            }
-        }
+        servicioContextoUsuario.exigirAccesoAEmpresa(usuario, empresaId);
     }
 }

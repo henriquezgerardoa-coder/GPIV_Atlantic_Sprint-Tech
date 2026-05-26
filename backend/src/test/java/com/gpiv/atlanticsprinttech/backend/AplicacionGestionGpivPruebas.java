@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -14,9 +15,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioConversacionMensajeria;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioMensajeMensajeria;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudUsuario;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudEmpresa;
+import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.util.Set;
@@ -26,6 +31,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -44,6 +50,15 @@ class AplicacionGestionGpivPruebas {
 
     @Autowired
     private RepositorioUsuario repositorioUsuario;
+
+    @Autowired
+    private RepositorioRubro repositorioRubro;
+
+    @Autowired
+    private RepositorioConversacionMensajeria repositorioConversacionMensajeria;
+
+    @Autowired
+    private RepositorioMensajeMensajeria repositorioMensajeMensajeria;
 
     @Test
     void deberiaResponderEstadoOkEnSalud() throws Exception {
@@ -210,8 +225,8 @@ class AplicacionGestionGpivPruebas {
             .andExpect(jsonPath("$.telefono").value("2990000000"))
             .andExpect(jsonPath("$.fechaRegistro").exists())
             .andExpect(jsonPath("$.statusEmpresa").value("ACTIVA"))
-            .andExpect(jsonPath("$.usuarioAsociado.nombreCompleto").value("Empresa Panel Admin"))
-            .andExpect(jsonPath("$.usuarioAsociado.fechaUltimoAcceso").exists())
+            .andExpect(jsonPath("$.usuariosAsociados[0].nombreCompleto").value("Empresa Panel Admin"))
+            .andExpect(jsonPath("$.usuariosAsociados[0].fechaUltimoAcceso").exists())
             .andExpect(jsonPath("$.totalEmpleados").value(0))
             .andExpect(jsonPath("$.totalVehiculos").value(0));
 
@@ -712,9 +727,9 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
-    void adminDebePoderCambiarEstadosDeRadicacionYEmpresaDebeVisualizarEstadoFinal() throws Exception {
+    void secretarioDebePoderCambiarEstadosDeRadicacionYEmpresaDebeVisualizarEstadoFinal() throws Exception {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
-                .with(httpBasic("admin", "admin12345"))
+                .with(httpBasic("secretario", "secretario123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(cuerpoEmpresa("Empresa Estados", "Empresa Estados SA", "20-88889999-5", "estados@empresa.com")))
             .andExpect(status().isCreated())
@@ -725,7 +740,7 @@ class AplicacionGestionGpivPruebas {
         Long idEmpresa = objectMapper.readTree(respuestaEmpresa).get("id").asLong();
 
         mockMvc.perform(post("/api/usuarios")
-                .with(httpBasic("admin", "admin12345"))
+                .with(httpBasic("secretario", "secretario123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nombreUsuario\":\"empresa_estados\",\"nombreCompleto\":\"Empresa Estados\",\"clave\":\"EmpresaEstados123\",\"activo\":true,\"roles\":[\"EMPRESA\"],\"empresaId\":" + idEmpresa + "}"))
             .andExpect(status().isCreated());
@@ -756,18 +771,104 @@ class AplicacionGestionGpivPruebas {
                 + "}";
 
             mockMvc.perform(patch("/api/radicaciones/{id}/estado", idRadicacion)
-                    .with(httpBasic("admin", "admin12345"))
+                    .with(httpBasic("secretario", "secretario123"))
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(payload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value(estado));
         }
 
+        mockMvc.perform(multipart("/api/radicaciones/{id}/rubrica", idRadicacion)
+                .file(new MockMultipartFile(
+                    "archivo",
+                    "acta-rubrica.pdf",
+                    "application/pdf",
+                    "%PDF-1.4\n%Test rubrica\n".getBytes()
+                ))
+                .with(httpBasic("secretario", "secretario123")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.tipoDocumento").value("ACTA_RUBRICA"))
+            .andExpect(jsonPath("$.mimeType").value("application/pdf"));
+
         mockMvc.perform(get("/api/radicaciones/{id}", idRadicacion)
                 .with(httpBasic("empresa_estados", "EmpresaEstados123")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.estado").value("RADICADA"))
             .andExpect(jsonPath("$.etapaActual").value(3));
+    }
+
+    @Test
+    void rechazoDeCambioDeRubroDebeGenerarNotificacionParaLaEmpresa() throws Exception {
+        String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
+                .with(httpBasic("secretario", "secretario123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoEmpresa("Empresa Rubro", "Empresa Rubro SA", "20-45454545-9", "rubro@empresa.com")))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long empresaId = objectMapper.readTree(respuestaEmpresa).get("id").asLong();
+
+        mockMvc.perform(post("/api/usuarios")
+                .with(httpBasic("secretario", "secretario123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreUsuario\":\"empresa_rubro\",\"nombreCompleto\":\"Empresa Rubro\",\"clave\":\"EmpresaRubro123\",\"activo\":true,\"roles\":[\"EMPRESA\"],\"empresaId\":" + empresaId + "}"))
+            .andExpect(status().isCreated());
+
+        Usuario usuarioEmpresa = repositorioUsuario.findByNombreUsuario("empresa_rubro").orElseThrow();
+        Rubro rubroSolicitado = repositorioRubro.findAllOrdenados().stream()
+            .filter(r -> "Logística y almacenamiento".equals(r.getNombre()))
+            .findFirst()
+            .or(() -> repositorioRubro.findAllOrdenados().stream()
+                .filter(r -> !"Otros".equalsIgnoreCase(r.getNombre()))
+                .findFirst())
+            .orElseGet(() -> repositorioRubro.save(
+                Rubro.crear("Rubro Temporal Test " + System.nanoTime(), null, false)
+            ));
+        Long rubroSolicitadoId = rubroSolicitado.getId();
+
+        String respuestaSolicitud = mockMvc.perform(post("/api/cambios-rubro")
+                .with(httpBasic("empresa_rubro", "EmpresaRubro123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{" +
+                    "\"rubroSolicitadoId\":" + rubroSolicitadoId + "," +
+                    "\"justificacion\":\"Cambio de actividad principal\"," +
+                    "\"descripcionOtros\":null" +
+                    "}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.estado").value("PENDIENTE"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long solicitudId = objectMapper.readTree(respuestaSolicitud).get("id").asLong();
+
+        mockMvc.perform(patch("/api/cambios-rubro/{id}/resolver", solicitudId)
+                .with(httpBasic("directivo", "directivo123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{" +
+                    "\"aprobada\":false," +
+                    "\"motivoRechazo\":\"No cumple el criterio técnico\"," +
+                    "\"nombreNuevoRubro\":null" +
+                    "}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.estado").value("RECHAZADA"))
+            .andExpect(jsonPath("$.motivoRechazo").value("No cumple el criterio técnico"));
+
+        var conversaciones = repositorioConversacionMensajeria.findByEmpresaIdConDetalleOrderByFechaUltimaActualizacionDesc(empresaId);
+        org.junit.jupiter.api.Assertions.assertFalse(conversaciones.isEmpty());
+        var notificacion = conversaciones.get(0);
+        assertEquals("Solicitud de cambio de rubro rechazada", notificacion.getAsunto());
+
+        var mensajes = repositorioMensajeMensajeria.findByConversacionIdConEmisorOrderByFechaEnvioAsc(notificacion.getId());
+        org.junit.jupiter.api.Assertions.assertEquals(1, mensajes.size());
+        assertEquals("Sistema GPIV", mensajes.get(0).getEmisorExternoNombre());
+        assertEquals(
+            "Tu solicitud de cambio de rubro para la empresa " + usuarioEmpresa.getNombreCompleto()
+                + " fue rechazada. Motivo: No cumple el criterio técnico",
+            mensajes.get(0).getContenido()
+        );
     }
 
     @Test

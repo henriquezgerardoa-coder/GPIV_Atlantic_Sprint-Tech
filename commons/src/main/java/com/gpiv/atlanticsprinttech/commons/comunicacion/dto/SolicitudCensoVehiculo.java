@@ -10,6 +10,10 @@ public record SolicitudCensoVehiculo(
 
     @NotBlank(message = "La marca/modelo es obligatoria")
     @Size(max = 120, message = "La marca/modelo no puede superar 120 caracteres")
-    String marcaModelo
+    String marcaModelo,
+
+    @NotBlank(message = "El tipo de vehículo es obligatorio")
+    @Size(max = 80, message = "El tipo no puede superar 80 caracteres")
+    String tipo
 ) {
 }

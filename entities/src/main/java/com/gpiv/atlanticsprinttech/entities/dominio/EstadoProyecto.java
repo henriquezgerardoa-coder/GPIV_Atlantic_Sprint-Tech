@@ -1,13 +1,13 @@
 package com.gpiv.atlanticsprinttech.entities.dominio;
 
 public enum EstadoProyecto {
-    PLANIFICADO,
+    INICIADO,
     EN_EJECUCION,
-    PAUSADO,
-    FINALIZADO,
+    DETENIDO,
+    COMPLETADO,
     CANCELADO;
 
     public boolean esFinal() {
-        return this == FINALIZADO || this == CANCELADO;
+        return this == COMPLETADO || this == CANCELADO;
     }
 }

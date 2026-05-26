@@ -52,12 +52,14 @@ Roles disponibles:
 
 - `ADMINISTRADOR`
 - `DIRECTIVO`
+- `SECRETARIO`
 - `EMPRESA`
 
 Usuarios predeterminados (solo para entorno inicial/local):
 
 - `admin` / `admin12345` (`ADMINISTRADOR`)
 - `directivo` / `directivo123` (`DIRECTIVO`)
+- `secretario` / `secretario123` (`SECRETARIO`)
 - `empresa` / `empresa12345` (`EMPRESA`)
 
 Registro publico con verificacion por correo:
@@ -81,6 +83,8 @@ Permisos por rol:
 - `DELETE /api/empresas/**`: solo `ADMINISTRADOR`
 - `GET /api/lotes/**`: `ADMINISTRADOR`, `DIRECTIVO`, `EMPRESA`
 - `POST/PUT/DELETE /api/lotes/**`: `ADMINISTRADOR`, `DIRECTIVO`
+- `PATCH /api/radicaciones/{id}/estado` y `POST /api/radicaciones/{id}/rubrica`: solo `SECRETARIO`
+- Rechazo de `cambios-rubro`: genera una notificacion en mensajeria para la empresa solicitante
 - `GET/POST/PUT/PATCH/DELETE /api/usuarios/**`: solo `ADMINISTRADOR`
 - `GET /api/catalogos/roles`: cualquier usuario autenticado
 - `GET /api/usuarios/roles`: alias temporal legado (solo `ADMINISTRADOR`)

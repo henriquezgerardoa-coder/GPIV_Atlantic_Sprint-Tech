@@ -15,3 +15,12 @@
 .DS_Store
 Thumbs.db
 
+# Variables de entorno locales (nunca versionar)
+.env
+.env.*
+
+# Perfiles con credenciales (rotar si ya estuvieron en git)
+backend/src/main/resources/application-neon.properties
+backend/src/main/resources/application-local.properties
+backend/compose-local.yaml
+

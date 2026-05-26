@@ -19,6 +19,7 @@ public class ConversacionMensajeria {
 
     public static final String ORIGEN_EMPRESA = "EMPRESA";
     public static final String ORIGEN_PUBLICO = "PUBLICO";
+    public static final String ORIGEN_USUARIO = "USUARIO";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,6 +41,10 @@ public class ConversacionMensajeria {
     @Column(name = "contacto_telefono", length = 40)
     private String contactoTelefono;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "usuario_iniciador_id", nullable = true)
+    private Usuario usuarioIniciador;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_responsable_id", nullable = false)
     private Usuario usuarioResponsable;
@@ -56,9 +61,10 @@ public class ConversacionMensajeria {
     protected ConversacionMensajeria() {
     }
 
-    private ConversacionMensajeria(Empresa empresa, Usuario usuarioResponsable, String asunto, String tipoOrigen,
+    private ConversacionMensajeria(Empresa empresa, Usuario usuarioIniciador, Usuario usuarioResponsable, String asunto, String tipoOrigen,
                                    String contactoNombreEmpresa, String contactoCorreoElectronico, String contactoTelefono) {
         this.empresa = empresa;
+        this.usuarioIniciador = usuarioIniciador;
         this.usuarioResponsable = usuarioResponsable;
         this.asunto = asunto;
         this.tipoOrigen = tipoOrigen;
@@ -70,7 +76,11 @@ public class ConversacionMensajeria {
     }
 
     public static ConversacionMensajeria crear(Empresa empresa, Usuario usuarioResponsable, String asunto) {
-        return new ConversacionMensajeria(empresa, usuarioResponsable, asunto, ORIGEN_EMPRESA, null, null, null);
+        return new ConversacionMensajeria(empresa, null, usuarioResponsable, asunto, ORIGEN_EMPRESA, null, null, null);
+    }
+
+    public static ConversacionMensajeria crearEntreUsuarios(Usuario iniciador, Usuario responsable, String asunto) {
+        return new ConversacionMensajeria(null, iniciador, responsable, asunto, ORIGEN_USUARIO, null, null, null);
     }
 
     public static ConversacionMensajeria crearConsultaPublica(
@@ -81,6 +91,7 @@ public class ConversacionMensajeria {
         String contactoTelefono
     ) {
         return new ConversacionMensajeria(
+            null,
             null,
             usuarioResponsable,
             asunto,
@@ -119,6 +130,22 @@ public class ConversacionMensajeria {
 
     public String getContactoTelefono() {
         return contactoTelefono;
+    }
+
+    public Usuario getUsuarioIniciador() {
+        return usuarioIniciador;
+    }
+
+    public Long getUsuarioIniciadorId() {
+        return usuarioIniciador != null ? usuarioIniciador.getId() : null;
+    }
+
+    public String getUsuarioIniciadorNombreUsuario() {
+        return usuarioIniciador != null ? usuarioIniciador.getNombreUsuario() : null;
+    }
+
+    public String getUsuarioIniciadorNombreCompleto() {
+        return usuarioIniciador != null ? usuarioIniciador.getNombreCompleto() : null;
     }
 
     public Usuario getUsuarioResponsable() {

@@ -82,6 +82,21 @@ public class ControladorEmpresa {
         return servicioEmpresa.obtenerServiciosPostRadicacion(id, autenticacion.getName());
     }
 
+    @PatchMapping("/{id}/rubro-inicial")
+    public ResponseEntity<Void> asignarRubroInicial(
+        @PathVariable Long id,
+        @RequestBody java.util.Map<String, Long> body,
+        Authentication autenticacion
+    ) {
+        Long rubroId = body.get("rubroId");
+        if (rubroId == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST, "El campo rubroId es obligatorio");
+        }
+        servicioEmpresa.asignarRubroInicial(id, rubroId, autenticacion.getName());
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/servicios-post-radicacion")
     public RespuestaServiciosPostRadicacion actualizarServiciosPostRadicacion(
         @PathVariable Long id,

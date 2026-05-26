@@ -19,6 +19,7 @@ public interface RepositorioUsuario extends JpaRepository<Usuario, Long> {
     List<Usuario> findByEmpresa_IdOrderByIdAsc(Long empresaId);
     @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r WHERE u.activo = true AND r IN :roles ORDER BY u.nombreCompleto ASC")
     List<Usuario> findActivosConRolesGestion(@Param("roles") Set<RolUsuario> roles);
+    List<Usuario> findByActivoTrueOrderByNombreCompletoAsc();
     boolean existsByNombreUsuario(String nombreUsuario);
     boolean existsByCorreoElectronicoIgnoreCase(String correoElectronico);
 }

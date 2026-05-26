@@ -1,12 +1,12 @@
 const ModuloProyectos = (() => {
     let _proyectoActualId = null;
-    let _esGestor = false;
+    let _esTecnico = false;
 
     async function cargar() {
-        _esGestor = !Autenticacion.tieneAcceso(['EMPRESA']) ||
-            Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        _esTecnico = Autenticacion.tieneAcceso(['TECNICO'])
+            && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
 
-        document.getElementById('btnNuevoProyecto')?.classList.toggle('d-none', !_esGestor);
+        document.getElementById('btnNuevoProyecto')?.classList.toggle('d-none', !_esTecnico);
 
         await Promise.all([_cargarProyectos(), _verificarAlertas()]);
     }
@@ -35,15 +35,16 @@ const ModuloProyectos = (() => {
                         <div class="progress-bar ${colorBarra}" style="width:${avance}%"></div>
                     </div>
                     <small class="text-muted">${avance}%</small>
+                    ${p.tieneHitosVencidos ? ' <i class="bi bi-exclamation-triangle-fill text-danger" title="Hitos vencidos"></i>' : ''}
                 </td>
                 <td>${p.fechaEstimadaFin ? p.fechaEstimadaFin.substring(0, 10) : '-'}</td>
                 <td>${p.responsableSeguimiento || '-'}</td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary me-1" title="Ver hitos"
+                    <button class="btn btn-sm btn-outline-primary me-1" title="Ver detalle e hitos"
                             onclick="ModuloProyectos.abrirHitos(${p.id})">
                         <i class="bi bi-list-check"></i>
                     </button>
-                    ${_esGestor ? `<button class="btn btn-sm btn-outline-secondary" title="Cambiar estado"
+                    ${_esTecnico ? `<button class="btn btn-sm btn-outline-secondary" title="Cambiar estado"
                             onclick="ModuloProyectos.abrirCambioEstado(${p.id}, '${p.estado}')">
                         <i class="bi bi-pencil"></i>
                     </button>` : ''}
@@ -79,9 +80,50 @@ const ModuloProyectos = (() => {
 
         document.getElementById('tituloModalHitos').textContent = proyecto.nombre;
         document.getElementById('subtituloModalHitos').textContent = proyecto.nombreEmpresa || '';
-        document.getElementById('bloqueFormNuevoHito')?.classList.toggle('d-none', !_esGestor);
+        document.getElementById('bloqueFormNuevoHito')?.classList.toggle('d-none', !_esTecnico);
+        _renderizarDetalleProyecto(proyecto);
         _renderizarHitos(proyecto.hitos || []);
         new bootstrap.Modal(document.getElementById('modalHitosProyecto')).show();
+    }
+
+    function _renderizarDetalleProyecto(p) {
+        const contenedor = document.getElementById('detalleProyectoModal');
+        if (!contenedor) return;
+        const fmtFecha = f => f ? f.substring(0, 10) : '—';
+        const fmtMonto = m => m != null
+            ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(m)
+            : '—';
+        contenedor.innerHTML = `
+            <div class="col-sm-6 col-md-4">
+                <span class="text-muted">Estado:</span>
+                <span class="ms-1">${_badgeEstado(p.estado)}</span>
+                ${p.tieneHitosVencidos ? '<span class="badge bg-danger ms-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Hitos vencidos</span>' : ''}
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <span class="text-muted">Avance físico:</span>
+                <span class="ms-1 fw-semibold">${p.avanceFisico ?? 0}%</span>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <span class="text-muted">Responsable:</span>
+                <span class="ms-1">${p.responsableSeguimiento || '—'}</span>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <span class="text-muted">Inicio real:</span>
+                <span class="ms-1">${fmtFecha(p.fechaInicioReal)}</span>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <span class="text-muted">Fin estimado:</span>
+                <span class="ms-1">${fmtFecha(p.fechaEstimadaFin)}</span>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <span class="text-muted">Creación:</span>
+                <span class="ms-1">${p.fechaCreacion ? p.fechaCreacion.substring(0, 10) : '—'}</span>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <span class="text-muted">Monto inversión:</span>
+                <span class="ms-1">${fmtMonto(p.montoInversion)}</span>
+            </div>
+            ${p.descripcion ? `<div class="col-12"><span class="text-muted">Descripción:</span> <span class="ms-1">${p.descripcion}</span></div>` : ''}`;
     }
 
     function _renderizarHitos(hitos) {
@@ -102,11 +144,11 @@ const ModuloProyectos = (() => {
                     <span class="${h.cumplido ? 'text-decoration-line-through text-muted' : ''}">${h.descripcion}</span>
                     ${h.fechaVencimiento ? `<small class="d-block text-muted">Plazo: ${h.fechaVencimiento.substring(0, 10)}</small>` : ''}
                 </div>
-                ${_esGestor && !h.cumplido ? `
+                ${_esTecnico && !h.cumplido ? `
                 <button class="btn btn-sm btn-outline-success" onclick="ModuloProyectos.marcarHitoCumplido(${h.id})" title="Marcar cumplido">
                     <i class="bi bi-check-lg"></i>
                 </button>` : ''}
-                ${_esGestor ? `
+                ${_esTecnico ? `
                 <button class="btn btn-sm btn-outline-danger" onclick="ModuloProyectos.eliminarHito(${h.id})" title="Eliminar">
                     <i class="bi bi-trash3"></i>
                 </button>` : ''}
@@ -227,10 +269,10 @@ const ModuloProyectos = (() => {
 
     function _badgeEstado(estado) {
         const cfg = {
-            PLANIFICADO:  ['bg-secondary-subtle text-secondary', 'Planificado'],
+            INICIADO:     ['bg-secondary-subtle text-secondary', 'Iniciado'],
             EN_EJECUCION: ['bg-primary-subtle text-primary',    'En ejecución'],
-            PAUSADO:      ['bg-warning-subtle text-warning',    'Pausado'],
-            FINALIZADO:   ['bg-success-subtle text-success',    'Finalizado'],
+            DETENIDO:     ['bg-warning-subtle text-warning',    'Detenido'],
+            COMPLETADO:   ['bg-success-subtle text-success',    'Completado'],
             CANCELADO:    ['bg-danger-subtle text-danger',      'Cancelado'],
         };
         const [cls, label] = cfg[estado] ?? ['bg-light text-muted', estado];

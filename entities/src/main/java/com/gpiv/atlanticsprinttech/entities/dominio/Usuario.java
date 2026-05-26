@@ -47,6 +47,8 @@ public class Usuario {
     private LocalDateTime fechaVerificacionEmail;
     @Column(name = "fecha_ultimo_acceso")
     private LocalDateTime fechaUltimoAcceso;
+    @Column(name = "autorizado_por", length = 60)
+    private String autorizadoPor;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
@@ -120,6 +122,12 @@ public class Usuario {
 
     public LocalDateTime getFechaUltimoAcceso() {
         return fechaUltimoAcceso;
+    }
+    public String getAutorizadoPor() {
+        return autorizadoPor;
+    }
+    public void setAutorizadoPor(String autorizadoPor) {
+        this.autorizadoPor = autorizadoPor;
     }
     public Empresa getEmpresa() {
         return empresa;

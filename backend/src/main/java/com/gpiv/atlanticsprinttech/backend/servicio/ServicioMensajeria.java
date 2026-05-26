@@ -29,5 +29,7 @@ public interface ServicioMensajeria {
         String asunto,
         String mensaje
     );
+
+    ConversacionMensajeria notificarEmpresa(Long empresaId, String asunto, String mensaje);
 }
 

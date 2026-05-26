@@ -2,6 +2,8 @@ const ModuloEmpresas = (() => {
     let empresas = [];
     let modoEdicion = false;
     let idEdicion = null;
+    let _paginaActual = 0;
+    const POR_PAGINA = 25;
     let empresaPropia = null;
     let vehiculosEmpresaPropia = [];
     let empleadosEmpresaPropia = [];
@@ -28,18 +30,19 @@ const ModuloEmpresas = (() => {
             await cargarVistaEmpresa();
             return;
         }
-        // Vista ADMIN completa (CRUD)
+        // Vista ADMIN/SECRETARIO completa (CRUD)
         mostrarPanelAdmin(false);
         mostrarPanelEmpresaPropia(false);
         const respuesta = await ApiCliente.obtener('/api/empresas');
         if (!respuesta?.ok) { mostrarAlerta('Error al cargar empresas.', 'danger'); return; }
         empresas = await respuesta.json();
+        _paginaActual = 0;
         renderizarTabla();
         poblarSelectorServiciosPost();
     }
 
     function esRolEmpresaSolo() {
-        return Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR']);
+        return Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
     }
 
     // ─── Panel ADMIN / DIRECTIVO ─────────────────────────────────────────────────
@@ -111,19 +114,6 @@ const ModuloEmpresas = (() => {
         contenido?.classList.add('d-none');
         modal.show();
 
-        if (Autenticacion.tieneRol('DIRECTIVO')) {
-            const respD = await ApiCliente.obtener(`/api/empresas/${idEmpresa}`);
-            estado?.classList.add('d-none');
-            if (!respD?.ok) {
-                error.textContent = 'No se pudo cargar el detalle de la empresa.';
-                error.classList.remove('d-none');
-                return;
-            }
-            renderizarDetalleAdmin(construirDetalleDesdeEmpresaBasica(await respD.json()));
-            contenido?.classList.remove('d-none');
-            return;
-        }
-
         let respuesta = await ApiCliente.obtener(`/api/empresas/admin/vista/${idEmpresa}`);
         estado?.classList.add('d-none');
         if (!respuesta?.ok) {
@@ -148,7 +138,7 @@ const ModuloEmpresas = (() => {
             cuit: empresa?.cuit, telefono: empresa?.telefono,
             direccion: empresa?.direccion, actividadEconomica: empresa?.actividadEconomica,
             correoElectronico: empresa?.correoElectronico, totalEmpleados: empresa?.cantidadEmpleados ?? 0,
-            totalVehiculos: 0, vehiculos: [], lotes: [], fechaRegistro: null, statusEmpresa: null, estadoExpediente: null, usuarioAsociado: null
+            totalVehiculos: 0, vehiculos: [], lotes: [], fechaRegistro: null, statusEmpresa: null, estadoExpediente: null, usuariosAsociados: []
         };
     }
 
@@ -164,7 +154,6 @@ const ModuloEmpresas = (() => {
     };
 
     function renderizarDetalleAdmin(detalle) {
-        const usuario = detalle?.usuarioAsociado;
         setTexto('detEmpresaNombre', detalle?.nombre);
         setTexto('detEmpresaRazonSocial', detalle?.razonSocial);
         setTexto('detEmpresaCuit', detalle?.cuit);
@@ -176,12 +165,29 @@ const ModuloEmpresas = (() => {
         setTexto('detEmpresaActividad', detalle?.actividadEconomica);
         setTexto('detEmpresaRubro', detalle?.rubroNombre || 'Sin rubro asignado');
         setTexto('detEmpresaEstado', detalle?.estadoExpediente || 'Sin expediente');
-        setTexto('detUsuarioNombre', usuario?.nombreCompleto || 'Sin usuario asociado');
-        setTexto('detUsuarioCorreo', usuario?.correoElectronico);
-        setTexto('detUsuarioRol', (usuario?.roles || []).join(', '));
-        setTexto('detUsuarioUltimoAcceso', formatearFechaHora(usuario?.fechaUltimoAcceso));
         setTexto('detTotalEmpleados', `${detalle?.totalEmpleados ?? 0}`);
         setTexto('detTotalVehiculos', `${detalle?.totalVehiculos ?? 0}`);
+
+        const contenidoUsuarios = document.getElementById('contenidoUsuariosEmpresaAdmin');
+        const usuarios = detalle?.usuariosAsociados || [];
+        if (contenidoUsuarios) {
+            if (!usuarios.length) {
+                contenidoUsuarios.innerHTML = '<span class="text-muted fst-italic small"><i class="bi bi-dash-circle me-1"></i>Sin usuarios asociados</span>';
+            } else {
+                contenidoUsuarios.innerHTML = usuarios.map(u => `
+                    <div class="border rounded p-2 mb-2 bg-light-subtle">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
+                            <span class="fw-semibold"><i class="bi bi-person me-1 text-primary"></i>${u.nombreUsuario}</span>
+                            <span class="badge rounded-pill ${u.activo ? 'bg-success' : 'bg-secondary'}">${u.activo ? 'Activo' : 'Inactivo'}</span>
+                        </div>
+                        <div class="text-muted small mt-1">
+                            <span class="me-3">${u.nombreCompleto || ''}</span>
+                            ${u.correoElectronico ? `<span class="me-3"><i class="bi bi-envelope me-1"></i>${u.correoElectronico}</span>` : ''}
+                            ${u.fechaUltimoAcceso ? `<span><i class="bi bi-clock me-1"></i>${formatearFechaHora(u.fechaUltimoAcceso)}</span>` : ''}
+                        </div>
+                    </div>`).join('');
+            }
+        }
 
         const contenidoLotes = document.getElementById('contenidoLotesEmpresaAdmin');
         const lotes = detalle?.lotes || [];
@@ -200,7 +206,8 @@ const ModuloEmpresas = (() => {
                         <div class="text-muted small mt-1">
                             <span class="me-3"><i class="bi bi-arrows-angle-expand me-1"></i>${(l.superficieMetrosCuadrados || 0).toLocaleString('es-AR')} m²</span>
                             ${l.zona ? `<span class="me-3"><i class="bi bi-geo-alt me-1"></i>${ETIQUETA_ZONA_EMPRESA[l.zona] || l.zona}</span>` : ''}
-                            ${l.fechaAsignacion ? `<span><i class="bi bi-calendar me-1"></i>${l.fechaAsignacion}</span>` : ''}
+                            ${l.fechaAsignacion ? `<span class="me-3"><i class="bi bi-calendar me-1"></i>${l.fechaAsignacion}</span>` : ''}
+                            ${l.numeroExpedienteReferencia ? `<span><i class="bi bi-file-earmark-text me-1"></i>Exp. ${l.numeroExpedienteReferencia}</span>` : ''}
                         </div>
                     </div>`;
                 }).join('');
@@ -257,6 +264,7 @@ const ModuloEmpresas = (() => {
         }
         actualizarBotonServicios();
         actualizarIndicadoresEmpresaPropia();
+        ModuloUsuariosEmpresa.cargar();
     }
 
     function actualizarBotonServicios() {
@@ -278,6 +286,41 @@ const ModuloEmpresas = (() => {
         setTexto('empDireccionPropia', emp.direccion || '-');
         setTexto('empCorreoPropio', emp.correoElectronico || '-');
         setTexto('empTelefonoPropio', emp.telefono || '-');
+        // Mostrar botón según si tiene rubro o no
+        const tieneRubro = !!emp.rubroId;
+        document.getElementById('btnSeleccionarRubroInicial')?.classList.toggle('d-none', tieneRubro);
+        document.getElementById('btnSolicitarCambioRubro')?.classList.toggle('d-none', !tieneRubro);
+    }
+
+    let _rubrosCache = [];
+
+    async function abrirSeleccionRubroInicial() {
+        ocultarAlertaModal('alertaModalRubroInicial');
+        const selector = document.getElementById('selectorRubroInicial');
+        if (_rubrosCache.length === 0) {
+            const resp = await ApiCliente.obtener('/api/catalogos/rubros');
+            _rubrosCache = resp?.ok ? await resp.json() : [];
+        }
+        selector.innerHTML = '<option value="">Seleccionar rubro...</option>' +
+            _rubrosCache.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRubroInicial')).show();
+    }
+
+    async function confirmarRubroInicial() {
+        const rubroId = parseInt(document.getElementById('selectorRubroInicial').value);
+        if (!rubroId) {
+            mostrarAlertaModal('alertaModalRubroInicial', 'Debe seleccionar un rubro.');
+            return;
+        }
+        const resp = await ApiCliente.parche(`/api/empresas/${empresaPropia.id}/rubro-inicial`, { rubroId });
+        if (resp?.ok || resp?.status === 204) {
+            bootstrap.Modal.getInstance(document.getElementById('modalRubroInicial'))?.hide();
+            await cargar();
+            mostrarAlerta('Rubro asignado correctamente.');
+        } else {
+            const error = await resp?.json().catch(() => ({}));
+            mostrarAlertaModal('alertaModalRubroInicial', error?.message || 'Error al asignar el rubro.');
+        }
     }
 
     function actualizarIndicadoresEmpresaPropia() {
@@ -716,11 +759,15 @@ const ModuloEmpresas = (() => {
         if (!cuerpo) return;
         if (empresas.length === 0) {
             cuerpo.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin empresas registradas</td></tr>';
+            _actualizarPaginacionEmpresas(0, 0);
             return;
         }
-        const puedeEditar  = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'EMPRESA']);
-        const puedeEliminar = Autenticacion.tieneAcceso(['ADMINISTRADOR']);
-        cuerpo.innerHTML = empresas.map(e => `
+        const totalPaginas = Math.ceil(empresas.length / POR_PAGINA);
+        if (_paginaActual >= totalPaginas) _paginaActual = totalPaginas - 1;
+        const pagina = empresas.slice(_paginaActual * POR_PAGINA, (_paginaActual + 1) * POR_PAGINA);
+        const puedeEditar  = Autenticacion.tieneAcceso(['SECRETARIO', 'EMPRESA']);
+        const puedeEliminar = Autenticacion.tieneAcceso(['SECRETARIO']);
+        cuerpo.innerHTML = pagina.map(e => `
             <tr>
                 <td class="text-muted">${e.id}</td>
                 <td class="fw-semibold">${e.nombre}</td>
@@ -735,6 +782,26 @@ const ModuloEmpresas = (() => {
                     ` : ''}
                 </td>
             </tr>`).join('');
+        _actualizarPaginacionEmpresas(empresas.length, totalPaginas);
+    }
+
+    function _actualizarPaginacionEmpresas(total, totalPaginas) {
+        const nav     = document.getElementById('paginacionEmpresas');
+        const info    = document.getElementById('infoPaginaEmpresas');
+        const btnPrev = document.getElementById('btnPrevEmpresas');
+        const btnNext = document.getElementById('btnNextEmpresas');
+        if (!nav) return;
+        if (totalPaginas <= 1) { nav.classList.add('d-none'); return; }
+        nav.classList.remove('d-none');
+        if (info) info.textContent = `Página ${_paginaActual + 1} de ${totalPaginas}  (${total} empresas)`;
+        if (btnPrev) btnPrev.disabled = _paginaActual === 0;
+        if (btnNext) btnNext.disabled = _paginaActual === totalPaginas - 1;
+    }
+
+    function irPagina(dir) {
+        if (dir === 'prev' && _paginaActual > 0) _paginaActual--;
+        else if (dir === 'next') _paginaActual++;
+        renderizarTabla();
     }
 
     async function abrirCreacion() {
@@ -988,7 +1055,7 @@ const ModuloEmpresas = (() => {
     }
 
     return {
-        cargar,
+        cargar, irPagina,
         abrirCreacion, abrirEdicion, editarEmpresaPropia, guardar,
         confirmarEliminacion, eliminar,
         verDetalleAdmin,
@@ -996,6 +1063,7 @@ const ModuloEmpresas = (() => {
         abrirAgregarEmpleados, guardarEmpleado, editarEmpleado, cancelarEdicionEmpleado, eliminarEmpleado,
         abrirListadoVehiculos, mostrarFormularioVehiculo, ocultarFormularioVehiculo,
         guardarVehiculo, quitarVehiculo,
-        abrirServiciosModal, guardarServiciosModal
+        abrirServiciosModal, guardarServiciosModal,
+        abrirSeleccionRubroInicial, confirmarRubroInicial
     };
 })();

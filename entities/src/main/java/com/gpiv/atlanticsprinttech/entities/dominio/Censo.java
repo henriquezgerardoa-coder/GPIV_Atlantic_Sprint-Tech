@@ -36,8 +36,8 @@ public class Censo {
     @Column(name = "cantidad_personal_registrado", nullable = false)
     private int cantidadPersonalRegistrado;
 
-    @Column(name = "cantidad_personas_no_registrado", nullable = false)
-    private int cantidadPersonasNoRegistrado;
+    @Column(name = "cantidad_personal_no_registrado", nullable = false)
+    private int cantidadPersonalNoRegistrado;
 
     @Column(length = 500)
     private String observacion;
@@ -49,14 +49,14 @@ public class Censo {
         Empresa empresa,
         int anioPeriodo,
         int cantidadPersonalRegistrado,
-        int cantidadPersonasNoRegistrado,
+        int cantidadPersonalNoRegistrado,
         String observacion
     ) {
         this.empresa = empresa;
         this.fechaDeclaracion = LocalDate.now();
         this.anioPeriodo = anioPeriodo;
         this.cantidadPersonalRegistrado = cantidadPersonalRegistrado;
-        this.cantidadPersonasNoRegistrado = cantidadPersonasNoRegistrado;
+        this.cantidadPersonalNoRegistrado = cantidadPersonalNoRegistrado;
         this.observacion = observacion;
     }
 
@@ -64,10 +64,10 @@ public class Censo {
         Empresa empresa,
         int anioPeriodo,
         int cantidadPersonalRegistrado,
-        int cantidadPersonasNoRegistrado,
+        int cantidadPersonalNoRegistrado,
         String observacion
     ) {
-        return new Censo(empresa, anioPeriodo, cantidadPersonalRegistrado, cantidadPersonasNoRegistrado, observacion);
+        return new Censo(empresa, anioPeriodo, cantidadPersonalRegistrado, cantidadPersonalNoRegistrado, observacion);
     }
 
     public Long getId() {
@@ -90,8 +90,8 @@ public class Censo {
         return cantidadPersonalRegistrado;
     }
 
-    public int getCantidadPersonasNoRegistrado() {
-        return cantidadPersonasNoRegistrado;
+    public int getCantidadPersonalNoRegistrado() {
+        return cantidadPersonalNoRegistrado;
     }
 
     public String getObservacion() {
@@ -99,10 +99,10 @@ public class Censo {
     }
 
     public int calcularTotalEmpleados() {
-        return cantidadPersonalRegistrado + cantidadPersonasNoRegistrado;
+        return cantidadPersonalRegistrado + cantidadPersonalNoRegistrado;
     }
 
-    public boolean esPeriodoValido() {
+    public boolean esPeriodoValida() {
         int anioActual = LocalDate.now().getYear();
         return anioPeriodo >= 2000 && anioPeriodo <= anioActual;
     }

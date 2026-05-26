@@ -110,8 +110,8 @@ const ModuloRadicaciones = (() => {
             return;
         }
 
-        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
-        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
         cuerpo.innerHTML = radicaciones.map(r => `
             <tr role="button" title="Seleccionar expediente" onclick="ModuloRadicaciones.seleccionarExpediente(${r.id}, '${r.numeroRadicado}')">
                 <td class="ps-3 fw-semibold">${r.numeroRadicado}</td>
@@ -293,7 +293,7 @@ const ModuloRadicaciones = (() => {
             document.getElementById('tab-rad-a')?.closest('.nav-item')?.classList.add('d-none');
             document.getElementById('btnNuevaSolicitudRad')?.classList.add('d-none');
             document.getElementById('btnNuevaSolicitudRadListado')?.classList.add('d-none');
-            const puedeAdjuntar = Autenticacion.tieneAcceso(['EMPRESA', 'ADMINISTRADOR', 'SECRETARIO']);
+            const puedeAdjuntar = Autenticacion.tieneAcceso(['EMPRESA', 'SECRETARIO']);
             document.getElementById('tab-rad-d')?.closest('.nav-item')?.classList.toggle('d-none', !puedeAdjuntar);
             const tabB = document.getElementById('tab-rad-b');
             if (tabB && window.bootstrap?.Tab) window.bootstrap.Tab.getOrCreateInstance(tabB).show();
@@ -546,8 +546,8 @@ const ModuloRadicaciones = (() => {
     }
 
     function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null, tieneActa = false) {
-        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-        const esGestor = !esEmpresa && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
+        const esGestor = !esEmpresa && Autenticacion.tieneAcceso(['SECRETARIO']);
 
         setTexto('detRadNumero', detalle?.numeroRadicado || '-');
         setTexto('detRadSolicitante', detalle?.nombreEmpresa || '-');
@@ -611,7 +611,7 @@ const ModuloRadicaciones = (() => {
         renderizarSeccionActaRubrica(detalle?.id, tieneActa, detalle?.estado);
 
         // Relevamiento
-        renderizarRelevamiento(relevamiento);
+        renderizarRelevamiento(relevamiento, detalle?.tieneRelevamientoPedidoLotes);
 
         const cuerpoDocs = document.getElementById('cuerpoDocumentosDetalleRadAdmin');
         if (cuerpoDocs) {
@@ -645,12 +645,16 @@ const ModuloRadicaciones = (() => {
         }
     }
 
-    function renderizarRelevamiento(rel) {
+    function renderizarRelevamiento(rel, tieneRelevamiento) {
         const bloque = document.getElementById('bloqueRelevamientoDetalleRad');
         const contenido = document.getElementById('contenidoRelevamientoDetalleRad');
         if (!bloque || !contenido) return;
-        if (!rel) { bloque.classList.add('d-none'); return; }
+        if (!tieneRelevamiento) { bloque.classList.add('d-none'); return; }
         bloque.classList.remove('d-none');
+        if (!rel) {
+            contenido.innerHTML = '<div class="col-12 text-muted small">No se pudieron cargar los datos del relevamiento.</div>';
+            return;
+        }
 
         const campo = (etiqueta, valor) => valor != null && valor !== ''
             ? `<div class="col-md-4"><span class="text-muted">${etiqueta}:</span> <span class="fw-semibold">${valor}</span></div>`
@@ -700,7 +704,7 @@ const ModuloRadicaciones = (() => {
     }
 
     function renderizarSeccionLote(loteAsignado, necesidadM2) {
-        const esAdmin = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esAdmin = Autenticacion.tieneAcceso(['SECRETARIO']);
         const bloqueAsignacion = document.getElementById('bloqueAsignacionLoteRad');
         if (!bloqueAsignacion) return;
 
@@ -796,8 +800,8 @@ const ModuloRadicaciones = (() => {
     }
 
     function renderizarSeccionActaRubrica(id, tieneActa, estadoRadicacion) {
-        const esAdmin = Autenticacion.tieneAcceso(['ADMINISTRADOR']) && !Autenticacion.tieneAcceso(['EMPRESA']);
-        const esGestorConVista = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esAdmin = Autenticacion.tieneAcceso(['SECRETARIO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esGestorConVista = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
         const estadosPermitidos = new Set(['APROBADA', 'RADICADA']);
         const bloque = document.getElementById('bloqueActaRubricaRad');
         if (!bloque) return;

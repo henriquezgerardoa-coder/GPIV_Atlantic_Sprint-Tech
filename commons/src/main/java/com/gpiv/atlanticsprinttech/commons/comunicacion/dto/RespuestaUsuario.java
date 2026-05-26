@@ -10,7 +10,8 @@ public record RespuestaUsuario(
     boolean activo,
     Set<RolUsuario> roles,
     Long empresaId,
-    String nombreEmpresa
+    String nombreEmpresa,
+    String autorizadoPor
 ) {
 }
 

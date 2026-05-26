@@ -28,17 +28,21 @@ public class Vehiculo {
     @Column(name = "marca_modelo", nullable = false, length = 120)
     private String marcaModelo;
 
+    @Column(nullable = false, length = 80)
+    private String tipo;
+
     protected Vehiculo() {
     }
 
-    private Vehiculo(Empresa empresa, String patente, String marcaModelo) {
+    private Vehiculo(Empresa empresa, String patente, String marcaModelo, String tipo) {
         this.empresa = empresa;
         this.patente = patente.trim().toUpperCase();
         this.marcaModelo = marcaModelo;
+        this.tipo = tipo;
     }
 
-    public static Vehiculo crear(Empresa empresa, String patente, String marcaModelo) {
-        return new Vehiculo(empresa, patente, marcaModelo);
+    public static Vehiculo crear(Empresa empresa, String patente, String marcaModelo, String tipo) {
+        return new Vehiculo(empresa, patente, marcaModelo, tipo);
     }
 
     public Long getId() {
@@ -55,6 +59,10 @@ public class Vehiculo {
 
     public String getMarcaModelo() {
         return marcaModelo;
+    }
+
+    public String getTipo() {
+        return tipo;
     }
 
     /** Valida patente argentina vieja (AAA000) o Mercosur (AA000AA). */

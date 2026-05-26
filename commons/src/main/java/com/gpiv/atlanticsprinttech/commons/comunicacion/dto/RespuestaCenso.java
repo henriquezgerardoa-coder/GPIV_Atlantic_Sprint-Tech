@@ -5,7 +5,7 @@ public record RespuestaCenso(
     int anioPeriodo,
     String fechaDeclaracion,
     int cantidadPersonalRegistrado,
-    int cantidadPersonasNoRegistrado,
+    int cantidadPersonalNoRegistrado,
     int totalEmpleados,
     String observacion
 ) {

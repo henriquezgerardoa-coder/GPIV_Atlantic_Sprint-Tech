@@ -59,7 +59,7 @@ public class MigradorConstraintRoles extends MigradorBasePostgresql {
                     BEGIN
                         ALTER TABLE public.usuarios_roles
                         ADD CONSTRAINT usuarios_roles_rol_check
-                        CHECK (rol IN ('ADMINISTRADOR', 'DIRECTIVO', 'EMPRESA', 'SECRETARIO', 'TECNICO'));
+                        CHECK (rol IN ('ADMINISTRADOR', 'DIRECTIVO', 'EMPRESA', 'SECRETARIO', 'TECNICO', 'AUDITOR'));
                     EXCEPTION
                         WHEN duplicate_object THEN NULL;
                     END;

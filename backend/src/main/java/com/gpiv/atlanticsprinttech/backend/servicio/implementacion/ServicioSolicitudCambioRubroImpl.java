@@ -3,6 +3,7 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioSolicitudCambioRubro;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
@@ -24,17 +25,20 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
     private final RepositorioSolicitudCambioRubro repositorioSolicitud;
     private final RepositorioRubro repositorioRubro;
     private final RepositorioEmpresa repositorioEmpresa;
+    private final ServicioMensajeria servicioMensajeria;
     private final ServicioContextoUsuario servicioContextoUsuario;
 
     public ServicioSolicitudCambioRubroImpl(
         RepositorioSolicitudCambioRubro repositorioSolicitud,
         RepositorioRubro repositorioRubro,
         RepositorioEmpresa repositorioEmpresa,
+        ServicioMensajeria servicioMensajeria,
         ServicioContextoUsuario servicioContextoUsuario
     ) {
         this.repositorioSolicitud = repositorioSolicitud;
         this.repositorioRubro = repositorioRubro;
         this.repositorioEmpresa = repositorioEmpresa;
+        this.servicioMensajeria = servicioMensajeria;
         this.servicioContextoUsuario = servicioContextoUsuario;
     }
 
@@ -128,7 +132,14 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El motivo de rechazo es obligatorio al rechazar una solicitud");
             }
-            solicitud.rechazar(identificadorIngreso, motivoRechazo.trim());
+            String motivoNormalizado = motivoRechazo.trim();
+            solicitud.rechazar(identificadorIngreso, motivoNormalizado);
+            servicioMensajeria.notificarEmpresa(
+                solicitud.getEmpresa().getId(),
+                "Solicitud de cambio de rubro rechazada",
+                "Tu solicitud de cambio de rubro para la empresa " + solicitud.getEmpresa().getNombre()
+                    + " fue rechazada. Motivo: " + motivoNormalizado
+            );
         }
 
         return repositorioSolicitud.save(solicitud);

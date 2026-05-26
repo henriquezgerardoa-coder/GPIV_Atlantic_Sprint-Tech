@@ -8,20 +8,40 @@ const ConfiguracionInicial = (() => {
     let _todasLasEmpresas = [];
 
     function mostrar() {
-        _modal = new bootstrap.Modal(document.getElementById('modalConfiguracionInicial'));
-        _modal.show();
-        document.getElementById('tabsConfigInicial').addEventListener('shown.bs.tab', e => {
-            if (e.target.dataset.bsTarget === '#panel-empresa-existente-ci') {
+        const modalEl = document.getElementById('modalConfiguracionInicial');
+        _modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+
+        modalEl.addEventListener('shown.bs.modal', () => {
+            _cargarRubros();
+            _cargarEmpresas();
+        }, { once: true });
+
+        modalEl.addEventListener('shown.bs.tab', e => {
+            if (e.target.dataset.bsTarget === '#panel-empresa-existente-ci' && !_todasLasEmpresas.length) {
                 _cargarEmpresas();
             }
         });
+
+        _modal.show();
+    }
+
+    async function _cargarRubros() {
+        const selector = document.getElementById('ciRubro');
+        if (!selector) return;
+        const resp = await ApiCliente.obtener('/api/catalogos/rubros');
+        if (!resp?.ok) return;
+        const rubros = await resp.json();
+        selector.innerHTML = '<option value="">Seleccionar rubro (opcional)...</option>'
+            + rubros.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
     }
 
     async function _cargarEmpresas() {
         _empresaSeleccionadaId = null;
         _todasLasEmpresas = [];
-        document.getElementById('campoBusquedaEmpresaCI').value = '';
+        const busqueda = document.getElementById('campoBusquedaEmpresaCI');
+        if (busqueda) busqueda.value = '';
         const contenedor = document.getElementById('resultadosBusquedaEmpresaCI');
+        if (!contenedor) return;
         contenedor.innerHTML = '<p class="text-muted small text-center"><span class="spinner-border spinner-border-sm me-2"></span>Cargando empresas...</p>';
         const respuesta = await ApiCliente.obtener('/api/empresas');
         if (!respuesta?.ok) {
@@ -89,6 +109,7 @@ const ConfiguracionInicial = (() => {
             correoElectronico:  document.getElementById('ciCorreo').value.trim(),
             telefono:           document.getElementById('ciTelefono').value.trim() || null,
         };
+        const rubroId = parseInt(document.getElementById('ciRubro')?.value) || null;
         if (!campos.nombre || !campos.razonSocial || !campos.cuit ||
             !campos.direccion || !campos.actividadEconomica || !campos.correoElectronico) {
             mostrarAlertaModal('alertaConfiguracionInicial', 'Completá todos los campos obligatorios.');
@@ -98,13 +119,19 @@ const ConfiguracionInicial = (() => {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
         const respuesta = await ApiCliente.crear('/api/empresas', campos);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Confirmar y continuar';
         if (!respuesta?.ok) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Confirmar y continuar';
             const error = await respuesta?.json().catch(() => ({}));
             mostrarAlertaModal('alertaConfiguracionInicial', error?.mensaje || 'No se pudo crear la empresa. Verificá los datos.');
             return;
         }
+        if (rubroId) {
+            const empresa = await respuesta.json();
+            await ApiCliente.parche(`/api/empresas/${empresa.id}/rubro-inicial`, { rubroId });
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Confirmar y continuar';
         await _completarSesion();
     }
 
@@ -271,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btnNuevoLote')?.classList.add('d-none');
     }
 
-    // SECRETARIO: solo gestiona radicaciones (puede ver empresas y lotes en modo lectura)
+    // SECRETARIO: gestiona radicaciones, lotes, empresas y usuarios
     const esSecretario = Autenticacion.tieneAcceso(['SECRETARIO'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
     if (esSecretario) {
@@ -282,16 +309,32 @@ document.addEventListener('DOMContentLoaded', () => {
          'itemNavAuditLog', 'itemNavAuditLogMovil',
          'itemNavInformes', 'itemNavInformesMovil',
          'itemNavCenso', 'itemNavCensoMovil',
-         'itemNavCambioRubro', 'itemNavCambioRubroMovil',
-         'itemNavMensajeria', 'itemNavMensajeriaMovil',
-         'itemNavUsuarios', 'itemNavUsuariosMovil']
+         'itemNavCambioRubro', 'itemNavCambioRubroMovil']
             .forEach(id => document.getElementById(id)?.classList.add('d-none'));
         document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
-        document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
-        document.getElementById('btnNuevoLote')?.classList.add('d-none');
     }
 
-    // TECNICO: solo gestiona hitos de proyectos productivos
+    // AUDITOR: solo accede al registro de auditoría
+    const esAuditor = Autenticacion.tieneAcceso(['AUDITOR'])
+        && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+    if (esAuditor) {
+        ['itemNavInformes', 'itemNavInformesMovil',
+         'itemNavCenso', 'itemNavCensoMovil',
+         'itemNavInfraestructura', 'itemNavInfraestructuraMovil',
+         'itemNavDashboard', 'itemNavDashboardMovil',
+         'itemNavMonitor', 'itemNavMonitorMovil',
+         'itemNavCambioRubro', 'itemNavCambioRubroMovil',
+         'itemNavMensajeria', 'itemNavMensajeriaMovil',
+         'itemNavUsuarios', 'itemNavUsuariosMovil',
+         'itemNavProyectos', 'itemNavProyectosMovil']
+            .forEach(id => document.getElementById(id)?.classList.add('d-none'));
+        document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('nav-empresas')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('nav-lotes')?.closest('.nav-item')?.classList.add('d-none');
+        document.getElementById('nav-radicaciones')?.closest('.nav-item')?.classList.add('d-none');
+    }
+
+    // TECNICO: gestiona hitos de proyectos productivos y puede usar mensajería
     const esTecnico = Autenticacion.tieneAcceso(['TECNICO'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
     if (esTecnico) {
@@ -302,14 +345,12 @@ document.addEventListener('DOMContentLoaded', () => {
          'itemNavDashboard', 'itemNavDashboardMovil',
          'itemNavMonitor', 'itemNavMonitorMovil',
          'itemNavCambioRubro', 'itemNavCambioRubroMovil',
-         'itemNavMensajeria', 'itemNavMensajeriaMovil',
          'itemNavUsuarios', 'itemNavUsuariosMovil']
             .forEach(id => document.getElementById(id)?.classList.add('d-none'));
         document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
         document.getElementById('nav-empresas')?.closest('.nav-item')?.classList.add('d-none');
         document.getElementById('nav-lotes')?.closest('.nav-item')?.classList.add('d-none');
         document.getElementById('nav-radicaciones')?.closest('.nav-item')?.classList.add('d-none');
-        document.getElementById('nav-mensajeria')?.closest('.nav-item')?.classList.add('d-none');
     }
 
     // Botón cerrar sesión
@@ -392,6 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
         navegarA('empresas');
     } else if (esSecretario) {
         navegarA('radicaciones');
+    } else if (esAuditor) {
+        navegarA('audit-log');
     } else if (esTecnico) {
         navegarA('proyectos');
     } else {

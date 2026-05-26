@@ -37,6 +37,12 @@ public class InicializadorUsuariosPredeterminados implements CommandLineRunner {
             EnumSet.of(RolUsuario.DIRECTIVO)
         );
         crearSiNoExiste(
+            "secretario",
+            "Secretario GPIV",
+            propiedadesApiUsuarios.getSemilla().getSecretario().getClave(),
+            EnumSet.of(RolUsuario.SECRETARIO)
+        );
+        crearSiNoExiste(
             "empresa",
             "Empresa GPIV",
             propiedadesApiUsuarios.getSemilla().getEmpresa().getClave(),

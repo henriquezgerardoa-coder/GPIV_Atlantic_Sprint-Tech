@@ -113,7 +113,7 @@ const ModuloMensajeria = (() => {
     }
 
     function ajustarVistaPorRol() {
-        document.getElementById('btnNuevaConversacionMensajeria')?.classList.toggle('d-none', !esEmpresaExclusivo());
+        document.getElementById('btnNuevaConversacionMensajeria')?.classList.remove('d-none');
     }
 
     async function cargar() {
@@ -154,14 +154,18 @@ const ModuloMensajeria = (() => {
             actualizarBadgeNavNoLeidos();
             return;
         }
+        const sesionMsj = Autenticacion.obtenerSesion();
+        const miNombre = sesionMsj?.nombreUsuario;
         lista.innerHTML = conversaciones.map(conv => {
             const activo = conv.id === conversacionSeleccionadaId ? ' active' : '';
             const nueva = conv.id !== conversacionSeleccionadaId && esNuevaConv(conv);
-            const destinatario = esEmpresaExclusivo()
-                ? `Responsable: ${escaparHtml(conv.usuarioResponsableNombreCompleto || conv.usuarioResponsableNombre || '-')}`
-                : conv.consultaPublica
-                    ? `Consulta pública: ${escaparHtml(conv.contactoNombreEmpresa || 'Sin nombre')}`
-                    : `Empresa: ${escaparHtml(conv.empresaNombre || '-')}`;
+            const soySolicitante = conv.usuarioIniciadorNombre === miNombre
+                || (esEmpresaExclusivo() && conv.empresaNombre && !conv.usuarioIniciadorId);
+            const destinatario = conv.consultaPublica
+                ? `Consulta pública: ${escaparHtml(conv.contactoNombreEmpresa || 'Sin nombre')}`
+                : soySolicitante
+                    ? `Para: ${escaparHtml(conv.usuarioResponsableNombreCompleto || conv.usuarioResponsableNombre || '-')}`
+                    : `De: ${escaparHtml(conv.usuarioIniciadorNombreCompleto || conv.usuarioIniciadorNombre || conv.empresaNombre || '-')}`;
             const ultimoMensaje = conv.ultimoMensaje
                 ? escaparHtml(conv.ultimoMensaje.length > 95 ? conv.ultimoMensaje.slice(0, 95) + '…' : conv.ultimoMensaje)
                 : 'Sin mensajes';
@@ -210,11 +214,16 @@ const ModuloMensajeria = (() => {
         panelDetalle.classList.remove('d-none');
 
         document.getElementById('tituloConversacionMensajeria').textContent = conversacion?.asunto || '-';
-        document.getElementById('subtituloConversacionMensajeria').textContent = esEmpresaExclusivo()
-            ? `Responsable: ${conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-'} | Última actualización: ${formatearFecha(conversacion?.fechaUltimaActualizacion)}`
-            : conversacion?.consultaPublica
-                ? `Consulta pública de: ${conversacion?.contactoNombreEmpresa || '-'} | Correo: ${conversacion?.contactoCorreoElectronico || '-'} | Teléfono: ${conversacion?.contactoTelefono || '-'} | Responsable: ${conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-'} | Última actualización: ${formatearFecha(conversacion?.fechaUltimaActualizacion)}`
-                : `Empresa: ${conversacion?.empresaNombre || '-'} | Responsable: ${conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-'} | Última actualización: ${formatearFecha(conversacion?.fechaUltimaActualizacion)}`;
+        const sesionDet = Autenticacion.obtenerSesion();
+        const miNombreDet = sesionDet?.nombreUsuario;
+        const soySolicitanteDet = conversacion?.usuarioIniciadorNombre === miNombreDet
+            || (esEmpresaExclusivo() && conversacion?.empresaNombre && !conversacion?.usuarioIniciadorId);
+        const otroParticipante = soySolicitanteDet
+            ? (conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-')
+            : (conversacion?.usuarioIniciadorNombreCompleto || conversacion?.usuarioIniciadorNombre || conversacion?.empresaNombre || '-');
+        document.getElementById('subtituloConversacionMensajeria').textContent = conversacion?.consultaPublica
+            ? `Consulta pública de: ${conversacion?.contactoNombreEmpresa || '-'} | Correo: ${conversacion?.contactoCorreoElectronico || '-'} | Teléfono: ${conversacion?.contactoTelefono || '-'} | Responsable: ${conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-'} | Última actualización: ${formatearFecha(conversacion?.fechaUltimaActualizacion)}`
+            : `Con: ${otroParticipante} | Última actualización: ${formatearFecha(conversacion?.fechaUltimaActualizacion)}`;
 
         const contenedor = document.getElementById('contenedorMensajesMensajeria');
         const mensajes = conversacion?.mensajes || [];

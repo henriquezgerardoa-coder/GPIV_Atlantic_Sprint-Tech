@@ -45,6 +45,9 @@ const ModuloUsuarios = (() => {
             const rolesHtml = [...u.roles]
                 .map(r => `<span class="badge ${COLOR_ROL[r] || 'bg-secondary'} me-1">${r}</span>`)
                 .join('');
+            const autorizadoPorHtml = u.autorizadoPor
+                ? `<span class="text-muted small">${u.autorizadoPor}</span>`
+                : '<span class="text-muted small">—</span>';
             return `
             <tr>
                 <td class="text-muted">${u.id}</td>
@@ -56,6 +59,7 @@ const ModuloUsuarios = (() => {
                         ${u.activo ? 'Activo' : 'Inactivo'}
                     </span>
                 </td>
+                <td>${autorizadoPorHtml}</td>
                 <td class="text-center">
                     <button class="btn btn-sm btn-outline-primary me-1" title="Editar"
                             onclick="ModuloUsuarios.abrirEdicion(${u.id})">

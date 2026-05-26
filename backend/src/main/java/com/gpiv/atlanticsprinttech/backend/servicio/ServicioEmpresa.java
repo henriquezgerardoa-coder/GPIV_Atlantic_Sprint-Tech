@@ -15,6 +15,7 @@ public interface ServicioEmpresa {
 	void eliminar(Long id, String identificadorIngreso);
 	List<RespuestaEmpresaListadoAdmin> listarVistaAdmin(String identificadorIngreso);
 	RespuestaEmpresaDetalleAdmin obtenerDetalleVistaAdmin(Long empresaId, String identificadorIngreso);
+	void asignarRubroInicial(Long empresaId, Long rubroId, String identificadorIngreso);
 	boolean permiteServiciosPostRadicacion(Long empresaId, String identificadorIngreso);
 	RespuestaServiciosPostRadicacion obtenerServiciosPostRadicacion(Long empresaId, String identificadorIngreso);
 	RespuestaServiciosPostRadicacion actualizarServiciosPostRadicacion(Long empresaId, SolicitudServiciosPostRadicacion solicitud, String identificadorIngreso);
