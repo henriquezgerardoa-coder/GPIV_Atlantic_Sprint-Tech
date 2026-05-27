@@ -182,7 +182,7 @@ const ModuloEstadisticas = (() => {
     }
 
     function imprimirInformeEmpresas() {
-        window.print();
+        _imprimirModal('modalInformeEmpresas');
     }
 
     // ── Informe por Lote ────────────────────────────────────────────────────────
@@ -289,6 +289,18 @@ const ModuloEstadisticas = (() => {
     }
 
     function imprimirInformeLotes() {
+        _imprimirModal('modalInformeLotes');
+    }
+
+    function _imprimirModal(idModal) {
+        const modal = document.getElementById(idModal);
+        if (!modal) return;
+        modal.classList.add('modal-impresion');
+        const limpiar = () => {
+            modal.classList.remove('modal-impresion');
+            window.removeEventListener('afterprint', limpiar);
+        };
+        window.addEventListener('afterprint', limpiar);
         window.print();
     }
 
