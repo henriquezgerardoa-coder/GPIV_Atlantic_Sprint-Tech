@@ -8,6 +8,7 @@ const ModuloUsuarios = (() => {
         ADMINISTRADOR: 'bg-danger',
         DIRECTIVO:     'bg-warning text-dark',
         SECRETARIO:    'bg-info text-dark',
+        TECNICO:       'bg-primary',
         EMPRESA:       'bg-secondary'
     };
 

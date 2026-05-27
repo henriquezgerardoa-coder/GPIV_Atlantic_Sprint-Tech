@@ -43,7 +43,7 @@ const ConfiguracionInicial = (() => {
         const contenedor = document.getElementById('resultadosBusquedaEmpresaCI');
         if (!contenedor) return;
         contenedor.innerHTML = '<p class="text-muted small text-center"><span class="spinner-border spinner-border-sm me-2"></span>Cargando empresas...</p>';
-        const respuesta = await ApiCliente.obtener('/api/empresas');
+        const respuesta = await ApiCliente.obtener('/api/empresas/disponibles');
         if (!respuesta?.ok) {
             contenedor.innerHTML = '<p class="text-danger small">Error al cargar las empresas. Intente nuevamente.</p>';
             return;
@@ -265,7 +265,7 @@ function _limpiarSeccion(seccion) {
         'mensajeria':     ['listaConversacionesMensajeria', 'contenedorMensajesMensajeria'],
         'empresas':       ['listaEmpresasAdmin'],
         'infraestructura':['gridServicios'],
-        'dashboard':      ['contenedorDashboard'],
+        'dashboard':      ['kpisFila1', 'kpisFila2'],
         'proyectos':      ['listaAlertasHitos', 'listaHitosProximos'],
     };
     (tablas[seccion] || []).forEach(id => {
@@ -324,8 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('campoMiNombreCompleto').value = sesion.nombreCompleto || '';
     document.getElementById('campoMiCorreoElectronico').value = sesion.correoElectronico || '';
 
-    // Ocultar la sección Usuarios si no es administrador
-    if (!Autenticacion.esAdministrador()) {
+    // Ocultar la sección Usuarios si no es administrador ni secretario
+    if (!Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO'])) {
         document.getElementById('itemNavUsuarios')?.classList.add('d-none');
         document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
     }
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btnNuevoLote')?.classList.add('d-none');
     }
 
-    // SECRETARIO: gestiona radicaciones, lotes, empresas y usuarios
+    // SECRETARIO: gestiona radicaciones, lotes, empresas, usuarios y censo
     const esSecretario = Autenticacion.tieneAcceso(['SECRETARIO'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
     if (esSecretario) {
@@ -367,8 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
          'itemNavDashboard', 'itemNavDashboardMovil',
          'itemNavMonitor', 'itemNavMonitorMovil',
          'itemNavAuditLog', 'itemNavAuditLogMovil',
-         'itemNavInformes', 'itemNavInformesMovil',
-         'itemNavCenso', 'itemNavCensoMovil']
+         'itemNavInformes', 'itemNavInformesMovil']
             .forEach(id => document.getElementById(id)?.classList.add('d-none'));
         document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
     }

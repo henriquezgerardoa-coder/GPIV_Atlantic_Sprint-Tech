@@ -58,6 +58,10 @@ const ModuloCenso = (() => {
         _empresaId = selector?.value ? parseInt(selector.value) : null;
         const contenido = document.getElementById('contenidoCenso');
         if (!_empresaId) { contenido?.classList.add('d-none'); return; }
+        ['statCensoPersonal', 'statCensoVehiculos'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '—';
+        });
         contenido?.classList.remove('d-none');
         _aplicarVisibilidadRol();
         await Promise.all([_cargarDeclaraciones(), _cargarPersonal(), _cargarVehiculos()]);
@@ -117,6 +121,8 @@ const ModuloCenso = (() => {
         const cols = _soloLectura ? 3 : 4;
         if (!resp?.ok) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-danger text-center py-3">Error al cargar personal</td></tr>`; return; }
         const datos = await resp.json();
+        const statEl = document.getElementById('statCensoPersonal');
+        if (statEl) statEl.textContent = datos.length;
         if (!datos.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-muted text-center py-3">Sin personal registrado</td></tr>`; return; }
         tbody.innerHTML = datos.map(p => `
             <tr>
@@ -169,6 +175,8 @@ const ModuloCenso = (() => {
         const cols = _soloLectura ? 4 : 5;
         if (!resp?.ok) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-danger text-center py-3">Error al cargar vehículos</td></tr>`; return; }
         const datos = await resp.json();
+        const statEl = document.getElementById('statCensoVehiculos');
+        if (statEl) statEl.textContent = datos.length;
         if (!datos.length) { tbody.innerHTML = `<tr><td colspan="${cols}" class="text-muted text-center py-3">Sin vehículos registrados</td></tr>`; return; }
         tbody.innerHTML = datos.map(v => `
             <tr>
