@@ -78,6 +78,12 @@ public class RadicacionSolicitud {
 	@Column(name = "estado", nullable = false, length = 40)
 	private EstadoRadicacion estado;
 
+	@Column(name = "numero_resolucion", length = 50)
+	private String numeroResolucion;
+
+	@Column(name = "resuelto_por", length = 80)
+	private String resueltoPor;
+
 	@Column(name = "fecha_ultima_actualizacion", nullable = false)
 	private LocalDateTime fechaUltimaActualizacion;
 
@@ -235,6 +241,21 @@ public class RadicacionSolicitud {
 
 	public LocalDate getFechaAprobacion() {
 		return fechaAprobacion;
+	}
+
+	public String getNumeroResolucion() {
+		return numeroResolucion;
+	}
+
+	public String getResueltoPor() {
+		return resueltoPor;
+	}
+
+	public void establecerResolucion(String numeroResolucion, String resueltoPor) {
+		if (numeroResolucion != null && !numeroResolucion.isBlank()) {
+			this.numeroResolucion = numeroResolucion.trim();
+		}
+		this.resueltoPor = resueltoPor;
 	}
 
 	public Lote getLote() {

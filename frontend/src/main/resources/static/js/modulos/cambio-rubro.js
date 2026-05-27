@@ -1,6 +1,8 @@
 const ModuloCambioRubro = (() => {
     let rubros = [];
     let solicitudes = [];
+    let resolucionModal = null;
+    let solicitudEnResolucion = null;
 
     async function cargar() {
         await Promise.all([cargarRubros(), cargarSolicitudes()]);
@@ -74,13 +76,10 @@ const ModuloCambioRubro = (() => {
                     ${esGestor ? `
                     <td class="text-center columnaResolucion">
                         ${s.estado === 'PENDIENTE' ? `
-                        <button class="btn btn-sm btn-success me-1"
-                            onclick="ModuloCambioRubro.aprobar(${s.id}, ${!!s.descripcionOtros})">
-                            <i class="bi bi-check-lg"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger"
-                            onclick="ModuloCambioRubro.rechazar(${s.id})">
-                            <i class="bi bi-x-lg"></i>
+                        <button class="btn btn-sm btn-outline-primary"
+                            title="Resolver solicitud"
+                            onclick="ModuloCambioRubro.abrirResolucion(${s.id})">
+                            <i class="bi bi-pencil-square"></i>
                         </button>` : '<span class="text-muted small">—</span>'}
                     </td>` : ''}
                 </tr>`;
@@ -128,50 +127,113 @@ const ModuloCambioRubro = (() => {
         await cargarSolicitudes();
     }
 
-    async function aprobar(solicitudId, esOtros) {
-        if (!confirm('¿Confirma la aprobación del cambio de rubro? El rubro de la empresa será actualizado.')) return;
-        const rubrica = solicitarRubrica();
-        if (!rubrica) return;
-        const cuerpo = { aprobada: true, ...rubrica };
-        if (esOtros) {
-            const nombreNuevoRubro = prompt(
-                'La empresa solicitó el rubro "Otros".\n' +
-                'Ingrese el nombre oficial del nuevo rubro para crearlo en el sistema\n' +
-                '(deje vacío para dejarlo como "Otros"):'
-            );
-            if (nombreNuevoRubro === null) return;
-            if (nombreNuevoRubro.trim()) cuerpo.nombreNuevoRubro = nombreNuevoRubro.trim();
+    function abrirResolucion(solicitudId) {
+        const s = solicitudes.find(x => x.id === solicitudId);
+        if (!s) return;
+        solicitudEnResolucion = s;
+
+        document.getElementById('resolCREmpresa').textContent = s.nombreEmpresa;
+        document.getElementById('resolCRRubroAnterior').textContent = s.rubroAnteriorNombre || 'Sin rubro';
+        document.getElementById('resolCRRubroSolicitado').textContent =
+            s.nombreRubroSolicitado.toLowerCase() === 'otros' && s.descripcionOtros
+                ? `Otros (${s.descripcionOtros})` : s.nombreRubroSolicitado;
+        document.getElementById('resolCRJustificacion').textContent = s.justificacion;
+
+        // Reset formulario
+        document.querySelectorAll('input[name="resolCRDecision"]').forEach(r => r.checked = false);
+        ['resolCRImpacto', 'resolCRCompatibilidad', 'resolCRViabilidad', 'resolCRCumplimiento']
+            .forEach(name => document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.checked = false));
+        document.getElementById('resolCRObservaciones').value = '';
+        document.getElementById('resolCRMotivoRechazo').value = '';
+        document.getElementById('resolCRNuevoRubro').value = '';
+        document.getElementById('bloqueResolMotivoRechazo').classList.add('d-none');
+        document.getElementById('bloqueResolNuevoRubro').classList.add('d-none');
+        document.getElementById('alertaResolucionCR').classList.add('d-none');
+
+        if (!resolucionModal) {
+            resolucionModal = new bootstrap.Modal(document.getElementById('modalResolucionCambioRubro'));
         }
-        const resp = await ApiCliente.parche(`/api/cambios-rubro/${solicitudId}/resolver`, cuerpo);
-        if (!resp?.ok) {
-            const err = await resp?.json().catch(() => ({}));
-            mostrarAlerta(err?.mensaje || err?.message || 'No se pudo aprobar la solicitud.', 'danger');
-            return;
-        }
-        mostrarAlerta('Solicitud aprobada. El rubro de la empresa fue actualizado.');
-        await cargarSolicitudes();
+        resolucionModal.show();
     }
 
-    async function rechazar(solicitudId) {
-        const motivo = prompt('Ingrese el motivo de rechazo (obligatorio):');
-        if (motivo === null) return;
-        if (!motivo.trim()) {
-            mostrarAlerta('El motivo de rechazo es obligatorio.', 'danger');
+    function onCambioDecision() {
+        const decision = document.querySelector('input[name="resolCRDecision"]:checked')?.value;
+        const esOtros = solicitudEnResolucion?.nombreRubroSolicitado?.toLowerCase() === 'otros';
+        document.getElementById('bloqueResolMotivoRechazo').classList.toggle('d-none', decision !== 'rechazar');
+        document.getElementById('bloqueResolNuevoRubro').classList.toggle('d-none', !(decision === 'aprobar' && esOtros));
+    }
+
+    async function confirmarResolucion() {
+        const alerta = document.getElementById('alertaResolucionCR');
+        alerta.classList.add('d-none');
+
+        const decision = document.querySelector('input[name="resolCRDecision"]:checked')?.value;
+        if (!decision) {
+            alerta.textContent = 'Seleccione si aprueba o rechaza la solicitud.';
+            alerta.classList.remove('d-none');
             return;
         }
-        const rubrica = solicitarRubrica();
-        if (!rubrica) return;
-        const resp = await ApiCliente.parche(`/api/cambios-rubro/${solicitudId}/resolver`, {
-            aprobada: false,
-            motivoRechazo: motivo.trim(),
-            ...rubrica
-        });
+
+        const leerRadio = name => {
+            const checked = document.querySelector(`input[name="${name}"]:checked`);
+            return checked ? parseInt(checked.value) : null;
+        };
+
+        const puntajeImpactoOperativo    = leerRadio('resolCRImpacto');
+        const puntajeCompatibilidadParque = leerRadio('resolCRCompatibilidad');
+        const puntajeViabilidadTecnica   = leerRadio('resolCRViabilidad');
+        const puntajeCumplimientoNormativo = leerRadio('resolCRCumplimiento');
+
+        if (!puntajeImpactoOperativo || !puntajeCompatibilidadParque ||
+            !puntajeViabilidadTecnica || !puntajeCumplimientoNormativo) {
+            alerta.textContent = 'Complete los 4 puntajes de la rúbrica (1 a 5).';
+            alerta.classList.remove('d-none');
+            return;
+        }
+
+        const cuerpo = {
+            aprobada: decision === 'aprobar',
+            puntajeImpactoOperativo,
+            puntajeCompatibilidadParque,
+            puntajeViabilidadTecnica,
+            puntajeCumplimientoNormativo,
+            observacionesRubrica: document.getElementById('resolCRObservaciones').value.trim() || null
+        };
+
+        if (decision === 'rechazar') {
+            const motivo = document.getElementById('resolCRMotivoRechazo').value.trim();
+            if (!motivo) {
+                alerta.textContent = 'El motivo de rechazo es obligatorio.';
+                alerta.classList.remove('d-none');
+                return;
+            }
+            cuerpo.motivoRechazo = motivo;
+        }
+
+        if (decision === 'aprobar') {
+            const nuevoRubro = document.getElementById('resolCRNuevoRubro').value.trim();
+            if (nuevoRubro) cuerpo.nombreNuevoRubro = nuevoRubro;
+        }
+
+        const btn = document.getElementById('btnConfirmarResolucion');
+        btn.disabled = true;
+
+        const resp = await ApiCliente.parche(`/api/cambios-rubro/${solicitudEnResolucion.id}/resolver`, cuerpo);
+        btn.disabled = false;
+
         if (!resp?.ok) {
             const err = await resp?.json().catch(() => ({}));
-            mostrarAlerta(err?.mensaje || err?.message || 'No se pudo rechazar la solicitud.', 'danger');
+            alerta.textContent = err?.mensaje || err?.message || 'No se pudo procesar la resolución.';
+            alerta.classList.remove('d-none');
             return;
         }
-        mostrarAlerta('Solicitud rechazada.');
+
+        resolucionModal.hide();
+        solicitudEnResolucion = null;
+        const mensaje = decision === 'aprobar'
+            ? 'Solicitud aprobada. El rubro de la empresa fue actualizado.'
+            : 'Solicitud rechazada correctamente.';
+        mostrarAlerta(mensaje, decision === 'aprobar' ? 'success' : 'warning');
         await cargarSolicitudes();
     }
 
@@ -184,39 +246,6 @@ const ModuloCambioRubro = (() => {
     function formatearFecha(fechaIso) {
         if (!fechaIso) return '-';
         return String(fechaIso).replace('T', ' ').slice(0, 16);
-    }
-
-    function solicitarRubrica() {
-        const puntajeImpactoOperativo = solicitarPuntaje('impacto operativo');
-        if (puntajeImpactoOperativo === null) return null;
-        const puntajeCompatibilidadParque = solicitarPuntaje('compatibilidad del parque');
-        if (puntajeCompatibilidadParque === null) return null;
-        const puntajeViabilidadTecnica = solicitarPuntaje('viabilidad tecnica');
-        if (puntajeViabilidadTecnica === null) return null;
-        const puntajeCumplimientoNormativo = solicitarPuntaje('cumplimiento normativo');
-        if (puntajeCumplimientoNormativo === null) return null;
-
-        const observaciones = prompt('Observaciones de rúbrica (opcional):');
-        if (observaciones === null) return null;
-
-        return {
-            puntajeImpactoOperativo,
-            puntajeCompatibilidadParque,
-            puntajeViabilidadTecnica,
-            puntajeCumplimientoNormativo,
-            observacionesRubrica: observaciones.trim() || null
-        };
-    }
-
-    function solicitarPuntaje(etiqueta) {
-        const valor = prompt(`Ingrese puntaje de ${etiqueta} (1 a 5):`);
-        if (valor === null) return null;
-        const numero = parseInt(valor, 10);
-        if (!Number.isInteger(numero) || numero < 1 || numero > 5) {
-            mostrarAlerta(`El puntaje de ${etiqueta} debe ser un número entre 1 y 5.`, 'danger');
-            return null;
-        }
-        return numero;
     }
 
     function verDetalle(id) {
@@ -279,5 +308,5 @@ const ModuloCambioRubro = (() => {
         new bootstrap.Modal(document.getElementById('modalDetalleCambioRubro')).show();
     }
 
-    return { cargar, enviarSolicitud, aprobar, rechazar, toggleDescripcionOtros, verDetalle };
+    return { cargar, enviarSolicitud, abrirResolucion, onCambioDecision, confirmarResolucion, toggleDescripcionOtros, verDetalle };
 })();

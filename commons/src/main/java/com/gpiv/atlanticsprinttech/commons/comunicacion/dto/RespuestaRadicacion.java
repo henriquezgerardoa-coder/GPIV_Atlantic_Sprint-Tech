@@ -23,6 +23,8 @@ public record RespuestaRadicacion(
     Integer tiempoSolicitadoMeses,
     Long loteId,
     String codigoLote,
-    Integer superficieSolicitadaM2
+    Integer superficieSolicitadaM2,
+    String numeroResolucion,
+    String resueltoPor
 ) {
 }

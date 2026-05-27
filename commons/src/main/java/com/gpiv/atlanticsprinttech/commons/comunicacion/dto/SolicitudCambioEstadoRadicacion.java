@@ -12,6 +12,8 @@ public record SolicitudCambioEstadoRadicacion(
     String comentario,
     Integer tiempoEstimadoObraMeses,
     LocalDate fechaPlazo,
-    LocalDate fechaAprobacion
+    LocalDate fechaAprobacion,
+    @Size(max = 50, message = "El número de resolución no puede superar 50 caracteres")
+    String numeroResolucion
 ) {
 }

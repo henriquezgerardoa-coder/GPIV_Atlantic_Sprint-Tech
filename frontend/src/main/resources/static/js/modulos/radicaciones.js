@@ -10,6 +10,7 @@ const ModuloRadicaciones = (() => {
     let estadosSeleccionadosListado = new Set();
     let formularioInicializado = false;
     let temporizadorBorrador = null;
+    let evaluacionActual = null;
     const CLAVE_BORRADOR_RADICACION = 'gpiv.radicaciones.borrador.v1';
     const CLAVE_FILTROS_HISTORIAL_RADICACION = 'gpiv.radicaciones.filtros.historial.v1';
     const CLAVE_INDICADOR_RESTAURACION_HISTORIAL = 'gpiv.radicaciones.indicador.restauracion.v1';
@@ -506,13 +507,14 @@ const ModuloRadicaciones = (() => {
         modal.show();
 
         try {
-            const [respDetalle, respDocs, respHist, respLoteAsignado, respRelevamiento, respRubrica] = await Promise.all([
+            const [respDetalle, respDocs, respHist, respLoteAsignado, respRelevamiento, respRubrica, respEvaluacion] = await Promise.all([
                 ApiCliente.obtener(`/api/radicaciones/${id}`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/historial`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/lote`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/relevamiento`),
-                ApiCliente.obtener(`/api/radicaciones/${id}/rubrica`)
+                ApiCliente.obtener(`/api/radicaciones/${id}/rubrica`),
+                ApiCliente.obtener(`/api/radicaciones/${id}/evaluacion`)
             ]);
             estadoCarga?.classList.add('d-none');
             if (!respDetalle?.ok) {
@@ -538,8 +540,9 @@ const ModuloRadicaciones = (() => {
             const relevamiento = (respRelevamiento?.ok && respRelevamiento.status !== 204)
                 ? await respRelevamiento.json().catch(() => null) : null;
             const tieneActa = respRubrica?.ok === true;
+            const evaluacion = respEvaluacion?.ok ? await respEvaluacion.json().catch(() => null) : null;
             radicacionDetalleAdmin = detalle;
-            renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento, tieneActa);
+            renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento, tieneActa, evaluacion);
             contenido?.classList.remove('d-none');
         } catch (e) {
             estadoCarga?.classList.add('d-none');
@@ -549,7 +552,7 @@ const ModuloRadicaciones = (() => {
         }
     }
 
-    function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null, tieneActa = false) {
+    function renderizarDetalleAdmin(detalle, documentos, historial, loteAsignado, relevamiento = null, tieneActa = false, evaluacion = null) {
         const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
         const esGestor = !esEmpresa && Autenticacion.tieneAcceso(['SECRETARIO']);
 
@@ -579,6 +582,16 @@ const ModuloRadicaciones = (() => {
             wrapPlazo.classList.toggle('d-none', !detalle?.fechaPlazo);
             setTexto('detRadFechaPlazo', detalle?.fechaPlazo || '-');
         }
+        const wrapResolucion = document.getElementById('wrapperDetRadNumeroResolucion');
+        if (wrapResolucion) {
+            wrapResolucion.classList.toggle('d-none', !detalle?.numeroResolucion);
+            setTexto('detRadNumeroResolucion', detalle?.numeroResolucion || '-');
+        }
+        const wrapResueltoPor = document.getElementById('wrapperDetRadResueltoPor');
+        if (wrapResueltoPor) {
+            wrapResueltoPor.classList.toggle('d-none', !detalle?.resueltoPor);
+            setTexto('detRadResueltoPor', detalle?.resueltoPor || '-');
+        }
 
         const tieneTransiciones = (TRANSICIONES_VALIDAS_RAD[detalle?.estado] || []).length > 0;
         document.getElementById('bloqueCambiarEstadoRadAdmin')?.classList.toggle('d-none', !esGestor || !tieneTransiciones);
@@ -596,6 +609,9 @@ const ModuloRadicaciones = (() => {
         if (display) display.textContent = '-';
         const archivoEstado = document.getElementById('archivoDocumentoEstadoRad');
         if (archivoEstado) archivoEstado.value = '';
+        const campoNroRes = document.getElementById('campoNumeroResolucionEstadoRad');
+        if (campoNroRes) campoNroRes.value = '';
+        document.getElementById('wrapperNumeroResolucionEstadoRad')?.classList.add('d-none');
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
         if (selector) {
@@ -613,6 +629,9 @@ const ModuloRadicaciones = (() => {
 
         // Acta de rúbrica
         renderizarSeccionActaRubrica(detalle?.id, tieneActa, detalle?.estado);
+
+        // Evaluación por etapas (HU-03)
+        renderizarEvaluacion(evaluacion, detalle?.estado);
 
         // Relevamiento
         renderizarRelevamiento(relevamiento, detalle?.tieneRelevamientoPedidoLotes);
@@ -922,6 +941,10 @@ const ModuloRadicaciones = (() => {
             calcularFechaPlazo();
         }
 
+        const estadosResolucion = ['APROBADA', 'RADICADA', 'RECHAZADA', 'CANCELADA'];
+        const wrapperNroRes = document.getElementById('wrapperNumeroResolucionEstadoRad');
+        if (wrapperNroRes) wrapperNroRes.classList.toggle('d-none', !estadosResolucion.includes(estado));
+
         const estadoActual = radicacionDetalleAdmin?.estado;
         const requiereDoc = (estado === 'APROBADA' && estadoActual !== 'APROBADA')
                          || (estado === 'RADICADA'  && estadoActual !== 'RADICADA');
@@ -1030,16 +1053,13 @@ const ModuloRadicaciones = (() => {
             fechaPlazo = d.toISOString().split('T')[0];
         }
 
-        const confirmado = window.confirm(`Se cambiará el expediente ${radicacionDetalleAdmin.numeroRadicado} a ${formatearEstado(nuevoEstado)}. ¿Desea continuar?`);
-        if (!confirmado) {
-            return;
-        }
-
         const comentario = observaciones || `Cambio de estado a ${formatearEstado(nuevoEstado)} por administración`;
         const payload = { estado: nuevoEstado, comentario };
         if (fechaAprobacion) payload.fechaAprobacion = fechaAprobacion;
         if (fechaPlazo) payload.fechaPlazo = fechaPlazo;
         if (tiempoEstimadoObraMeses) payload.tiempoEstimadoObraMeses = tiempoEstimadoObraMeses;
+        const nroResolucion = document.getElementById('campoNumeroResolucionEstadoRad')?.value?.trim();
+        if (nroResolucion) payload.numeroResolucion = nroResolucion;
         const respuesta = await ApiCliente.parche(`/api/radicaciones/${radicacionDetalleAdmin.id}/estado`, payload);
         if (!respuesta?.ok) {
             const err = await respuesta?.json().catch(() => ({}));
@@ -1467,6 +1487,104 @@ const ModuloRadicaciones = (() => {
         return m[estado] || estado;
     }
 
+    // ── Evaluación por etapas (HU-03) ──────────────────────────────────────
+
+    function renderizarEvaluacion(evaluacion, estadoRadicacion) {
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO'])
+            && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const bloque = document.getElementById('bloqueEvaluacionEtapasRad');
+        if (!bloque || !esGestor) return;
+
+        bloque.classList.remove('d-none');
+        evaluacionActual = evaluacion;
+
+        // Limpiar alertas
+        [1, 2, 3].forEach(n => document.getElementById(`alertaEvalEtapa${n}`)?.classList.add('d-none'));
+
+        if (evaluacion) {
+            setRadioEval('evalE1C1', evaluacion.etapa1Criterio1);
+            setRadioEval('evalE1C2', evaluacion.etapa1Criterio2);
+            setRadioEval('evalE1C3', evaluacion.etapa1Criterio3);
+            setValorEval('evalObsEtapa1', evaluacion.etapa1Observaciones);
+            actualizarBadgeEtapa('badgeEtapa1Rad', evaluacion.etapa1Completa);
+
+            setRadioEval('evalE2C1', evaluacion.etapa2Criterio1);
+            setRadioEval('evalE2C2', evaluacion.etapa2Criterio2);
+            setRadioEval('evalE2C3', evaluacion.etapa2Criterio3);
+            setValorEval('evalObsEtapa2', evaluacion.etapa2Observaciones);
+            actualizarBadgeEtapa('badgeEtapa2Rad', evaluacion.etapa2Completa);
+
+            setRadioEval('evalE3C1', evaluacion.etapa3Criterio1);
+            setRadioEval('evalE3C2', evaluacion.etapa3Criterio2);
+            setRadioEval('evalE3C3', evaluacion.etapa3Criterio3);
+            setValorEval('evalObsEtapa3', evaluacion.etapa3Observaciones);
+            actualizarBadgeEtapa('badgeEtapa3Rad', evaluacion.etapa3Completa);
+
+            const spanTotal = document.getElementById('puntuacionTotalEval');
+            if (spanTotal) spanTotal.textContent = evaluacion.puntuacionTotal != null ? evaluacion.puntuacionTotal : '–';
+        } else {
+            ['evalE1C1','evalE1C2','evalE1C3','evalE2C1','evalE2C2','evalE2C3','evalE3C1','evalE3C2','evalE3C3']
+                .forEach(name => document.querySelectorAll(`input[name="${name}"]`).forEach(r => { r.checked = false; }));
+            ['evalObsEtapa1','evalObsEtapa2','evalObsEtapa3']
+                .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            ['badgeEtapa1Rad','badgeEtapa2Rad','badgeEtapa3Rad'].forEach(id => actualizarBadgeEtapa(id, false));
+            const spanTotal = document.getElementById('puntuacionTotalEval');
+            if (spanTotal) spanTotal.textContent = '–';
+        }
+    }
+
+    function actualizarBadgeEtapa(id, completa) {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        badge.className = completa ? 'badge bg-success' : 'badge bg-secondary';
+    }
+
+    function setRadioEval(name, value) {
+        if (value == null) return;
+        const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+        if (radio) radio.checked = true;
+    }
+
+    function setValorEval(id, valor) {
+        const el = document.getElementById(id);
+        if (el) el.value = valor || '';
+    }
+
+    function leerRadioEval(name) {
+        const checked = document.querySelector(`input[name="${name}"]:checked`);
+        return checked ? parseInt(checked.value, 10) : null;
+    }
+
+    async function guardarEtapaEvaluacion(numero) {
+        if (!radicacionDetalleAdmin?.id) return;
+        const alertaEl = document.getElementById(`alertaEvalEtapa${numero}`);
+        alertaEl?.classList.add('d-none');
+
+        const criterio1 = leerRadioEval(`evalE${numero}C1`);
+        const criterio2 = leerRadioEval(`evalE${numero}C2`);
+        const criterio3 = leerRadioEval(`evalE${numero}C3`);
+        const observaciones = document.getElementById(`evalObsEtapa${numero}`)?.value?.trim() || '';
+
+        if (!criterio1 || !criterio2 || !criterio3) {
+            if (alertaEl) { alertaEl.textContent = 'Debe puntuar los tres criterios antes de guardar.'; alertaEl.classList.remove('d-none'); }
+            return;
+        }
+
+        const respuesta = await ApiCliente.actualizar(
+            `/api/radicaciones/${radicacionDetalleAdmin.id}/evaluacion/etapa/${numero}`,
+            { criterio1, criterio2, criterio3, observaciones }
+        );
+        if (!respuesta?.ok) {
+            const err = await respuesta?.json().catch(() => ({}));
+            if (alertaEl) { alertaEl.textContent = err?.mensaje || err?.message || 'No se pudo guardar la etapa.'; alertaEl.classList.remove('d-none'); }
+            return;
+        }
+
+        const evaluacion = await respuesta.json().catch(() => null);
+        renderizarEvaluacion(evaluacion, radicacionDetalleAdmin.estado);
+        mostrarAlerta(`Etapa ${numero} guardada correctamente.`);
+    }
+
     return {
         cargar,
         crear,
@@ -1488,7 +1606,8 @@ const ModuloRadicaciones = (() => {
         toggleRubroOtros,
         toggleAdjuntoRadicacion,
         subirActaRubrica,
-        registrarObservacion
+        registrarObservacion,
+        guardarEtapaEvaluacion
     };
 })();
 
