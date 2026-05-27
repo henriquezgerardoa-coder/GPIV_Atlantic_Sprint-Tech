@@ -43,11 +43,13 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<Rubro> listarRubros() {
         return repositorioRubro.findAllOrdenados();
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<SolicitudCambioRubro> listar(String identificadorIngreso) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {

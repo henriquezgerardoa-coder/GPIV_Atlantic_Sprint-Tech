@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -52,6 +53,7 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ConversacionMensajeria> listar(String identificadorIngreso) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 
@@ -77,9 +79,16 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParConversacion> listarConConMensajes(String identificadorIngreso) {
-        return listar(identificadorIngreso).stream()
-            .map(c -> new ParConversacion(c, repositorioMensaje.findByConversacionIdConEmisorOrderByFechaEnvioAsc(c.getId())))
+        List<ConversacionMensajeria> conversaciones = listar(identificadorIngreso);
+        if (conversaciones.isEmpty()) return List.of();
+        List<Long> ids = conversaciones.stream().map(ConversacionMensajeria::getId).toList();
+        Map<Long, List<MensajeMensajeria>> porConversacion = repositorioMensaje
+            .findByConversacionIdsConEmisor(ids).stream()
+            .collect(Collectors.groupingBy(m -> m.getConversacion().getId()));
+        return conversaciones.stream()
+            .map(c -> new ParConversacion(c, porConversacion.getOrDefault(c.getId(), List.of())))
             .toList();
     }
 

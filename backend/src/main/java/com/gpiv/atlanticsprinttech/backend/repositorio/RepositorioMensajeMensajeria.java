@@ -17,6 +17,14 @@ public interface RepositorioMensajeMensajeria extends JpaRepository<MensajeMensa
         """)
     List<MensajeMensajeria> findByConversacionIdConEmisorOrderByFechaEnvioAsc(@Param("conversacionId") Long conversacionId);
 
+    @Query("""
+        SELECT m FROM MensajeMensajeria m
+        LEFT JOIN FETCH m.usuarioEmisor
+        WHERE m.conversacion.id IN :ids
+        ORDER BY m.fechaEnvio ASC
+        """)
+    List<MensajeMensajeria> findByConversacionIdsConEmisor(@Param("ids") List<Long> ids);
+
     Optional<MensajeMensajeria> findFirstByConversacionIdOrderByFechaEnvioDesc(Long conversacionId);
 
     long countByConversacionId(Long conversacionId);

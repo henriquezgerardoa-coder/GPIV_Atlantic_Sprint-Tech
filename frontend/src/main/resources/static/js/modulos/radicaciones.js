@@ -506,12 +506,11 @@ const ModuloRadicaciones = (() => {
         modal.show();
 
         try {
-            const [respDetalle, respDocs, respHist, respLoteAsignado, respLotesDisp, respRelevamiento, respRubrica] = await Promise.all([
+            const [respDetalle, respDocs, respHist, respLoteAsignado, respRelevamiento, respRubrica] = await Promise.all([
                 ApiCliente.obtener(`/api/radicaciones/${id}`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/documentos`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/historial`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/lote`),
-                ApiCliente.obtener('/api/lotes'),
                 ApiCliente.obtener(`/api/radicaciones/${id}/relevamiento`),
                 ApiCliente.obtener(`/api/radicaciones/${id}/rubrica`)
             ]);
@@ -528,9 +527,14 @@ const ModuloRadicaciones = (() => {
             const historial = respHist?.ok ? await respHist.json() : [];
             const loteAsignado = (respLoteAsignado?.ok && respLoteAsignado.status !== 204)
                 ? await respLoteAsignado.json() : null;
-            const respLotesJson = respLotesDisp?.ok ? await respLotesDisp.json() : [];
-            const todosLosLotes = Array.isArray(respLotesJson) ? respLotesJson : (respLotesJson.contenido || []);
-            lotesDisponibles = todosLosLotes.filter(l => !l.estadoAsignacion);
+
+            // Lotes solo se necesitan cuando no hay lote asignado y el usuario puede asignar uno
+            lotesDisponibles = [];
+            if (!loteAsignado && Autenticacion.tieneAcceso(['SECRETARIO'])) {
+                const respLotes = await ApiCliente.obtener('/api/lotes');
+                const arr = respLotes?.ok ? await respLotes.json() : [];
+                lotesDisponibles = (Array.isArray(arr) ? arr : (arr.contenido || [])).filter(l => !l.estadoAsignacion);
+            }
             const relevamiento = (respRelevamiento?.ok && respRelevamiento.status !== 204)
                 ? await respRelevamiento.json().catch(() => null) : null;
             const tieneActa = respRubrica?.ok === true;

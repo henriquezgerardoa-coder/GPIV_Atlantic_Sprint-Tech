@@ -10,7 +10,7 @@ const ModuloProyectos = (() => {
         _esTecnico = Autenticacion.tieneAcceso(['TECNICO'])
             && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
         _puedeGestionarHitos = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO', 'TECNICO']);
-        _puedeGestionarEstado = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
+        _puedeGestionarEstado = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO', 'TECNICO']);
         _puedeCrearProyecto = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
 
         document.getElementById('btnNuevoProyecto')?.classList.toggle('d-none', !_puedeCrearProyecto);
