@@ -101,7 +101,8 @@ public class ControladorRadicacion {
             solicitud.comentario(),
             solicitud.tiempoEstimadoObraMeses(),
             solicitud.fechaPlazo(),
-            solicitud.fechaAprobacion()
+            solicitud.fechaAprobacion(),
+            solicitud.numeroResolucion()
         );
         return mapeador.toRespuesta(actualizada);
     }

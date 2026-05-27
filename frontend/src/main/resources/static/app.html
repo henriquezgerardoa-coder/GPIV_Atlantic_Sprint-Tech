@@ -2155,6 +2155,8 @@
                         <div class="col-md-4" id="wrapperDetRadTiempoSolicitado"><strong>Tiempo de radicación:</strong> <span id="detRadTiempoSolicitado">-</span></div>
                         <div class="col-md-4 d-none" id="wrapperDetRadTiempoObra"><strong>Plazo otorgado (admin):</strong> <span id="detRadTiempoObra">-</span></div>
                         <div class="col-md-4 d-none" id="wrapperDetRadFechaPlazo"><strong>Fecha plazo (admin):</strong> <span id="detRadFechaPlazo">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadNumeroResolucion"><strong>N° resolución:</strong> <span id="detRadNumeroResolucion" class="fw-semibold text-primary">-</span></div>
+                        <div class="col-md-4 d-none" id="wrapperDetRadResueltoPor"><strong>Resuelto por:</strong> <span id="detRadResueltoPor">-</span></div>
                         <div class="col-md-4" id="wrapperDetRadSuperficieSolicitada"><strong>Superficie solicitada:</strong> <span id="detRadSuperficieSolicitada">-</span></div>
                     </div>
 
@@ -2252,6 +2254,11 @@
                                     <label class="form-label small text-muted">Fecha de plazo calculada</label>
                                     <div class="form-control form-control-sm bg-light" id="campoPlazoCalculadoDisplay">-</div>
                                 </div>
+                                <div class="col-md-6 d-none" id="wrapperNumeroResolucionEstadoRad">
+                                    <label for="campoNumeroResolucionEstadoRad" class="form-label small">N° de resolución / dictamen <span class="text-muted fw-normal">(opcional)</span></label>
+                                    <input type="text" id="campoNumeroResolucionEstadoRad" class="form-control form-control-sm"
+                                        maxlength="50" placeholder="Ej: RES-2024-0042">
+                                </div>
                                 <div class="col-12 d-none" id="wrapperDocumentoEstadoRad">
                                     <label class="form-label small" id="labelDocumentoEstadoRad">Documento requerido <span class="text-danger">*</span></label>
                                     <input type="file" class="form-control form-control-sm" id="archivoDocumentoEstadoRad" accept=".pdf">
@@ -2281,6 +2288,190 @@
                                         <i class="bi bi-save me-1"></i>Guardar nota
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evaluación por etapas (HU-03) — solo gestores -->
+                    <div class="card border-0 bg-light mb-3 d-none" id="bloqueEvaluacionEtapasRad">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <h6 class="text-muted mb-0"><i class="bi bi-clipboard-check me-1"></i>Evaluación por etapas</h6>
+                                <span id="badgeEtapa1Rad" class="badge bg-secondary">Etapa 1</span>
+                                <span id="badgeEtapa2Rad" class="badge bg-secondary">Etapa 2</span>
+                                <span id="badgeEtapa3Rad" class="badge bg-secondary">Etapa 3</span>
+                                <span class="ms-auto text-muted small">Total: <strong id="puntuacionTotalEval">–</strong> / 45</span>
+                            </div>
+                            <div class="accordion accordion-flush" id="acordeonEvaluacionRad">
+
+                                <!-- Etapa 1 -->
+                                <div class="accordion-item border rounded mb-2">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-2" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapseEtapa1Rad">
+                                            <strong class="me-2">Etapa 1</strong> Empleabilidad / Materia Prima / Reciclaje
+                                        </button>
+                                    </h2>
+                                    <div id="collapseEtapa1Rad" class="accordion-collapse collapse"
+                                         data-bs-parent="#acordeonEvaluacionRad">
+                                        <div class="accordion-body pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Empleos directos generados</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e1c1v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Uso de materia prima local</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e1c2v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Impacto ambiental / manejo de residuos</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e1c3v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="evalObsEtapa1" class="form-label small">Observaciones</label>
+                                                <textarea id="evalObsEtapa1" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Notas sobre esta etapa..."></textarea>
+                                            </div>
+                                            <div id="alertaEvalEtapa1" class="alert alert-danger d-none small py-1 mb-2"></div>
+                                            <div class="d-flex justify-content-end">
+                                                <button type="button" class="btn btn-sm btn-primary"
+                                                        onclick="ModuloRadicaciones.guardarEtapaEvaluacion(1)">
+                                                    <i class="bi bi-save me-1"></i>Guardar etapa 1
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Etapa 2 -->
+                                <div class="accordion-item border rounded mb-2">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-2" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapseEtapa2Rad">
+                                            <strong class="me-2">Etapa 2</strong> Financiero / Rentabilidad
+                                        </button>
+                                    </h2>
+                                    <div id="collapseEtapa2Rad" class="accordion-collapse collapse"
+                                         data-bs-parent="#acordeonEvaluacionRad">
+                                        <div class="accordion-body pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Rentabilidad estimada del proyecto</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e2c1v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Solidez financiera declarada</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e2c2v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Inversión inicial declarada</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e2c3v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="evalObsEtapa2" class="form-label small">Observaciones</label>
+                                                <textarea id="evalObsEtapa2" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Notas sobre esta etapa..."></textarea>
+                                            </div>
+                                            <div id="alertaEvalEtapa2" class="alert alert-danger d-none small py-1 mb-2"></div>
+                                            <div class="d-flex justify-content-end">
+                                                <button type="button" class="btn btn-sm btn-primary"
+                                                        onclick="ModuloRadicaciones.guardarEtapaEvaluacion(2)">
+                                                    <i class="bi bi-save me-1"></i>Guardar etapa 2
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Etapa 3 -->
+                                <div class="accordion-item border rounded mb-2">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed py-2" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapseEtapa3Rad">
+                                            <strong class="me-2">Etapa 3</strong> Preadjudicación / Cronograma de Obra
+                                        </button>
+                                    </h2>
+                                    <div id="collapseEtapa3Rad" class="accordion-collapse collapse"
+                                         data-bs-parent="#acordeonEvaluacionRad">
+                                        <div class="accordion-body pt-2">
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Viabilidad técnica del proyecto</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e3c1v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Coherencia del cronograma de obra</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e3c2v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Calidad y completitud de la documentación</label>
+                                                <div class="btn-group btn-group-sm d-block" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v1">1</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v2">2</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v3">3</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v4">4</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e3c3v5">5</label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="evalObsEtapa3" class="form-label small">Observaciones</label>
+                                                <textarea id="evalObsEtapa3" class="form-control form-control-sm" rows="2" maxlength="500" placeholder="Notas sobre esta etapa..."></textarea>
+                                            </div>
+                                            <div id="alertaEvalEtapa3" class="alert alert-danger d-none small py-1 mb-2"></div>
+                                            <div class="d-flex justify-content-end">
+                                                <button type="button" class="btn btn-sm btn-primary"
+                                                        onclick="ModuloRadicaciones.guardarEtapaEvaluacion(3)">
+                                                    <i class="bi bi-save me-1"></i>Guardar etapa 3
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -3081,6 +3272,169 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Resolución de cambio de rubro (aprobar / rechazar) -->
+<div class="modal fade" id="modalResolucionCambioRubro" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Resolución de cambio de rubro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Datos de la solicitud -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-5">
+                        <p class="mb-1 small text-muted fw-semibold">Empresa</p>
+                        <p id="resolCREmpresa" class="mb-0 fw-semibold"></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="mb-1 small text-muted fw-semibold">Rubro anterior</p>
+                        <p id="resolCRRubroAnterior" class="mb-0 small"></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1 small text-muted fw-semibold">Rubro solicitado</p>
+                        <p id="resolCRRubroSolicitado" class="mb-0 small"></p>
+                    </div>
+                    <div class="col-12">
+                        <p class="mb-1 small text-muted fw-semibold">Justificación</p>
+                        <p id="resolCRJustificacion" class="mb-0 small text-muted fst-italic"></p>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <!-- Decisión: Aprobar / Rechazar -->
+                <div class="mb-4">
+                    <p class="fw-semibold mb-2">Decisión</p>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resolCRDecision"
+                                id="resolCRDecisionAprobar" value="aprobar"
+                                onchange="ModuloCambioRubro.onCambioDecision()">
+                            <label class="form-check-label text-success fw-semibold" for="resolCRDecisionAprobar">
+                                <i class="bi bi-check-circle me-1"></i>Aprobar
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="resolCRDecision"
+                                id="resolCRDecisionRechazar" value="rechazar"
+                                onchange="ModuloCambioRubro.onCambioDecision()">
+                            <label class="form-check-label text-danger fw-semibold" for="resolCRDecisionRechazar">
+                                <i class="bi bi-x-circle me-1"></i>Rechazar
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rúbrica de evaluación -->
+                <div class="mb-3">
+                    <p class="fw-semibold mb-3"><i class="bi bi-clipboard-check me-2 text-primary"></i>Rúbrica de evaluación</p>
+                    <div class="row g-3">
+                        <!-- Impacto operativo -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Impacto operativo <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto1" value="1" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto1">1</label>
+                                <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto2" value="2" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto2">2</label>
+                                <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto3" value="3" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto3">3</label>
+                                <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto4" value="4" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto4">4</label>
+                                <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto5" value="5" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto5">5</label>
+                            </div>
+                        </div>
+                        <!-- Compatibilidad del parque -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Compatibilidad del parque <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp1" value="1" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp1">1</label>
+                                <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp2" value="2" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp2">2</label>
+                                <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp3" value="3" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp3">3</label>
+                                <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp4" value="4" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp4">4</label>
+                                <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp5" value="5" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp5">5</label>
+                            </div>
+                        </div>
+                        <!-- Viabilidad técnica -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Viabilidad técnica <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab1" value="1" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab1">1</label>
+                                <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab2" value="2" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab2">2</label>
+                                <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab3" value="3" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab3">3</label>
+                                <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab4" value="4" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab4">4</label>
+                                <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab5" value="5" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab5">5</label>
+                            </div>
+                        </div>
+                        <!-- Cumplimiento normativo -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Cumplimiento normativo <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl1" value="1" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl1">1</label>
+                                <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl2" value="2" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl2">2</label>
+                                <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl3" value="3" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl3">3</label>
+                                <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl4" value="4" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl4">4</label>
+                                <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl5" value="5" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl5">5</label>
+                            </div>
+                        </div>
+                        <!-- Observaciones de rúbrica -->
+                        <div class="col-12">
+                            <label for="resolCRObservaciones" class="form-label small fw-semibold">Observaciones de rúbrica <span class="text-muted fw-normal">(opcional)</span></label>
+                            <textarea id="resolCRObservaciones" class="form-control form-control-sm" rows="2" maxlength="1000"
+                                placeholder="Comentarios sobre la evaluación..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Motivo de rechazo (solo visible cuando se elige rechazar) -->
+                <div id="bloqueResolMotivoRechazo" class="mb-3 d-none">
+                    <label for="resolCRMotivoRechazo" class="form-label small fw-semibold text-danger">
+                        Motivo de rechazo <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="resolCRMotivoRechazo" class="form-control form-control-sm border-danger" rows="3"
+                        maxlength="500" placeholder="Explique el motivo del rechazo..."></textarea>
+                </div>
+
+                <!-- Nombre nuevo rubro (solo visible cuando se aprueba y el rubro es "Otros") -->
+                <div id="bloqueResolNuevoRubro" class="mb-3 d-none">
+                    <label for="resolCRNuevoRubro" class="form-label small fw-semibold">
+                        Nombre oficial del nuevo rubro <span class="text-muted fw-normal">(opcional — dejar vacío para registrar como "Otros")</span>
+                    </label>
+                    <input type="text" id="resolCRNuevoRubro" class="form-control form-control-sm"
+                        maxlength="120" placeholder="Ej: Biotecnología Industrial">
+                </div>
+
+                <div id="alertaResolucionCR" class="alert alert-danger py-2 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarResolucion" class="btn btn-primary btn-sm"
+                    onclick="ModuloCambioRubro.confirmarResolucion()">
+                    Confirmar resolución
+                </button>
             </div>
         </div>
     </div>

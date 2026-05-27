@@ -32,6 +32,9 @@ public class HitoObra {
     @Column(nullable = false)
     private boolean cumplido;
 
+    @Column(name = "ultima_notificacion_enviada")
+    private LocalDate ultimaNotificacionEnviada;
+
     protected HitoObra() {
     }
 
@@ -50,6 +53,10 @@ public class HitoObra {
         return id;
     }
 
+    public ProyectoProductivo getProyecto() {
+        return proyecto;
+    }
+
     public String getDescripcion() {
         return descripcion;
     }
@@ -64,6 +71,24 @@ public class HitoObra {
 
     public boolean estaVencido() {
         return !cumplido && fechaVencimientoReal != null && fechaVencimientoReal.isBefore(LocalDate.now());
+    }
+
+    public boolean proximoAVencer(int diasUmbral) {
+        if (cumplido || fechaVencimientoReal == null) return false;
+        LocalDate hoy = LocalDate.now();
+        return !fechaVencimientoReal.isBefore(hoy) && !fechaVencimientoReal.isAfter(hoy.plusDays(diasUmbral));
+    }
+
+    public boolean necesitaNotificacion() {
+        return ultimaNotificacionEnviada == null || ultimaNotificacionEnviada.isBefore(LocalDate.now());
+    }
+
+    public void registrarNotificacion() {
+        this.ultimaNotificacionEnviada = LocalDate.now();
+    }
+
+    public LocalDate getUltimaNotificacionEnviada() {
+        return ultimaNotificacionEnviada;
     }
 
     public void validarNoCumplido() {

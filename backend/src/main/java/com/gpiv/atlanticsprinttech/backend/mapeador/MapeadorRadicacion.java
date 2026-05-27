@@ -43,7 +43,9 @@ public class MapeadorRadicacion {
             extraerCampoEntero(json, "tiempoRadicacionMeses"),
             lote != null ? lote.getId() : null,
             lote != null ? lote.getCodigo() : null,
-            extraerCampoEntero(json, "necesidadMetrosCuadrados")
+            extraerCampoEntero(json, "necesidadMetrosCuadrados"),
+            radicacion.getNumeroResolucion(),
+            radicacion.getResueltoPor()
         );
     }
 

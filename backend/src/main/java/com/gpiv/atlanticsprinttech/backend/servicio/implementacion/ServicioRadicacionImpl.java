@@ -207,7 +207,8 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         String comentario,
         Integer tiempoEstimadoObraMeses,
         LocalDate fechaPlazo,
-        LocalDate fechaAprobacion
+        LocalDate fechaAprobacion,
+        String numeroResolucion
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -227,6 +228,10 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         // Solo actualizar plazo cuando se proporciona explicitamente (evita borrar datos al cambiar a RADICADA)
         if (tiempoEstimadoObraMeses != null || fechaPlazo != null) {
             radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
+        }
+        if (estado == EstadoRadicacion.APROBADA || estado == EstadoRadicacion.RADICADA
+                || estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA) {
+            radicacion.establecerResolucion(numeroResolucion, identificadorIngreso);
         }
         Lote lote = radicacion.getLote();
         radicacion.sincronizarLote(lote);
