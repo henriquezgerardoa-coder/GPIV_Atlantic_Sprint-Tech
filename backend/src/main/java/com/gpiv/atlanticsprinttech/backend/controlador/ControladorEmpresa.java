@@ -106,4 +106,11 @@ public class ControladorEmpresa {
         return servicioEmpresa.actualizarServiciosPostRadicacion(id, solicitud, autenticacion.getName());
     }
 
+    @GetMapping("/disponibles")
+    public List<RespuestaEmpresa> listarDisponibles() {
+        return servicioEmpresa.listarDisponibles().stream()
+            .map(e -> mapeador.toRespuesta(e, false))
+            .toList();
+    }
+
 }

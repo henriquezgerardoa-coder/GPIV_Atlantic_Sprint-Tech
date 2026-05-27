@@ -8,7 +8,9 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProduc
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionDocumento;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
@@ -52,8 +54,10 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private final RepositorioEmpresa repositorioEmpresa;
     private final RepositorioLote repositorioLote;
     private final RepositorioProyectoProductivo repositorioProyecto;
+    private final RepositorioUsuario repositorioUsuario;
     private final ServicioContextoUsuario servicioContextoUsuario;
     private final ServicioAuditLog servicioAuditLog;
+    private final ServicioMensajeria servicioMensajeria;
     private final ObjectMapper objectMapper;
 
     public ServicioRadicacionImpl(
@@ -63,8 +67,10 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         RepositorioEmpresa repositorioEmpresa,
         RepositorioLote repositorioLote,
         RepositorioProyectoProductivo repositorioProyecto,
+        RepositorioUsuario repositorioUsuario,
         ServicioContextoUsuario servicioContextoUsuario,
         ServicioAuditLog servicioAuditLog,
+        ServicioMensajeria servicioMensajeria,
         ObjectMapper objectMapper
     ) {
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
@@ -73,8 +79,10 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         this.repositorioEmpresa = repositorioEmpresa;
         this.repositorioLote = repositorioLote;
         this.repositorioProyecto = repositorioProyecto;
+        this.repositorioUsuario = repositorioUsuario;
         this.servicioContextoUsuario = servicioContextoUsuario;
         this.servicioAuditLog = servicioAuditLog;
+        this.servicioMensajeria = servicioMensajeria;
         this.objectMapper = objectMapper;
     }
 
@@ -235,7 +243,25 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         if (estado == EstadoRadicacion.APROBADA && !repositorioProyecto.existsBySolicitudOrigenId(actualizada.getId())) {
             crearProyectoDesdeRadicacion(actualizada, usuario);
         }
+        if (estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA) {
+            notificarEmpresaCambioEstado(identificadorIngreso, actualizada, estado, comentario);
+        }
         return actualizada;
+    }
+
+    private void notificarEmpresaCambioEstado(String remitente, RadicacionSolicitud radicacion, EstadoRadicacion estado, String comentario) {
+        List<Usuario> usuariosEmpresa = repositorioUsuario.findByEmpresa_IdOrderByIdAsc(radicacion.getEmpresa().getId());
+        if (usuariosEmpresa.isEmpty()) return;
+        Usuario destinatario = usuariosEmpresa.get(0);
+        String accion = estado == EstadoRadicacion.RECHAZADA ? "rechazado" : "cancelado";
+        String asunto = "Expediente " + radicacion.getNumeroRadicado() + " — " + (estado == EstadoRadicacion.RECHAZADA ? "Rechazado" : "Cancelado");
+        String mensaje = "Su expediente " + radicacion.getNumeroRadicado() + " ha sido " + accion + ".\n\nMotivo: "
+            + (comentario != null && !comentario.isBlank() ? comentario : "Sin especificar.");
+        try {
+            servicioMensajeria.crear(remitente, destinatario.getId(), asunto, mensaje);
+        } catch (Exception e) {
+            // Notificación no crítica; no interrumpir el cambio de estado
+        }
     }
 
 

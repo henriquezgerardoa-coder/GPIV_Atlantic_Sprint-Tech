@@ -103,7 +103,12 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         Long solicitudId,
         boolean aprobada,
         String motivoRechazo,
-        String nombreNuevoRubro
+        String nombreNuevoRubro,
+        Integer puntajeImpactoOperativo,
+        Integer puntajeCompatibilidadParque,
+        Integer puntajeViabilidadTecnica,
+        Integer puntajeCumplimientoNormativo,
+        String observacionesRubrica
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -115,6 +120,19 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Solicitud no encontrada"));
 
         solicitud.validarResoluble();
+        validarRubrica(
+            puntajeImpactoOperativo,
+            puntajeCompatibilidadParque,
+            puntajeViabilidadTecnica,
+            puntajeCumplimientoNormativo
+        );
+        solicitud.registrarRubrica(
+            puntajeImpactoOperativo,
+            puntajeCompatibilidadParque,
+            puntajeViabilidadTecnica,
+            puntajeCumplimientoNormativo,
+            normalizarOpcional(observacionesRubrica)
+        );
 
         if (aprobada) {
             solicitud.aprobar(identificadorIngreso);
@@ -143,5 +161,32 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
         }
 
         return repositorioSolicitud.save(solicitud);
+    }
+
+    private void validarRubrica(
+        Integer puntajeImpactoOperativo,
+        Integer puntajeCompatibilidadParque,
+        Integer puntajeViabilidadTecnica,
+        Integer puntajeCumplimientoNormativo
+    ) {
+        validarPuntaje("impacto operativo", puntajeImpactoOperativo);
+        validarPuntaje("compatibilidad del parque", puntajeCompatibilidadParque);
+        validarPuntaje("viabilidad tecnica", puntajeViabilidadTecnica);
+        validarPuntaje("cumplimiento normativo", puntajeCumplimientoNormativo);
+    }
+
+    private void validarPuntaje(String campo, Integer valor) {
+        if (valor == null || valor < 1 || valor > 5) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "El puntaje de " + campo + " debe estar entre 1 y 5");
+        }
+    }
+
+    private String normalizarOpcional(String valor) {
+        if (valor == null) {
+            return null;
+        }
+        String normalizado = valor.trim();
+        return normalizado.isEmpty() ? null : normalizado;
     }
 }

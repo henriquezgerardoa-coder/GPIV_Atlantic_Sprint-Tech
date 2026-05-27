@@ -97,7 +97,7 @@ const ModuloLotes = (() => {
         if (_paginaActual >= totalPaginas) _paginaActual = totalPaginas - 1;
         const pagina = filtrados.slice(_paginaActual * POR_PAGINA, (_paginaActual + 1) * POR_PAGINA);
 
-        const puedeEditar = Autenticacion.tieneAcceso(['SECRETARIO']);
+        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
         cuerpo.innerHTML = pagina.map(l => `
             <tr>
                 <td class="text-muted">${l.id}</td>

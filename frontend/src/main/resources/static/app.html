@@ -532,7 +532,7 @@
         <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h4 class="fw-bold mb-1"><i class="bi bi-chat-dots text-primary me-2"></i>Mensajería</h4>
-                <p class="text-muted small mb-0">Comunicación entre la empresa y Admin/Directivo</p>
+                <p class="text-muted small mb-0">Comunicación interna entre usuarios registrados ENREPAVI</p>
             </div>
             <button class="btn btn-primary d-none" id="btnNuevaConversacionMensajeria" onclick="ModuloMensajeria.abrirNuevaConversacion()">
                 <i class="bi bi-plus-lg me-1"></i>Nueva conversación
@@ -1457,11 +1457,12 @@
                                 <th>Estado</th>
                                 <th>Fecha</th>
                                 <th id="thResueltoPor">Resuelto por</th>
+                                <th class="text-center">Detalle</th>
                                 <th id="thResolucion" class="text-center">Resolución</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoCambiosRubro">
-                            <tr><td colspan="8" class="text-muted text-center py-3">Cargando...</td></tr>
+                            <tr><td colspan="9" class="text-muted text-center py-3">Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1745,6 +1746,32 @@
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>Hitos con plazo vencido sin cumplir
             </div>
             <ul id="listaAlertasHitos" class="list-group list-group-flush mb-0 small"></ul>
+        </div>
+
+        <!-- Panel: Hitos próximos a vencer (30 días) -->
+        <div id="bloqueHitosProximos" class="card border-2 border-warning shadow-sm mb-3 d-none">
+            <div class="card-header bg-warning-subtle d-flex align-items-center gap-2 py-2">
+                <i class="bi bi-clock-history text-warning fs-5"></i>
+                <span class="fw-semibold">Hitos próximos a vencer <span class="text-muted fw-normal small">(próximos 30 días)</span></span>
+                <span id="badgeHitosProximos" class="badge bg-warning text-dark ms-auto"></span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Proyecto</th>
+                                <th>Empresa</th>
+                                <th>Hito</th>
+                                <th>Fecha límite</th>
+                                <th>Tiempo restante</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaHitosProximos"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Tabla de proyectos -->
@@ -2942,6 +2969,90 @@
                 <button type="button" class="btn btn-primary" onclick="ModuloMensajeria.guardarNuevaConversacion()">
                     <i class="bi bi-send me-1"></i>Enviar
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Detalle de solicitud de cambio de rubro -->
+<div class="modal fade" id="modalDetalleCambioRubro" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Detalle de solicitud</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-1 small text-muted fw-semibold">Empresa</p>
+                        <p id="detalleCREmpresa" class="mb-0 fw-semibold"></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="mb-1 small text-muted fw-semibold">Estado</p>
+                        <p id="detalleCREstado" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="mb-1 small text-muted fw-semibold">Fecha solicitud</p>
+                        <p id="detalleCRFecha" class="mb-0 small"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1 small text-muted fw-semibold">Rubro anterior</p>
+                        <p id="detalleCRRubroAnterior" class="mb-0"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1 small text-muted fw-semibold">Rubro solicitado</p>
+                        <p id="detalleCRRubroSolicitado" class="mb-0"></p>
+                    </div>
+                    <div class="col-12">
+                        <p class="mb-1 small text-muted fw-semibold">Justificación</p>
+                        <p id="detalleCRJustificacion" class="mb-0 small"></p>
+                    </div>
+                    <div class="col-md-6" id="bloqueSolicitadoPor">
+                        <p class="mb-1 small text-muted fw-semibold">Solicitado por</p>
+                        <p id="detalleCRSolicitadoPor" class="mb-0 small"></p>
+                    </div>
+                    <div class="col-md-6" id="bloqueResueltoPor">
+                        <p class="mb-1 small text-muted fw-semibold">Resuelto por</p>
+                        <p id="detalleCRResueltoPor" class="mb-0 small"></p>
+                    </div>
+                    <div class="col-md-6" id="bloqueFechaResolucion">
+                        <p class="mb-1 small text-muted fw-semibold">Fecha resolución</p>
+                        <p id="detalleCRFechaResolucion" class="mb-0 small"></p>
+                    </div>
+                    <div class="col-12" id="bloqueMotivoRechazo">
+                        <p class="mb-1 small text-muted fw-semibold">Motivo de rechazo</p>
+                        <p id="detalleCRMotivoRechazo" class="mb-0 small text-danger"></p>
+                    </div>
+                </div>
+                <div id="bloqueRubricaDetalle" class="border-top pt-3 d-none">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-clipboard-check me-2 text-primary"></i>Rúbrica de evaluación</h6>
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-6">
+                            <p class="mb-1 small text-muted fw-semibold">Impacto operativo</p>
+                            <p id="detalleCRPuntajeImpacto" class="mb-0"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1 small text-muted fw-semibold">Compatibilidad del parque</p>
+                            <p id="detalleCRPuntajeCompatibilidad" class="mb-0"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1 small text-muted fw-semibold">Viabilidad técnica</p>
+                            <p id="detalleCRPuntajeViabilidad" class="mb-0"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1 small text-muted fw-semibold">Cumplimiento normativo</p>
+                            <p id="detalleCRPuntajeCumplimiento" class="mb-0"></p>
+                        </div>
+                    </div>
+                    <div id="bloqueObservacionesRubrica">
+                        <p class="mb-1 small text-muted fw-semibold">Observaciones</p>
+                        <p id="detalleCRObservaciones" class="mb-0 small"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>

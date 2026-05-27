@@ -12,5 +12,16 @@ public interface ServicioSolicitudCambioRubro {
 
     SolicitudCambioRubro crear(String identificadorIngreso, Long rubroSolicitadoId, String justificacion, String descripcionOtros);
 
-    SolicitudCambioRubro resolver(String identificadorIngreso, Long solicitudId, boolean aprobada, String motivoRechazo, String nombreNuevoRubro);
+    SolicitudCambioRubro resolver(
+        String identificadorIngreso,
+        Long solicitudId,
+        boolean aprobada,
+        String motivoRechazo,
+        String nombreNuevoRubro,
+        Integer puntajeImpactoOperativo,
+        Integer puntajeCompatibilidadParque,
+        Integer puntajeViabilidadTecnica,
+        Integer puntajeCumplimientoNormativo,
+        String observacionesRubrica
+    );
 }

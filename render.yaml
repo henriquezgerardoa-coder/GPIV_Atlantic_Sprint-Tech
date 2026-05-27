@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: gpiv-atlantic-sprint-tech
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: "10000"
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SEED_ADMIN_CLAVE
+        sync: false
+      - key: SEED_DIRECTIVO_CLAVE
+        sync: false
+      - key: SEED_EMPRESA_CLAVE
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: REGISTRO_URL_BASE_VERIFICACION
+        sync: false
+      - key: REGISTRO_MAIL_HABILITADO
+        value: "true"
+      - key: REGISTRO_MAIL_REMITENTE
+        sync: false
+      - key: REGISTRO_CONTACTO_SOPORTE
+        sync: false

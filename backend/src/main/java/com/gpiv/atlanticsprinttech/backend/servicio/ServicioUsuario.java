@@ -20,4 +20,5 @@ public interface ServicioUsuario {
     void registrarPublico(String nombreUsuario, String correoElectronico, String clave, String confirmacionClave, String ipCliente);
     void verificarCorreoElectronico(String tokenVerificacion);
     void reenviarCorreoVerificacion(String correoElectronico, String ipCliente);
+    void vincularUsuarioEmpresa(String identificadorIngreso, Long empresaId);
 }

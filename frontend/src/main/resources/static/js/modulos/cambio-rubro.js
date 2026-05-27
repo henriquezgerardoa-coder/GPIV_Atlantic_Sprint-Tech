@@ -8,8 +8,8 @@ const ModuloCambioRubro = (() => {
     }
 
     function ajustarVistaPorRol() {
-        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-        const esGestor  = !esEmpresa && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+        const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
+        const esGestor  = !esEmpresa && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
 
         document.getElementById('bloqueFormSolicitudCambioRubro')?.classList.toggle('d-none', !esEmpresa);
         document.getElementById('columnaResolucion')?.classList.toggle('d-none', !esGestor);
@@ -48,7 +48,7 @@ const ModuloCambioRubro = (() => {
             return;
         }
         solicitudes = await resp.json();
-        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO'])
+        const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO'])
             && !Autenticacion.tieneAcceso(['EMPRESA']);
 
         cuerpo.innerHTML = solicitudes.length
@@ -65,6 +65,12 @@ const ModuloCambioRubro = (() => {
                     <td>${badgeEstado(s.estado)}</td>
                     <td class="small text-muted">${formatearFecha(s.fechaSolicitud)}</td>
                     <td class="small text-muted">${s.resueltoPor || '-'}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-secondary" title="Ver detalle"
+                            onclick="ModuloCambioRubro.verDetalle(${s.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
                     ${esGestor ? `
                     <td class="text-center columnaResolucion">
                         ${s.estado === 'PENDIENTE' ? `
@@ -79,7 +85,7 @@ const ModuloCambioRubro = (() => {
                     </td>` : ''}
                 </tr>`;
             }).join('')
-            : `<tr><td colspan="${esGestor ? 8 : 7}" class="text-muted text-center py-3">Sin solicitudes registradas</td></tr>`;
+            : `<tr><td colspan="${esGestor ? 9 : 8}" class="text-muted text-center py-3">Sin solicitudes registradas</td></tr>`;
     }
 
     async function enviarSolicitud() {
@@ -124,7 +130,9 @@ const ModuloCambioRubro = (() => {
 
     async function aprobar(solicitudId, esOtros) {
         if (!confirm('¿Confirma la aprobación del cambio de rubro? El rubro de la empresa será actualizado.')) return;
-        const cuerpo = { aprobada: true };
+        const rubrica = solicitarRubrica();
+        if (!rubrica) return;
+        const cuerpo = { aprobada: true, ...rubrica };
         if (esOtros) {
             const nombreNuevoRubro = prompt(
                 'La empresa solicitó el rubro "Otros".\n' +
@@ -151,9 +159,12 @@ const ModuloCambioRubro = (() => {
             mostrarAlerta('El motivo de rechazo es obligatorio.', 'danger');
             return;
         }
+        const rubrica = solicitarRubrica();
+        if (!rubrica) return;
         const resp = await ApiCliente.parche(`/api/cambios-rubro/${solicitudId}/resolver`, {
             aprobada: false,
-            motivoRechazo: motivo.trim()
+            motivoRechazo: motivo.trim(),
+            ...rubrica
         });
         if (!resp?.ok) {
             const err = await resp?.json().catch(() => ({}));
@@ -175,5 +186,98 @@ const ModuloCambioRubro = (() => {
         return String(fechaIso).replace('T', ' ').slice(0, 16);
     }
 
-    return { cargar, enviarSolicitud, aprobar, rechazar, toggleDescripcionOtros };
+    function solicitarRubrica() {
+        const puntajeImpactoOperativo = solicitarPuntaje('impacto operativo');
+        if (puntajeImpactoOperativo === null) return null;
+        const puntajeCompatibilidadParque = solicitarPuntaje('compatibilidad del parque');
+        if (puntajeCompatibilidadParque === null) return null;
+        const puntajeViabilidadTecnica = solicitarPuntaje('viabilidad tecnica');
+        if (puntajeViabilidadTecnica === null) return null;
+        const puntajeCumplimientoNormativo = solicitarPuntaje('cumplimiento normativo');
+        if (puntajeCumplimientoNormativo === null) return null;
+
+        const observaciones = prompt('Observaciones de rúbrica (opcional):');
+        if (observaciones === null) return null;
+
+        return {
+            puntajeImpactoOperativo,
+            puntajeCompatibilidadParque,
+            puntajeViabilidadTecnica,
+            puntajeCumplimientoNormativo,
+            observacionesRubrica: observaciones.trim() || null
+        };
+    }
+
+    function solicitarPuntaje(etiqueta) {
+        const valor = prompt(`Ingrese puntaje de ${etiqueta} (1 a 5):`);
+        if (valor === null) return null;
+        const numero = parseInt(valor, 10);
+        if (!Number.isInteger(numero) || numero < 1 || numero > 5) {
+            mostrarAlerta(`El puntaje de ${etiqueta} debe ser un número entre 1 y 5.`, 'danger');
+            return null;
+        }
+        return numero;
+    }
+
+    function verDetalle(id) {
+        const s = solicitudes.find(x => x.id === id);
+        if (!s) return;
+
+        document.getElementById('detalleCREmpresa').textContent        = s.nombreEmpresa;
+        document.getElementById('detalleCREstado').innerHTML           = badgeEstado(s.estado);
+        document.getElementById('detalleCRFecha').textContent          = formatearFecha(s.fechaSolicitud);
+        document.getElementById('detalleCRRubroAnterior').textContent  = s.rubroAnteriorNombre || 'Sin rubro anterior';
+        document.getElementById('detalleCRRubroSolicitado').textContent =
+            s.nombreRubroSolicitado.toLowerCase() === 'otros' && s.descripcionOtros
+                ? `Otros (${s.descripcionOtros})` : s.nombreRubroSolicitado;
+        document.getElementById('detalleCRJustificacion').textContent  = s.justificacion;
+
+        const elSolicitadoPor = document.getElementById('detalleCRSolicitadoPor');
+        const bloqueSolicitadoPor = document.getElementById('bloqueSolicitadoPor');
+        if (s.solicitadoPor) { elSolicitadoPor.textContent = s.solicitadoPor; bloqueSolicitadoPor.classList.remove('d-none'); }
+        else { bloqueSolicitadoPor.classList.add('d-none'); }
+
+        const bloqueResueltoPor = document.getElementById('bloqueResueltoPor');
+        const bloqueFechaResolucion = document.getElementById('bloqueFechaResolucion');
+        if (s.resueltoPor) {
+            document.getElementById('detalleCRResueltoPor').textContent = s.resueltoPor;
+            bloqueResueltoPor.classList.remove('d-none');
+            document.getElementById('detalleCRFechaResolucion').textContent = formatearFecha(s.fechaResolucion);
+            bloqueFechaResolucion.classList.remove('d-none');
+        } else {
+            bloqueResueltoPor.classList.add('d-none');
+            bloqueFechaResolucion.classList.add('d-none');
+        }
+
+        const bloqueMotivoRechazo = document.getElementById('bloqueMotivoRechazo');
+        if (s.estado === 'RECHAZADA' && s.motivoRechazo) {
+            document.getElementById('detalleCRMotivoRechazo').textContent = s.motivoRechazo;
+            bloqueMotivoRechazo.classList.remove('d-none');
+        } else {
+            bloqueMotivoRechazo.classList.add('d-none');
+        }
+
+        const tieneRubrica = s.puntajeImpactoOperativo != null;
+        const bloqueRubrica = document.getElementById('bloqueRubricaDetalle');
+        if (tieneRubrica) {
+            document.getElementById('detalleCRPuntajeImpacto').textContent       = `${s.puntajeImpactoOperativo} / 5`;
+            document.getElementById('detalleCRPuntajeCompatibilidad').textContent = `${s.puntajeCompatibilidadParque} / 5`;
+            document.getElementById('detalleCRPuntajeViabilidad').textContent     = `${s.puntajeViabilidadTecnica} / 5`;
+            document.getElementById('detalleCRPuntajeCumplimiento').textContent   = `${s.puntajeCumplimientoNormativo} / 5`;
+            const bloqueObs = document.getElementById('bloqueObservacionesRubrica');
+            if (s.observacionesRubrica) {
+                document.getElementById('detalleCRObservaciones').textContent = s.observacionesRubrica;
+                bloqueObs.classList.remove('d-none');
+            } else {
+                bloqueObs.classList.add('d-none');
+            }
+            bloqueRubrica.classList.remove('d-none');
+        } else {
+            bloqueRubrica.classList.add('d-none');
+        }
+
+        new bootstrap.Modal(document.getElementById('modalDetalleCambioRubro')).show();
+    }
+
+    return { cargar, enviarSolicitud, aprobar, rechazar, toggleDescripcionOtros, verDetalle };
 })();

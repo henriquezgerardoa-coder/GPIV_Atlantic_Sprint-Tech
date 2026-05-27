@@ -302,6 +302,11 @@ const ModuloMensajeria = (() => {
         const usuarioResponsableId = document.getElementById('selectorDestinatarioMensajeria')?.value;
         const asunto = document.getElementById('campoAsuntoMensajeria')?.value.trim();
         const mensaje = document.getElementById('campoMensajeInicialMensajeria')?.value.trim();
+        const destinatarioId = parseInt(usuarioResponsableId);
+        if (!destinatarioId) {
+            mostrarAlertaModalMensajeria('Debe seleccionar un destinatario.');
+            return;
+        }
         if (!asunto || !mensaje) {
             mostrarAlertaModalMensajeria('Complete asunto y mensaje.');
             return;

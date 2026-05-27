@@ -10,6 +10,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
 import com.gpiv.atlanticsprinttech.entities.dominio.HitoObra;
 import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 
 import java.math.BigDecimal;
@@ -67,9 +68,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         Long responsableId
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
+        if (!servicioContextoUsuario.esRolAdministrador(usuario) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo el TECNICO puede crear proyectos");
+                "Solo ADMINISTRADOR o SECRETARIO pueden crear proyectos");
         }
 
         Usuario responsable = null;
@@ -92,9 +93,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public ProyectoProductivo actualizarEstado(String identificadorIngreso, Long proyectoId, String estado) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
+        if (!servicioContextoUsuario.esRolAdministrador(usuario) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo el TECNICO puede modificar el estado del proyecto");
+                "Solo ADMINISTRADOR o SECRETARIO pueden modificar el estado del proyecto");
         }
 
         ProyectoProductivo proyecto = repositorioProyecto.findById(proyectoId)
@@ -119,9 +120,11 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         LocalDate fechaVencimiento
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)
+                && !servicioContextoUsuario.esRolAdministrador(usuario)
+                && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo el TECNICO puede gestionar hitos");
+                "Solo ADMINISTRADOR, SECRETARIO o TECNICO pueden gestionar hitos");
         }
 
         ProyectoProductivo proyecto = repositorioProyecto.findById(proyectoId)
@@ -136,9 +139,11 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public HitoObra marcarHitoCumplido(String identificadorIngreso, Long proyectoId, Long hitoId) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)
+                && !servicioContextoUsuario.esRolAdministrador(usuario)
+                && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo el TECNICO puede marcar hitos como cumplidos");
+                "Solo ADMINISTRADOR, SECRETARIO o TECNICO pueden marcar hitos como cumplidos");
         }
 
         HitoObra hito = repositorioHito.findByIdAndProyectoId(hitoId, proyectoId)
@@ -152,9 +157,11 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public void eliminarHito(String identificadorIngreso, Long proyectoId, Long hitoId) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolTecnico(usuario)) {
+        if (!servicioContextoUsuario.esRolTecnico(usuario)
+                && !servicioContextoUsuario.esRolAdministrador(usuario)
+                && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo el TECNICO puede eliminar hitos");
+                "Solo ADMINISTRADOR, SECRETARIO o TECNICO pueden eliminar hitos");
         }
 
         HitoObra hito = repositorioHito.findByIdAndProyectoId(hitoId, proyectoId)

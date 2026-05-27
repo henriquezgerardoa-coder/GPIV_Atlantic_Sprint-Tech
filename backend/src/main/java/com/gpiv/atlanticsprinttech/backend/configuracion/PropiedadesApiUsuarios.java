@@ -24,6 +24,7 @@ public class PropiedadesApiUsuarios {
         private Credencial admin = new Credencial();
         private Credencial directivo = new Credencial();
         private Credencial secretario = new Credencial();
+        private Credencial tecnico = new Credencial();
         private Credencial empresa = new Credencial();
         public Credencial getAdmin() {
             return admin;
@@ -42,6 +43,12 @@ public class PropiedadesApiUsuarios {
         }
         public void setSecretario(Credencial secretario) {
             this.secretario = secretario;
+        }
+        public Credencial getTecnico() {
+            return tecnico;
+        }
+        public void setTecnico(Credencial tecnico) {
+            this.tecnico = tecnico;
         }
         public Credencial getEmpresa() {
             return empresa;

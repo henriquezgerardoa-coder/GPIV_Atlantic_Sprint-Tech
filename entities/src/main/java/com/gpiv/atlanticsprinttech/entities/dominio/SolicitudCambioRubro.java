@@ -45,6 +45,21 @@ public class SolicitudCambioRubro {
     @Column(name = "motivo_rechazo", length = 500)
     private String motivoRechazo;
 
+    @Column(name = "rubrica_puntaje_impacto_operativo")
+    private Integer puntajeImpactoOperativo;
+
+    @Column(name = "rubrica_puntaje_compatibilidad_parque")
+    private Integer puntajeCompatibilidadParque;
+
+    @Column(name = "rubrica_puntaje_viabilidad_tecnica")
+    private Integer puntajeViabilidadTecnica;
+
+    @Column(name = "rubrica_puntaje_cumplimiento_normativo")
+    private Integer puntajeCumplimientoNormativo;
+
+    @Column(name = "rubrica_observaciones", length = 1000)
+    private String observacionesRubrica;
+
     @Column(name = "solicitado_por", nullable = false, length = 80)
     private String solicitadoPor;
 
@@ -108,6 +123,20 @@ public class SolicitudCambioRubro {
         this.fechaResolucion = LocalDateTime.now();
     }
 
+    public void registrarRubrica(
+        Integer puntajeImpactoOperativo,
+        Integer puntajeCompatibilidadParque,
+        Integer puntajeViabilidadTecnica,
+        Integer puntajeCumplimientoNormativo,
+        String observacionesRubrica
+    ) {
+        this.puntajeImpactoOperativo = puntajeImpactoOperativo;
+        this.puntajeCompatibilidadParque = puntajeCompatibilidadParque;
+        this.puntajeViabilidadTecnica = puntajeViabilidadTecnica;
+        this.puntajeCumplimientoNormativo = puntajeCumplimientoNormativo;
+        this.observacionesRubrica = observacionesRubrica;
+    }
+
     public Long getId() { return id; }
     public Empresa getEmpresa() { return empresa; }
     public Rubro getRubroSolicitado() { return rubroSolicitado; }
@@ -117,6 +146,11 @@ public class SolicitudCambioRubro {
     public boolean esRubroOtros() { return "Otros".equalsIgnoreCase(rubroSolicitado.getNombre()); }
     public EstadoCambioRubro getEstado() { return estado; }
     public String getMotivoRechazo() { return motivoRechazo; }
+    public Integer getPuntajeImpactoOperativo() { return puntajeImpactoOperativo; }
+    public Integer getPuntajeCompatibilidadParque() { return puntajeCompatibilidadParque; }
+    public Integer getPuntajeViabilidadTecnica() { return puntajeViabilidadTecnica; }
+    public Integer getPuntajeCumplimientoNormativo() { return puntajeCumplimientoNormativo; }
+    public String getObservacionesRubrica() { return observacionesRubrica; }
     public String getSolicitadoPor() { return solicitadoPor; }
     public LocalDateTime getFechaSolicitud() { return fechaSolicitud; }
     public String getResueltoPor() { return resueltoPor; }

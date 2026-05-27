@@ -293,7 +293,7 @@ const ModuloRadicaciones = (() => {
             document.getElementById('tab-rad-a')?.closest('.nav-item')?.classList.add('d-none');
             document.getElementById('btnNuevaSolicitudRad')?.classList.add('d-none');
             document.getElementById('btnNuevaSolicitudRadListado')?.classList.add('d-none');
-            const puedeAdjuntar = Autenticacion.tieneAcceso(['EMPRESA', 'SECRETARIO']);
+            const puedeAdjuntar = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
             document.getElementById('tab-rad-d')?.closest('.nav-item')?.classList.toggle('d-none', !puedeAdjuntar);
             const tabB = document.getElementById('tab-rad-b');
             if (tabB && window.bootstrap?.Tab) window.bootstrap.Tab.getOrCreateInstance(tabB).show();
@@ -958,13 +958,15 @@ const ModuloRadicaciones = (() => {
         const label = document.getElementById('labelObservacionesRadAdmin');
         const campo = document.getElementById('campoObservacionesRadAdmin');
         if (!label || !campo) return;
-        if (estado === 'RECHAZADA') {
-            label.textContent = 'Motivo de rechazo';
+        if (estado === 'RECHAZADA' || estado === 'CANCELADA') {
+            label.textContent = estado === 'RECHAZADA' ? 'Motivo de rechazo' : 'Motivo de cancelación';
             const asterisco = document.createElement('span');
             asterisco.className = 'text-danger fw-bold';
             asterisco.textContent = ' *';
             label.appendChild(asterisco);
-            campo.placeholder = 'Ingrese el motivo de rechazo (obligatorio)';
+            campo.placeholder = estado === 'RECHAZADA'
+                ? 'Ingrese el motivo de rechazo (obligatorio)'
+                : 'Ingrese el motivo de cancelación (obligatorio)';
             campo.required = true;
         } else {
             label.textContent = 'Observaciones';

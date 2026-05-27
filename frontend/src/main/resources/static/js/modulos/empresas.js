@@ -78,7 +78,7 @@ const ModuloEmpresas = (() => {
         if (!respuesta?.ok) {
             const respuestaFallback = await ApiCliente.obtener('/api/empresas');
             if (!respuestaFallback?.ok) {
-                const errorJson = await respuesta?.json().catch(() => ({}));
+                const errorJson = await respuestaFallback?.json().catch(() => ({}));
                 error.textContent = errorJson?.mensaje || errorJson?.message || 'No se pudo cargar el panel de empresas.';
                 error.classList.remove('d-none');
                 badge.textContent = 'Total: 0';
@@ -765,8 +765,8 @@ const ModuloEmpresas = (() => {
         const totalPaginas = Math.ceil(empresas.length / POR_PAGINA);
         if (_paginaActual >= totalPaginas) _paginaActual = totalPaginas - 1;
         const pagina = empresas.slice(_paginaActual * POR_PAGINA, (_paginaActual + 1) * POR_PAGINA);
-        const puedeEditar  = Autenticacion.tieneAcceso(['SECRETARIO', 'EMPRESA']);
-        const puedeEliminar = Autenticacion.tieneAcceso(['SECRETARIO']);
+        const puedeEditar  = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO', 'EMPRESA']);
+        const puedeEliminar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
         cuerpo.innerHTML = pagina.map(e => `
             <tr>
                 <td class="text-muted">${e.id}</td>

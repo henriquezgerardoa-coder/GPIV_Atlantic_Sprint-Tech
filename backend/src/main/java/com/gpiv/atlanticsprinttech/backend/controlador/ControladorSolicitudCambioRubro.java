@@ -56,7 +56,16 @@ public class ControladorSolicitudCambioRubro {
         Authentication auth
     ) {
         return toRespuesta(servicio.resolver(
-            auth.getName(), id, solicitud.aprobada(), solicitud.motivoRechazo(), solicitud.nombreNuevoRubro()
+            auth.getName(),
+            id,
+            solicitud.aprobada(),
+            solicitud.motivoRechazo(),
+            solicitud.nombreNuevoRubro(),
+            solicitud.puntajeImpactoOperativo(),
+            solicitud.puntajeCompatibilidadParque(),
+            solicitud.puntajeViabilidadTecnica(),
+            solicitud.puntajeCumplimientoNormativo(),
+            solicitud.observacionesRubrica()
         ));
     }
 
@@ -72,6 +81,11 @@ public class ControladorSolicitudCambioRubro {
             s.getDescripcionOtros(),
             s.getEstado().name(),
             s.getMotivoRechazo(),
+            s.getPuntajeImpactoOperativo(),
+            s.getPuntajeCompatibilidadParque(),
+            s.getPuntajeViabilidadTecnica(),
+            s.getPuntajeCumplimientoNormativo(),
+            s.getObservacionesRubrica(),
             s.getSolicitadoPor(),
             s.getFechaSolicitud() != null ? s.getFechaSolicitud().toString() : null,
             s.getResueltoPor(),

@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ServicioEmpresa {
 	List<Empresa> listar(String identificadorIngreso);
+	List<Empresa> listarDisponibles();
 	Empresa obtenerPorId(Long id, String identificadorIngreso);
 	Empresa crear(Empresa empresa, String identificadorIngreso);
 	Empresa actualizar(Long id, Empresa empresa, String identificadorIngreso);

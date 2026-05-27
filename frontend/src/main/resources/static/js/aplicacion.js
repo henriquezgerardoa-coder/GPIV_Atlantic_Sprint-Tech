@@ -143,7 +143,7 @@ const ConfiguracionInicial = (() => {
         const btn = document.getElementById('btnConfirmarConfiguracionInicial');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Vinculando...';
-        const respuesta = await ApiCliente.parche('/api/yo/empresa', { empresaId: _empresaSeleccionadaId });
+        const respuesta = await ApiCliente.crear('/api/yo/vincular-empresa', { empresaId: _empresaSeleccionadaId });
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Confirmar y continuar';
         if (!respuesta?.ok) {
@@ -200,10 +200,17 @@ function ocultarAlertaModal(idElemento) {
 function navegarA(seccion) {
     const esEmpresaExclusivo = Autenticacion.tieneAcceso(['EMPRESA'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
+    const esTecnicoExclusivo = Autenticacion.tieneAcceso(['TECNICO'])
+        && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
     const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor', 'censo']);
+    const seccionesRestringidasTecnico = new Set(['empresas', 'lotes', 'radicaciones', 'usuarios', 'audit-log', 'informes', 'censo', 'infraestructura', 'dashboard', 'monitor', 'cambio-rubro', 'panel']);
     if (esEmpresaExclusivo && seccionesRestringidasEmpresa.has(seccion)) {
         mostrarAlerta('No tienes acceso a esta sección.', 'danger');
         seccion = 'empresas';
+    }
+    if (esTecnicoExclusivo && seccionesRestringidasTecnico.has(seccion)) {
+        mostrarAlerta('No tienes acceso a esta sección.', 'danger');
+        seccion = 'proyectos';
     }
 
     document.querySelectorAll('.seccion-contenido').forEach(s => s.classList.add('d-none'));
@@ -213,6 +220,8 @@ function navegarA(seccion) {
     const elNav     = document.getElementById('nav-' + seccion);
     elSeccion?.classList.remove('d-none');
     elNav?.classList.add('activo');
+
+    _limpiarSeccion(seccion);
 
     // Cerrar sidebar en móvil tras navegar
     const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasSidebar'));
@@ -233,6 +242,57 @@ function navegarA(seccion) {
         case 'infraestructura': ModuloInfraestructura.cargar(); break;
         case 'dashboard':       ModuloDashboard.cargar();       break;
         case 'monitor':       ModuloMonitor.cargar();        break;
+    }
+}
+
+const _FILA_CARGANDO = '<tr><td colspan="20" class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</td></tr>';
+const _DIV_CARGANDO  = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</div>';
+
+function _limpiarSeccion(seccion) {
+    const tablas = {
+        'radicaciones':   ['cuerpoTablaRadicaciones', 'cuerpoTablaHistorialRadicacion'],
+        'empresas':       ['cuerpoTablaEmpresas', 'cuerpoTablaUsuariosEmpresa'],
+        'lotes':          ['cuerpoTablaLotes'],
+        'censo':          ['cuerpoTablaCenso', 'cuerpoTablaPersonal', 'cuerpoTablaVehiculos'],
+        'cambio-rubro':   ['cuerpoCambiosRubro'],
+        'monitor':        ['cuerpoCuerpoMonitor'],
+        'proyectos':      ['cuerpoTablaProyectos'],
+        'usuarios':       ['cuerpoTablaUsuarios'],
+        'audit-log':      ['cuerpoTablaAuditLog'],
+        'informes':       ['cuerpoTablaEstadosRadicacion'],
+    };
+    const divs = {
+        'mensajeria':     ['listaConversacionesMensajeria', 'contenedorMensajesMensajeria'],
+        'empresas':       ['listaEmpresasAdmin'],
+        'infraestructura':['gridServicios'],
+        'dashboard':      ['contenedorDashboard'],
+        'proyectos':      ['listaAlertasHitos', 'listaHitosProximos'],
+    };
+    (tablas[seccion] || []).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = _FILA_CARGANDO;
+    });
+    (divs[seccion] || []).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = _DIV_CARGANDO;
+    });
+    if (seccion === 'proyectos') {
+        document.getElementById('bloqueAlertasHitos')?.classList.add('d-none');
+        document.getElementById('bloqueHitosProximos')?.classList.add('d-none');
+    }
+    if (seccion === 'mensajeria') {
+        document.getElementById('detalleConversacionMensajeria')?.classList.add('d-none');
+        document.getElementById('panelSinConversacionMensajeria')?.classList.remove('d-none');
+    }
+    if (seccion === 'empresas') {
+        ['errorEmpresasAdmin', 'sinEmpresasAdmin', 'estadoCargaEmpresasAdmin', 'panelEmpresasAdminVisualizacion']
+            .forEach(id => document.getElementById(id)?.classList.add('d-none'));
+    }
+    if (seccion === 'panel') {
+        ['statEmpresas', 'statLotes', 'statLotesOcupados', 'statLotesLibres'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '—';
+        });
     }
 }
 
@@ -308,8 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
          'itemNavMonitor', 'itemNavMonitorMovil',
          'itemNavAuditLog', 'itemNavAuditLogMovil',
          'itemNavInformes', 'itemNavInformesMovil',
-         'itemNavCenso', 'itemNavCensoMovil',
-         'itemNavCambioRubro', 'itemNavCambioRubroMovil']
+         'itemNavCenso', 'itemNavCensoMovil']
             .forEach(id => document.getElementById(id)?.classList.add('d-none'));
         document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
     }

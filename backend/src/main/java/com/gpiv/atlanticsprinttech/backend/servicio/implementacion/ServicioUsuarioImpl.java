@@ -301,6 +301,29 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         enviarCorreoVerificacion(usuario);
     }
 
+    @Override
+    public void vincularUsuarioEmpresa(String identificadorIngreso, Long empresaId) {
+        Usuario usuario = obtenerUsuarioPorIdentificador(identificadorIngreso);
+        if (!usuario.getRoles().contains(RolUsuario.EMPRESA)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo usuarios EMPRESA pueden vincularse");
+        }
+        if (usuario.getEmpresaId() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El usuario ya está vinculado a una empresa");
+        }
+        Empresa empresa = repositorioEmpresa.findById(empresaId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
+        usuario.actualizarEmpresa(empresa);
+        repositorioUsuario.save(usuario);
+        String autorizador = servicioContextoUsuario.obtenerIdentificadorActual();
+        servicioAuditLog.registrarEvento(
+            autorizador, "VINCULACION_EMPRESA", "Usuario",
+            usuario.getNombreUsuario(),
+            "sin_empresa",
+            "empresa_" + empresa.getId(),
+            UtilRed.obtenerIpActual()
+        );
+    }
+
     private void validarRoles(Set<RolUsuario> roles) {
         if (roles == null || roles.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe asignar al menos un rol");

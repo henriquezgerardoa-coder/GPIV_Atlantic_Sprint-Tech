@@ -84,6 +84,12 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		}
 		return repositorioEmpresa.findAllWithRubroOrderByNombre();
 	}
+
+	@Override
+	public List<Empresa> listarDisponibles() {
+		return repositorioEmpresa.findAllWithRubroOrderByNombre();
+	}
+
 	@Override
 	public Empresa obtenerPorId(Long id, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);

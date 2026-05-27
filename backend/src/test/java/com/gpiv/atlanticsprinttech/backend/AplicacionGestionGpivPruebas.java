@@ -191,7 +191,7 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
-    void adminDebeVerPanelVisualizacionEmpresasYDirectivoNoDebeAcceder() throws Exception {
+    void adminDebeVerPanelVisualizacionEmpresas() throws Exception {
         String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
                 .with(httpBasic("admin", "admin12345"))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -232,7 +232,7 @@ class AplicacionGestionGpivPruebas {
 
         mockMvc.perform(get("/api/empresas/admin/vista")
                 .with(httpBasic("directivo", "directivo123")))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isOk());
     }
 
     @Test
@@ -850,11 +850,21 @@ class AplicacionGestionGpivPruebas {
                 .content("{" +
                     "\"aprobada\":false," +
                     "\"motivoRechazo\":\"No cumple el criterio técnico\"," +
-                    "\"nombreNuevoRubro\":null" +
+                    "\"nombreNuevoRubro\":null," +
+                    "\"puntajeImpactoOperativo\":2," +
+                    "\"puntajeCompatibilidadParque\":3," +
+                    "\"puntajeViabilidadTecnica\":2," +
+                    "\"puntajeCumplimientoNormativo\":4," +
+                    "\"observacionesRubrica\":\"No cumple estandares minimos\"" +
                     "}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.estado").value("RECHAZADA"))
-            .andExpect(jsonPath("$.motivoRechazo").value("No cumple el criterio técnico"));
+            .andExpect(jsonPath("$.motivoRechazo").value("No cumple el criterio técnico"))
+            .andExpect(jsonPath("$.puntajeImpactoOperativo").value(2))
+            .andExpect(jsonPath("$.puntajeCompatibilidadParque").value(3))
+            .andExpect(jsonPath("$.puntajeViabilidadTecnica").value(2))
+            .andExpect(jsonPath("$.puntajeCumplimientoNormativo").value(4))
+            .andExpect(jsonPath("$.observacionesRubrica").value("No cumple estandares minimos"));
 
         var conversaciones = repositorioConversacionMensajeria.findByEmpresaIdConDetalleOrderByFechaUltimaActualizacionDesc(empresaId);
         org.junit.jupiter.api.Assertions.assertFalse(conversaciones.isEmpty());
@@ -869,6 +879,63 @@ class AplicacionGestionGpivPruebas {
                 + " fue rechazada. Motivo: No cumple el criterio técnico",
             mensajes.get(0).getContenido()
         );
+    }
+
+    @Test
+    void resolucionDeCambioDeRubroDebeRequerirRubricaCompleta() throws Exception {
+        String respuestaEmpresa = mockMvc.perform(post("/api/empresas")
+                .with(httpBasic("secretario", "secretario123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoEmpresa("Empresa Rubro Sin Rubrica", "Empresa Rubro Sin Rubrica SA", "20-12121212-3", "sinrubrica@empresa.com")))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long empresaId = objectMapper.readTree(respuestaEmpresa).get("id").asLong();
+
+        mockMvc.perform(post("/api/usuarios")
+                .with(httpBasic("secretario", "secretario123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nombreUsuario\":\"empresa_rubro_sin_rubrica\",\"nombreCompleto\":\"Empresa Rubro Sin Rubrica\",\"clave\":\"EmpresaRubro123\",\"activo\":true,\"roles\":[\"EMPRESA\"],\"empresaId\":" + empresaId + "}"))
+            .andExpect(status().isCreated());
+
+        Rubro rubroSolicitado = repositorioRubro.findAllOrdenados().stream()
+            .filter(r -> !"Otros".equalsIgnoreCase(r.getNombre()))
+            .findFirst()
+            .orElseGet(() -> repositorioRubro.save(
+                Rubro.crear("Rubro Temporal Test " + System.nanoTime(), null, false)
+            ));
+
+        String respuestaSolicitud = mockMvc.perform(post("/api/cambios-rubro")
+                .with(httpBasic("empresa_rubro_sin_rubrica", "EmpresaRubro123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{" +
+                    "\"rubroSolicitadoId\":" + rubroSolicitado.getId() + "," +
+                    "\"justificacion\":\"Cambio de linea productiva\"," +
+                    "\"descripcionOtros\":null" +
+                    "}"))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long solicitudId = objectMapper.readTree(respuestaSolicitud).get("id").asLong();
+
+        mockMvc.perform(patch("/api/cambios-rubro/{id}/resolver", solicitudId)
+                .with(httpBasic("directivo", "directivo123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{" +
+                    "\"aprobada\":true," +
+                    "\"motivoRechazo\":null," +
+                    "\"nombreNuevoRubro\":null," +
+                    "\"puntajeImpactoOperativo\":4," +
+                    "\"puntajeCompatibilidadParque\":4," +
+                    "\"puntajeViabilidadTecnica\":null," +
+                    "\"puntajeCumplimientoNormativo\":5," +
+                    "\"observacionesRubrica\":\"Falta un criterio\"" +
+                    "}"))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -906,19 +973,19 @@ class AplicacionGestionGpivPruebas {
             .andExpect(status().isConflict());
 
         mockMvc.perform(patch("/api/radicaciones/{id}/estado", idRadicacion)
-                .with(httpBasic("admin", "admin12345"))
+                .with(httpBasic("secretario", "secretario123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"EN_REVISION\",\"comentario\":\"Revision inicial\"}"))
             .andExpect(status().isOk());
 
         mockMvc.perform(patch("/api/radicaciones/{id}/estado", idRadicacion)
-                .with(httpBasic("admin", "admin12345"))
+                .with(httpBasic("secretario", "secretario123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"APROBADA\",\"comentario\":\"Aprobada por mesa\",\"fechaPlazo\":\"2099-12-31\"}"))
             .andExpect(status().isOk());
 
         mockMvc.perform(patch("/api/radicaciones/{id}/estado", idRadicacion)
-                .with(httpBasic("admin", "admin12345"))
+                .with(httpBasic("secretario", "secretario123"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"RADICADA\",\"comentario\":\"Radicacion confirmada\"}"))
             .andExpect(status().isOk());
@@ -1002,10 +1069,10 @@ class AplicacionGestionGpivPruebas {
     }
 
     @Test
-    void empresaNoDebeAccederACensoNiCambioDeRubro() throws Exception {
+    void empresaNoDebeAccederACensoDeOtrasEmpresas() throws Exception {
         mockMvc.perform(get("/api/cambios-rubro")
                 .with(httpBasic("empresa", "empresa12345")))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/empresas/{empresaId}/censo", 1L)
                 .with(httpBasic("empresa", "empresa12345")))
@@ -1045,13 +1112,129 @@ class AplicacionGestionGpivPruebas {
             + "\"telefono\":\"2990000000\","
             + "\"cantidadEmpleados\":0}";
     }
+
+    @Test
+    void secretarioDebePoderVerListadoEmpresas() throws Exception {
+        mockMvc.perform(get("/api/empresas")
+                .with(httpBasic("secretario", "secretario123")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void directivoDebePoderVerListadoEmpresas() throws Exception {
+        mockMvc.perform(get("/api/empresas")
+                .with(httpBasic("directivo", "directivo123")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void secretarioDebePoderVerListadoLotes() throws Exception {
+        mockMvc.perform(get("/api/lotes?tamanio=500")
+                .with(httpBasic("secretario", "secretario123")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void directivoDebePoderVerListadoLotes() throws Exception {
+        mockMvc.perform(get("/api/lotes?tamanio=500")
+                .with(httpBasic("directivo", "directivo123")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void secretarioDebePoderVerListadoRadicaciones() throws Exception {
+        mockMvc.perform(get("/api/radicaciones?tamanio=500")
+                .with(httpBasic("secretario", "secretario123")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void directivoDebePoderVerListadoRadicaciones() throws Exception {
+        mockMvc.perform(get("/api/radicaciones?tamanio=500")
+                .with(httpBasic("directivo", "directivo123")))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void deberiaPermitirMensajeriaUnoAUnoEntreUsuariosInternos() throws Exception {
+        Usuario directivo = repositorioUsuario.findByNombreUsuario("directivo")
+            .orElseThrow(() -> new IllegalStateException("No existe usuario directivo"));
+
+        String nuevaConversacion = """
+            {
+              "usuarioResponsableId": %d,
+              "asunto": "Consulta interna",
+              "mensaje": "Primer mensaje interno"
+            }
+            """.formatted(directivo.getId());
+
+        String respuestaCreacion = mockMvc.perform(post("/api/mensajeria/conversaciones")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(nuevaConversacion))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.tipoOrigen").value("USUARIO"))
+            .andExpect(jsonPath("$.usuarioIniciadorNombre").value("admin"))
+            .andExpect(jsonPath("$.totalMensajes").value(1))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long conversacionId = objectMapper.readTree(respuestaCreacion).get("id").asLong();
+
+        String respuestaMensaje = """
+            {
+              "mensaje": "Respuesta desde directivo"
+            }
+            """;
+
+        mockMvc.perform(post("/api/mensajeria/conversaciones/{id}/mensajes", conversacionId)
+                .with(httpBasic("directivo", "directivo123"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(respuestaMensaje))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(conversacionId))
+            .andExpect(jsonPath("$.mensajes.length()").value(2))
+            .andExpect(jsonPath("$.mensajes[1].usuarioEmisorNombre").value("directivo"));
+
+        mockMvc.perform(get("/api/mensajeria/conversaciones/{id}", conversacionId)
+                .with(httpBasic("admin", "admin12345")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(conversacionId))
+            .andExpect(jsonPath("$.mensajes.length()").value(2));
+    }
+
+    @Test
+    void terceroNoDebeAccederAConversacionUnoAUno() throws Exception {
+        Usuario secretario = repositorioUsuario.findByNombreUsuario("secretario")
+            .orElseThrow(() -> new IllegalStateException("No existe usuario secretario"));
+
+        String nuevaConversacion = """
+            {
+              "usuarioResponsableId": %d,
+              "asunto": "Privado",
+              "mensaje": "Solo para secretario"
+            }
+            """.formatted(secretario.getId());
+
+        String respuestaCreacion = mockMvc.perform(post("/api/mensajeria/conversaciones")
+                .with(httpBasic("admin", "admin12345"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(nuevaConversacion))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        Long conversacionId = objectMapper.readTree(respuestaCreacion).get("id").asLong();
+
+        mockMvc.perform(get("/api/mensajeria/conversaciones/{id}", conversacionId)
+                .with(httpBasic("directivo", "directivo123")))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/mensajeria/conversaciones/{id}", conversacionId)
+                .with(httpBasic("secretario", "secretario123")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(conversacionId));
+    }
 }
-
-
-
-
-
-
-
-
-
