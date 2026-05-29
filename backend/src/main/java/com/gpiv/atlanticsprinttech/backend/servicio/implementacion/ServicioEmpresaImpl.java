@@ -147,7 +147,10 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getDireccion(),
 			empresa.getActividadEconomica(),
 			empresa.getCorreoElectronico(),
-			empresa.getTelefono()
+			empresa.getTelefono(),
+			empresa.getReferente(),
+			empresa.getIngresosBrutos(),
+			empresa.getCantidadEmpleados()
 		);
 		Empresa guardada = repositorioEmpresa.save(empresaActual);
 		servicioAuditLog.registrarEvento(
@@ -159,6 +162,27 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		);
 		return guardada;
 	}
+	@Override
+	public Empresa actualizarContacto(Long id, String correoElectronico, String telefono, String identificadorIngreso) {
+		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+			Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
+			if (!empresaId.equals(id)) {
+				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
+			}
+		}
+		Empresa empresa = obtenerPorIdInterno(id);
+		empresa.actualizarDatosContacto(correoElectronico, telefono);
+		Empresa guardada = repositorioEmpresa.save(empresa);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "ACTUALIZACION_CONTACTO_EMPRESA", "Empresa",
+			guardada.getCuit(), null,
+			"correo=" + correoElectronico + " | telefono=" + telefono,
+			UtilRed.obtenerIpActual()
+		);
+		return guardada;
+	}
+
 	@Override
 	public void asignarRubroInicial(Long empresaId, Long rubroId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
@@ -237,6 +261,18 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			.toList();
 
 		Rubro rubro = empresa.getRubro();
+		RespuestaEmpresaDetalleAdmin.ServiciosResumen serviciosResumen = null;
+		if (tieneHabilitacionServiciosPostRadicacion(empresaId)) {
+			DatosServiciosPostRadicacion datos = leerDatosServiciosPostRadicacion(empresa);
+			serviciosResumen = new RespuestaEmpresaDetalleAdmin.ServiciosResumen(
+				datos.solicitaAguaCruda(),
+				datos.consumoAguaCrudaM3(),
+				datos.consumoLuzKwh(),
+				datos.consumoGasM3(),
+				datos.consumoInternetMbps(),
+				datos.consumosAdicionales()
+			);
+		}
 		return new RespuestaEmpresaDetalleAdmin(
 			empresa.getId(),
 			empresa.getNombre(),
@@ -253,9 +289,13 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			estadoExpediente,
 			Optional.ofNullable(rubro).map(Rubro::getId).orElse(null),
 			Optional.ofNullable(rubro).map(Rubro::getNombre).orElse(null),
+			empresa.getReferente(),
+			empresa.getIngresosBrutos(),
+			empresa.getCantidadEmpleados(),
 			usuariosAsociados,
 			vehiculos,
-			lotes
+			lotes,
+			serviciosResumen
 		);
 	}
 

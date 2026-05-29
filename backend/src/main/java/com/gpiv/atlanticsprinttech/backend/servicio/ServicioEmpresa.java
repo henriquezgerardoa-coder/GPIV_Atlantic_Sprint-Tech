@@ -13,6 +13,7 @@ public interface ServicioEmpresa {
 	Empresa obtenerPorId(Long id, String identificadorIngreso);
 	Empresa crear(Empresa empresa, String identificadorIngreso);
 	Empresa actualizar(Long id, Empresa empresa, String identificadorIngreso);
+	Empresa actualizarContacto(Long id, String correoElectronico, String telefono, String identificadorIngreso);
 	void eliminar(Long id, String identificadorIngreso);
 	List<RespuestaEmpresaListadoAdmin> listarVistaAdmin(String identificadorIngreso);
 	RespuestaEmpresaDetalleAdmin obtenerDetalleVistaAdmin(Long empresaId, String identificadorIngreso);

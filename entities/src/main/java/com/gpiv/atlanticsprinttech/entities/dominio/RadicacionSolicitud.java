@@ -227,7 +227,8 @@ public class RadicacionSolicitud {
 		if (lote == null) return;
 		if (estado == EstadoRadicacion.APROBADA || estado == EstadoRadicacion.RADICADA) {
 			lote.actualizarAsignacion(EstadoAsignacionLote.ADJUDICADO, lote.getNumeroExpedienteReferencia());
-		} else if (estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA) {
+		} else if (estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA
+				|| estado == EstadoRadicacion.DESADJUDICACION) {
 			lote.actualizarAsignacion(EstadoAsignacionLote.DESADJUDICADO, lote.getNumeroExpedienteReferencia());
 		}
 	}

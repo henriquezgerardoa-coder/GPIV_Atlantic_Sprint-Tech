@@ -9,6 +9,12 @@ public record RespuestaRadicacion(
     String numeroRadicado,
     Long empresaId,
     String nombreEmpresa,
+    String razonSocialEmpresa,
+    String cuitEmpresa,
+    String actividadEconomicaEmpresa,
+    String direccionEmpresa,
+    String correoElectronicoEmpresa,
+    String telefonoEmpresa,
     String tipoSolicitud,
     String descripcion,
     String usoEstimativo,
@@ -25,6 +31,8 @@ public record RespuestaRadicacion(
     String codigoLote,
     Integer superficieSolicitadaM2,
     String numeroResolucion,
-    String resueltoPor
+    String resueltoPor,
+    Long proyectoId,
+    String proyectoEstado
 ) {
 }

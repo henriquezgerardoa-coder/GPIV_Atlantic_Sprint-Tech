@@ -43,6 +43,8 @@ public interface RepositorioProyectoProductivo extends JpaRepository<ProyectoPro
 
     boolean existsBySolicitudOrigenId(Long solicitudId);
 
+    Optional<ProyectoProductivo> findBySolicitudOrigenId(Long solicitudId);
+
     long countByEstadoNotIn(List<EstadoProyecto> estados);
 
     @Query("""

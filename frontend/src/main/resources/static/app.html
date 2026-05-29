@@ -388,6 +388,7 @@
                                     <option value="RECHAZADA">Rechazada</option>
                                     <option value="REQUIERE_INFORMACION_ADICIONAL">Requiere información adicional</option>
                                     <option value="CANCELADA">Cancelada</option>
+                                    <option value="DESADJUDICACION">Desadjudicación</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -411,6 +412,7 @@
                                 <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="RECHAZADA"><span class="form-check-label ms-1">Rechazada</span></label>
                                 <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="REQUIERE_INFORMACION_ADICIONAL"><span class="form-check-label ms-1">Requiere información adicional</span></label>
                                 <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="APROBADA"><span class="form-check-label ms-1">Aprobada</span></label>
+                                <label class="form-check form-check-inline m-0"><input class="form-check-input filtro-estado-rad-multi" type="checkbox" value="DESADJUDICACION"><span class="form-check-label ms-1">Desadjudicación</span></label>
                             </div>
                         </div>
                         </div><!-- /#bloqueFiltrosListadoRad -->
@@ -452,6 +454,7 @@
                                     <option value="RECHAZADA">Rechazada</option>
                                     <option value="REQUIERE_INFORMACION_ADICIONAL">Requiere información adicional</option>
                                     <option value="CANCELADA">Cancelada</option>
+                                    <option value="DESADJUDICACION">Desadjudicación</option>
                                 </select>
                                 <button id="btnUltimos10HistorialRad" type="button" class="btn btn-outline-secondary btn-sm">Últimos 10</button>
                             </div>
@@ -680,7 +683,7 @@
                 <div class="card border-start border-4 border-danger h-100">
                     <div class="card-body">
                         <div class="fs-3 fw-bold text-danger" id="statInfoRechazadas">–</div>
-                        <div class="text-muted small">Rechazadas</div>
+                        <div class="text-muted small">Rechazadas / Canceladas</div>
                     </div>
                 </div>
             </div>
@@ -915,9 +918,17 @@
                             <span class="fw-semibold">CUIT:</span>
                             <span id="empCuitPropio">-</span>
                         </div>
+                        <div class="col-md-3">
+                            <span class="fw-semibold">Estado:</span>
+                            <span id="empStatusPropio">-</span>
+                        </div>
                         <div class="col-md-6">
                             <span class="fw-semibold">Actividad económica:</span>
                             <span id="empActividadPropia">-</span>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="fw-semibold">Fecha de registro:</span>
+                            <span id="empFechaRegistroPropio">-</span>
                         </div>
                         <div class="col-md-6 d-flex align-items-center gap-2 flex-wrap">
                             <span class="fw-semibold">Rubro:</span>
@@ -943,6 +954,18 @@
                             <span class="fw-semibold">Teléfono:</span>
                             <span id="empTelefonoPropio">-</span>
                         </div>
+                        <div class="col-md-6">
+                            <span class="fw-semibold">Referente:</span>
+                            <span id="empReferentePropio">-</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="fw-semibold">Ingresos Brutos:</span>
+                            <span id="empIngresosBrutosPropio">-</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="fw-semibold">Empleados activos:</span>
+                            <span id="empCantidadEmpleadosActivosPropio">-</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -951,7 +974,7 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="text-muted small mb-1">Empleados registrados</div>
+                                <div class="text-muted small mb-1">Empleados para registrar</div>
                                 <div class="fs-4 fw-bold" id="empCantidadEmpleados">0</div>
                             </div>
                             <button class="btn btn-outline-primary btn-sm" onclick="ModuloEmpresas.abrirAgregarEmpleados()">
@@ -1204,7 +1227,7 @@
                         <div class="card-body py-3">
                             <i class="bi bi-people-fill text-primary fs-3 mb-1 d-block"></i>
                             <div class="fs-4 fw-bold" id="statCensoPersonal">—</div>
-                            <small class="text-muted">Personal registrado</small>
+                            <small class="text-muted">Personal para registrar</small>
                         </div>
                     </div>
                 </div>
@@ -1226,9 +1249,9 @@
                         <i class="bi bi-calendar-check me-1"></i>Declaraciones
                     </button>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item d-none" id="tabPersonalCenso">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#panelCensoPersonal">
-                        <i class="bi bi-person-badge me-1"></i>Personal registrado
+                        <i class="bi bi-person-lines-fill me-1"></i>Personal registrado
                     </button>
                 </li>
                 <li class="nav-item">
@@ -1287,7 +1310,6 @@
                                             <th class="ps-3">Período</th>
                                             <th>Fecha declaración</th>
                                             <th>Registrados</th>
-                                            <th>No registrados</th>
                                             <th>Total</th>
                                             <th>Observación</th>
                                         </tr>
@@ -1496,7 +1518,7 @@
     <section id="seccion-dashboard" class="seccion-contenido d-none">
         <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
             <div>
-                <h4 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard gerencial</h4>
+                <h4 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Dashboard Gerencial</h4>
                 <p class="text-muted small mb-0">
                     Indicadores clave del Parque Industrial ENREPAVI ·
                     <span id="fechaActualizacionDashboard" class="text-muted"></span>
@@ -1523,7 +1545,7 @@
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-header bg-white border-bottom fw-semibold small">
-                            <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Distribución por rubro
+                            <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Distribución por Rubro
                         </div>
                         <div class="card-body d-flex align-items-center justify-content-center" style="height:280px">
                             <canvas id="graficoRubroDashboard"></canvas>
@@ -1533,7 +1555,7 @@
                 <div class="col-md-6">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-header bg-white border-bottom fw-semibold small">
-                            <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Ocupación por zona
+                            <i class="bi bi-bar-chart-fill me-2 text-primary"></i>Ocupación por Zona
                         </div>
                         <div class="card-body d-flex align-items-center justify-content-center" style="height:280px">
                             <canvas id="graficoZonaDashboard"></canvas>
@@ -1545,7 +1567,7 @@
             <!-- Tabla de zonas -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-bottom fw-semibold small">
-                    <i class="bi bi-table me-2 text-primary"></i>Resumen por zona
+                    <i class="bi bi-table me-2 text-primary"></i>Resumen por Zona
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -1553,7 +1575,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th class="ps-3">Zona</th>
-                                    <th class="text-end">Total lotes</th>
+                                    <th class="text-end">Total Lotes</th>
                                     <th class="text-end">Ocupados</th>
                                     <th class="text-end">Libres</th>
                                     <th class="text-end">Superficie</th>
@@ -1753,12 +1775,12 @@
     <section id="seccion-proyectos" class="seccion-contenido d-none">
         <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
-                <h4 class="fw-bold mb-1"><i class="bi bi-building-gear text-primary me-2"></i>Proyectos productivos</h4>
-                <p class="text-muted small mb-0">Seguimiento de hitos de obra y alertas de incumplimiento</p>
+                <h4 class="fw-bold mb-1"><i class="bi bi-building-gear text-primary me-2"></i>Proyectos Productivos</h4>
+                <p class="text-muted small mb-0">Seguimiento de Hitos de Obra y Alertas de Incumplimiento</p>
             </div>
             <button id="btnNuevoProyecto" class="btn btn-primary d-none"
                     onclick="ModuloProyectos.abrirCreacion()">
-                <i class="bi bi-plus-lg me-1"></i>Nuevo proyecto
+                <i class="bi bi-plus-lg me-1"></i>Nuevo Proyecto
             </button>
         </div>
 
@@ -1827,7 +1849,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <div>
-                        <h5 class="modal-title fw-bold" id="tituloModalHitos">Hitos del proyecto</h5>
+                        <h5 class="modal-title fw-bold" id="tituloModalHitos">Hitos del Proyecto</h5>
                         <p class="text-muted small mb-0" id="subtituloModalHitos"></p>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -1843,7 +1865,7 @@
 
                     <!-- Formulario nuevo hito (solo TECNICO) -->
                     <div id="bloqueFormNuevoHito" class="border-top pt-3 d-none">
-                        <h6 class="fw-semibold mb-2"><i class="bi bi-plus-lg me-1 text-primary"></i>Agregar hito</h6>
+                        <h6 class="fw-semibold mb-2"><i class="bi bi-plus-lg me-1 text-primary"></i>Agregar Hito</h6>
                         <form id="formNuevoHito">
                             <div class="row g-2">
                                 <div class="col-md-7">
@@ -1876,12 +1898,12 @@
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Cambiar estado</h5>
+                    <h5 class="modal-title fw-bold">Cambiar Estado</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div id="alertaModalEstado" class="alert alert-danger d-none alerta-modal small"></div>
-                    <label for="selectorEstadoProyecto" class="form-label small fw-semibold">Nuevo estado</label>
+                    <label for="selectorEstadoProyecto" class="form-label small fw-semibold">Nuevo Estado</label>
                     <select id="selectorEstadoProyecto" class="form-select">
                         <option value="INICIADO">Iniciado</option>
                         <option value="EN_EJECUCION">En ejecución</option>
@@ -1903,7 +1925,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Nuevo proyecto productivo</h5>
+                    <h5 class="modal-title fw-bold">Nuevo Proyecto Productivo</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -1911,7 +1933,7 @@
                     <form id="formNuevoProyecto">
                         <div class="row g-3">
                             <div class="col-md-8">
-                                <label for="campoNombreProyecto" class="form-label small fw-semibold">Nombre del proyecto</label>
+                                <label for="campoNombreProyecto" class="form-label small fw-semibold">Nombre del Proyecto</label>
                                 <input type="text" id="campoNombreProyecto" class="form-control"
                                        maxlength="160" placeholder="Ej: Construcción nave industrial A">
                             </div>
@@ -1940,7 +1962,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="ModuloProyectos.guardarNuevoProyecto()">Crear proyecto</button>
+                    <button type="button" class="btn btn-primary" onclick="ModuloProyectos.guardarNuevoProyecto()">Crear Proyecto</button>
                 </div>
             </div>
         </div>
@@ -1951,7 +1973,7 @@
         <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h4 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Usuarios</h4>
-                <p class="text-muted small mb-0">Administración de cuentas y permisos</p>
+                <p class="text-muted small mb-0">Administración de Cuentas y Permisos</p>
             </div>
             <button class="btn btn-primary" onclick="ModuloUsuarios.abrirCreacion()">
                 <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
@@ -2051,6 +2073,20 @@
                         <label for="campoTelefonoEmpresa" class="form-label fw-semibold">Teléfono</label>
                         <input type="text" class="form-control" id="campoTelefonoEmpresa" placeholder="Ej: 2990000000" maxlength="40">
                     </div>
+                    <div class="mb-3">
+                        <label for="campoReferenteEmpresa" class="form-label fw-semibold">Referente</label>
+                        <input type="text" class="form-control" id="campoReferenteEmpresa" placeholder="Nombre del referente de contacto" maxlength="120">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="campoIngresosBrutosEmpresa" class="form-label fw-semibold">Ingresos Brutos</label>
+                            <input type="text" class="form-control" id="campoIngresosBrutosEmpresa" placeholder="Nro. de inscripción IIBB" maxlength="30">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="campoCantidadEmpleadosEmpresa" class="form-label fw-semibold">Cantidad empleados activos</label>
+                            <input type="number" class="form-control" id="campoCantidadEmpleadosEmpresa" placeholder="0" min="0">
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -2090,6 +2126,9 @@
                         <div class="col-md-6"><strong>Actividad económica:</strong> <span id="detEmpresaActividad">-</span></div>
                         <div class="col-md-6"><strong>Rubro:</strong> <span id="detEmpresaRubro">-</span></div>
                         <div class="col-md-6"><strong>Estado expediente:</strong> <span id="detEmpresaEstado">-</span></div>
+                        <div class="col-md-6"><strong>Referente:</strong> <span id="detEmpresaReferente">-</span></div>
+                        <div class="col-md-6"><strong>Ingresos Brutos:</strong> <span id="detEmpresaIngresosBrutos">-</span></div>
+                        <div class="col-md-6"><strong>Empleados activos:</strong> <span id="detEmpresaCantidadEmpleadosActivos">-</span></div>
                     </div>
 
                     <h6 class="text-muted">Usuarios asociados</h6>
@@ -2109,7 +2148,7 @@
                     </div>
 
                     <h6 class="text-muted">Listado de vehículos</h6>
-                    <div class="table-responsive">
+                    <div class="table-responsive mb-3">
                         <table class="table table-sm">
                             <thead>
                                 <tr>
@@ -2123,9 +2162,18 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div id="seccionServiciosDetalleAdmin" class="d-none">
+                        <h6 class="text-muted">Servicios post-radicación</h6>
+                        <div id="contenidoServiciosDetalleAdmin" class="mb-3"></div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary d-none" id="btnEditarDesdeDetalleEmpresaAdmin"
+                        onclick="ModuloEmpresas.editarDesdeDetalleAdmin()">
+                    <i class="bi bi-pencil me-1"></i>Editar datos
+                </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
@@ -2148,7 +2196,7 @@
                         <div class="col-md-4"><strong>N° expediente:</strong> <span id="detRadNumero">-</span></div>
                         <div class="col-md-4"><strong>Solicitante:</strong> <span id="detRadSolicitante">-</span></div>
                         <div class="col-md-4"><strong>Tipo trámite:</strong> <span id="detRadTipo">-</span></div>
-                        <div class="col-md-4"><strong>Estado actual:</strong> <span id="detRadEstado">-</span></div>
+                        <div class="col-md-4"><strong>Estado:</strong> <span id="detRadEstado">-</span></div>
                         <div class="col-md-4"><strong>Fecha creación:</strong> <span id="detRadFechaCreacion">-</span></div>
                         <div class="col-md-4"><strong>Última modificación:</strong> <span id="detRadFechaModificacion">-</span></div>
                         <div class="col-md-4 d-none" id="wrapperDetRadFechaAprobacion"><strong>Fecha de aprobación:</strong> <span id="detRadFechaAprobacion">-</span></div>
@@ -2164,7 +2212,7 @@
                     <div class="card border-0 border-top mb-3 pt-2">
                         <div class="row g-2 small">
                             <div class="col-md-8">
-                                <span class="text-muted">Uso estimativo:</span>
+                                <span class="text-muted">Uso del lote:</span>
                                 <span class="ms-1 fw-semibold" id="detRadUsoEstimativo">-</span>
                             </div>
                             <div class="col-md-4">
@@ -2193,8 +2241,12 @@
                                         <span class="fw-semibold ms-1" id="detRadLoteCodigo">-</span>
                                     </div>
                                     <div class="col-md-4">
-                                        <span class="text-muted small">Superficie:</span>
+                                        <span class="text-muted small">Superficie del lote:</span>
                                         <span class="fw-semibold ms-1" id="detRadLoteSuperficie">-</span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="text-muted small">Superficie solicitada:</span>
+                                        <span class="fw-semibold ms-1" id="detRadSupSolicitadaEnLote">-</span>
                                     </div>
                                 </div>
                             </div>
@@ -2211,9 +2263,9 @@
                                     <div id="alertaAsignacionLoteRad" class="alert alert-danger d-none mb-2"></div>
                                     <div class="row g-2 align-items-end">
                                         <div class="col-md-8">
-                                            <label for="selectorLoteDisponibleRad" class="form-label small">Lote disponible</label>
+                                            <label for="selectorLoteDisponibleRad" class="form-label small">Lote Disponible</label>
                                             <select id="selectorLoteDisponibleRad" class="form-select form-select-sm">
-                                                <option value="">Seleccionar lote...</option>
+                                                <option value="">Seleccionar Lote...</option>
                                             </select>
                                         </div>
                                         <div class="col-md-4">
@@ -2285,7 +2337,7 @@
                                 <div class="col-md-3 d-grid">
                                     <button type="button" class="btn btn-outline-secondary btn-sm"
                                             onclick="ModuloRadicaciones.registrarObservacion()">
-                                        <i class="bi bi-save me-1"></i>Guardar nota
+                                        <i class="bi bi-save me-1"></i>Guardar Nota
                                     </button>
                                 </div>
                             </div>
@@ -2592,8 +2644,8 @@
                             <input id="campoTipoSolicitudRad" class="form-control" maxlength="80" required value="PEDIDO_LOTES">
                         </div>
                         <div class="col-md-8">
-                            <label for="campoUsoEstimativoRad" class="form-label fw-semibold">Uso estimativo del servicio</label>
-                            <input id="campoUsoEstimativoRad" class="form-control" maxlength="120" placeholder="Ej: 350 m3/mes de agua">
+                            <label for="campoUsoEstimativoRad" class="form-label fw-semibold">Destino del Lote</label>
+                            <input id="campoUsoEstimativoRad" class="form-control" maxlength="120" placeholder="Ej: Depósito">
                         </div>
                         <div class="col-12">
                             <label for="campoDescripcionRad" class="form-label fw-semibold">Descripción</label>
@@ -2612,26 +2664,10 @@
 
                     <div id="bloqueRelevamientoPedidoLotes" class="border rounded p-3 bg-light-subtle">
                         <h6 class="text-muted mb-3">Relevamiento de pedido de lotes</h6>
+                        <p class="small text-muted mb-2">Los datos de la empresa (razón social, CUIT, actividad económica, dirección, correo y teléfono) se toman automáticamente del perfil de la empresa registrada en el sistema.</p>
                         <div class="row g-2">
-                            <div class="col-md-6"><label for="relCorreo" class="form-label small">Correo</label><input id="relCorreo" class="form-control form-control-sm" type="email"></div>
-                            <div class="col-md-6"><label for="relRazonSocial" class="form-label small">Razón social</label><input id="relRazonSocial" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relCuit" class="form-label small">CUIT</label><input id="relCuit" class="form-control form-control-sm" placeholder="20123456789"></div>
-                            <div class="col-md-6"><label for="relIngresosBrutos" class="form-label small">Ingresos Brutos</label><input id="relIngresosBrutos" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relActividadPrincipal" class="form-label small">Actividad principal</label><input id="relActividadPrincipal" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relActividadSecundaria" class="form-label small">Actividad secundaria</label><input id="relActividadSecundaria" class="form-control form-control-sm"></div>
                             <div class="col-md-6"><label for="relTipoEmpresa" class="form-label small">Empresa</label><select id="relTipoEmpresa" class="form-select form-select-sm"><option value="NUEVA">Nueva</option><option value="EXISTENTE">Existente</option></select></div>
                             <div class="col-md-6"><label for="relObjetoProyecto" class="form-label small">Objeto del proyecto (si es existente)</label><select id="relObjetoProyecto" class="form-select form-select-sm"><option value="">Seleccione</option><option value="TRASLADO_TOTAL_PARCIAL">Traslado total o parcial</option><option value="NUEVOS_PRODUCTOS">Elaborar nuevos productos</option><option value="INCREMENTAR_PRODUCCION">Incrementar producción total</option></select></div>
-                            <div class="col-md-6"><label for="relDireccion" class="form-label small">Dirección</label><input id="relDireccion" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relPersonaReferente" class="form-label small">Persona referente</label><input id="relPersonaReferente" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relTelefono" class="form-label small">Teléfono</label><input id="relTelefono" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relCorreoElectronico" class="form-label small">Correo electrónico de contacto</label><input id="relCorreoElectronico" type="email" class="form-control form-control-sm"></div>
-                            <div class="col-md-6"><label for="relRubro" class="form-label small">Rubro</label><select id="relRubro" class="form-select form-select-sm" onchange="ModuloRadicaciones.toggleRubroOtros()"><option value="">Seleccionar rubro...</option></select></div>
-                            <div class="col-md-6 d-none" id="bloqueRelRubroOtro"><label for="relRubroOtro" class="form-label small">¿Cuál? <span class="text-danger">*</span></label><input id="relRubroOtro" class="form-control form-control-sm" maxlength="300" placeholder="Describa el rubro específico..."></div>
-                            <div class="col-12"><label for="relDescripcionServicio" class="form-label small">Descripción del servicio o bien ofrecido</label><textarea id="relDescripcionServicio" rows="2" class="form-control form-control-sm"></textarea></div>
-                            <div class="col-md-6"><label for="relEmplazamiento" class="form-label small">Emplazamiento actual</label><select id="relEmplazamiento" class="form-select form-select-sm"><option value="PROPIO">Propio</option><option value="ALQUILADO">Alquilado</option></select></div>
-                            <div class="col-md-2"><label for="relPersonalJerarquico" class="form-label small">Personal jerárquico</label><input id="relPersonalJerarquico" type="number" min="0" class="form-control form-control-sm" value="0"></div>
-                            <div class="col-md-2"><label for="relPersonalProduccion" class="form-label small">Personal producción</label><input id="relPersonalProduccion" type="number" min="0" class="form-control form-control-sm" value="0"></div>
-                            <div class="col-md-2"><label for="relPersonalAdministrativo" class="form-label small">Personal administrativo</label><input id="relPersonalAdministrativo" type="number" min="0" class="form-control form-control-sm" value="0"></div>
                             <div class="col-md-4"><label for="relTiempoRadicacion" class="form-label small">Tiempo de radicación</label><select id="relTiempoRadicacion" class="form-select form-select-sm"><option value="6">6 meses</option><option value="12">12 meses</option><option value="24">24 meses</option><option value="36">36 o más</option></select></div>
                             <div class="col-md-4"><label for="relNecesidadM2" class="form-label small">Necesidad de m²</label><select id="relNecesidadM2" class="form-select form-select-sm"><option value="1200">1200</option><option value="1800">1800</option><option value="2500">2500</option><option value="3300">3300</option><option value="5000">5000</option><option value="6000">6000</option></select></div>
                             <div class="col-md-4"><label for="relPersonalAOcupar" class="form-label small">Personal a ocupar</label><input id="relPersonalAOcupar" type="number" min="0" class="form-control form-control-sm" value="0"></div>
@@ -2648,9 +2684,9 @@
                             <div class="col-md-4"><label for="relBalanzaPublica" class="form-label small">Necesidad balanza pública</label><select id="relBalanzaPublica" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
                             <div class="col-md-4"><label for="relComedorUnitario" class="form-label small">Necesidad comedor unitario</label><select id="relComedorUnitario" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
                             <div class="col-md-4"><label for="relSalonCoworking" class="form-label small">Necesidad SUM/coworking</label><select id="relSalonCoworking" class="form-select form-select-sm"><option value="true">Sí</option><option value="false">No</option></select></div>
-                            <div class="col-12"><label for="relMateriasPrimas" class="form-label small">Materias primas</label><textarea id="relMateriasPrimas" rows="2" class="form-control form-control-sm"></textarea></div>
-                            <div class="col-12"><label for="relDestinoProduccion" class="form-label small">Destino de la producción</label><textarea id="relDestinoProduccion" rows="2" class="form-control form-control-sm"></textarea></div>
-                            <div class="col-12"><label for="relTipoResiduos" class="form-label small">Residuos/Efluentes</label><textarea id="relTipoResiduos" rows="2" class="form-control form-control-sm"></textarea></div>
+                            <div class="col-12"><label for="relMateriasPrimas" class="form-label small">Materias primas: Indicar tipo y calidad de origen</label><textarea id="relMateriasPrimas" rows="2" class="form-control form-control-sm">No</textarea></div>
+                            <div class="col-12"><label for="relDestinoProduccion" class="form-label small">Destino de la producción</label><textarea id="relDestinoProduccion" rows="2" class="form-control form-control-sm">No</textarea></div>
+                            <div class="col-12"><label for="relTipoResiduos" class="form-label small">Residuos/Efluentes: Indicar que tipo de residuos emitirá la industria</label><textarea id="relTipoResiduos" rows="2" class="form-control form-control-sm">No</textarea></div>
                         </div>
                     </div>
 

@@ -75,7 +75,9 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         long enRevision  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.EN_REVISION.name(), 0L);
         long aprobadas   = radicacionesPorEstado.getOrDefault(EstadoRadicacion.APROBADA.name(), 0L)
             + radicacionesPorEstado.getOrDefault(EstadoRadicacion.RADICADA.name(), 0L);
-        long rechazadas  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.RECHAZADA.name(), 0L);
+        long rechazadas  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.RECHAZADA.name(), 0L)
+            + radicacionesPorEstado.getOrDefault(EstadoRadicacion.CANCELADA.name(), 0L)
+            + radicacionesPorEstado.getOrDefault(EstadoRadicacion.DESADJUDICACION.name(), 0L);
 
         return new RespuestaEstadisticas(
             totalEmpresas,

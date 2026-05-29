@@ -33,6 +33,8 @@ const ModuloCenso = (() => {
         document.getElementById('bloqueFormDeclaracion')?.classList.toggle('d-none', _soloLectura);
         document.getElementById('bloqueFormPersonal')?.classList.toggle('d-none', _soloLectura);
         document.getElementById('bloqueFormVehiculo')?.classList.toggle('d-none', _soloLectura);
+        // El tab de personal solo es accesible para EMPRESA; gestores solo ven el conteo en el resumen
+        document.getElementById('tabPersonalCenso')?.classList.toggle('d-none', _esGestor);
         const cabeceraPersonal = document.getElementById('cabeceraTablaPersonal');
         if (cabeceraPersonal) {
             cabeceraPersonal.querySelector('th:last-child')?.classList.toggle('d-none', _soloLectura);

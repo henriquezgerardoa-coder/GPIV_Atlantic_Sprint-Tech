@@ -93,12 +93,14 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public ProyectoProductivo actualizarEstado(String identificadorIngreso, Long proyectoId, String estado) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolAdministrador(usuario) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
+        if (!servicioContextoUsuario.esRolAdministrador(usuario)
+                && !usuario.tieneRol(RolUsuario.SECRETARIO)
+                && !servicioContextoUsuario.esRolTecnico(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o SECRETARIO pueden modificar el estado del proyecto");
+                "Solo ADMINISTRADOR, SECRETARIO o TECNICO pueden modificar el estado del proyecto");
         }
 
-        ProyectoProductivo proyecto = repositorioProyecto.findById(proyectoId)
+        ProyectoProductivo proyecto = repositorioProyecto.findByIdConDetalle(proyectoId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
 
         EstadoProyecto nuevoEstado;

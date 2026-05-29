@@ -41,6 +41,10 @@ public class Empresa {
 	private String status;
 	@Column(name = "cantidad_empleados")
 	private Integer cantidadEmpleados;
+	@Column(name = "referente", length = 120)
+	private String referente;
+	@Column(name = "ingresos_brutos", length = 30)
+	private String ingresosBrutos;
 	@Column(name = "vehiculos_asignados_json", length = 12000)
 	private String vehiculosAsignadosJson;
 	@Column(name = "servicios_post_radicacion_json", length = 20000)
@@ -85,17 +89,27 @@ public class Empresa {
 		String correoElectronico,
 		String telefono
 	) {
-		return new Empresa(
-			nombre,
-			razonSocial,
-			cuit,
-			direccion,
-			actividadEconomica,
-			correoElectronico,
-			telefono,
-			0,
-			null
-		);
+		return crear(nombre, razonSocial, cuit, direccion, actividadEconomica,
+			correoElectronico, telefono, null, null, null);
+	}
+
+	public static Empresa crear(
+		String nombre,
+		String razonSocial,
+		String cuit,
+		String direccion,
+		String actividadEconomica,
+		String correoElectronico,
+		String telefono,
+		Integer cantidadEmpleados,
+		String referente,
+		String ingresosBrutos
+	) {
+		Empresa e = new Empresa(nombre, razonSocial, cuit, direccion, actividadEconomica,
+			correoElectronico, telefono, cantidadEmpleados != null ? cantidadEmpleados : 0, null);
+		e.referente = referente;
+		e.ingresosBrutos = ingresosBrutos;
+		return e;
 	}
 
 	public static Empresa crear(String nombre, String cuit, String correoElectronico) {
@@ -143,6 +157,14 @@ public class Empresa {
 		return cantidadEmpleados;
 	}
 
+	public String getReferente() {
+		return referente;
+	}
+
+	public String getIngresosBrutos() {
+		return ingresosBrutos;
+	}
+
 	public String getVehiculosAsignadosJson() {
 		return vehiculosAsignadosJson;
 	}
@@ -176,7 +198,10 @@ public class Empresa {
 		String direccion,
 		String actividadEconomica,
 		String correoElectronico,
-		String telefono
+		String telefono,
+		String referente,
+		String ingresosBrutos,
+		Integer cantidadEmpleados
 	) {
 		this.nombre = nombre;
 		this.razonSocial = razonSocial;
@@ -185,10 +210,14 @@ public class Empresa {
 		this.actividadEconomica = actividadEconomica;
 		this.correoElectronico = correoElectronico;
 		this.telefono = telefono;
+		this.referente = referente;
+		this.ingresosBrutos = ingresosBrutos;
+		if (cantidadEmpleados != null) this.cantidadEmpleados = cantidadEmpleados;
 	}
 
 	public void actualizarDatos(String nombre, String cuit, String correoElectronico) {
-		actualizarDatos(nombre, nombre, cuit, this.direccion, this.actividadEconomica, correoElectronico, this.telefono);
+		actualizarDatos(nombre, nombre, cuit, this.direccion, this.actividadEconomica,
+			correoElectronico, this.telefono, this.referente, this.ingresosBrutos, this.cantidadEmpleados);
 	}
 
 	public void asignarRubro(Rubro rubro) {

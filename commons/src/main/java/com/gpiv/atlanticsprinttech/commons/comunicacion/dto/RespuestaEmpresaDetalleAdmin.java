@@ -20,9 +20,13 @@ public record RespuestaEmpresaDetalleAdmin(
     String estadoExpediente,
     Long rubroId,
     String rubroNombre,
+    String referente,
+    String ingresosBrutos,
+    Integer cantidadEmpleados,
     List<RespuestaUsuarioEmpresaAdmin> usuariosAsociados,
     List<RespuestaVehiculoEmpresa> vehiculos,
-    List<LoteResumen> lotes
+    List<LoteResumen> lotes,
+    ServiciosResumen serviciosPostRadicacion
 ) {
     public record LoteResumen(
         Long id,
@@ -32,5 +36,14 @@ public record RespuestaEmpresaDetalleAdmin(
         String estadoAsignacion,
         LocalDate fechaAsignacion,
         String numeroExpedienteReferencia
+    ) {}
+
+    public record ServiciosResumen(
+        Boolean solicitaAguaCruda,
+        Double consumoAguaCrudaM3,
+        Double consumoLuzKwh,
+        Double consumoGasM3,
+        Double consumoInternetMbps,
+        List<RespuestaConsumoServicioPostRadicacion> consumosAdicionales
     ) {}
 }
