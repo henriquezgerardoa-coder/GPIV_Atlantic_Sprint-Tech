@@ -264,19 +264,20 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         if (comentario != null && !comentario.isBlank()) {
             cuerpo += "\n\nObservación: " + comentario;
         }
-        // Empresa
+        // Siempre notificar a la empresa que realizó la solicitud
         List<Usuario> usuariosEmpresa = repositorioUsuario.findByEmpresa_IdOrderByIdAsc(radicacion.getEmpresa().getId());
         for (Usuario dest : usuariosEmpresa) {
             if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
                 enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);
             }
         }
-        // Gestores (ADMIN y SECRETARIO)
-        List<Usuario> gestores = repositorioUsuario.findActivosConRolesGestion(
-            Set.of(RolUsuario.ADMINISTRADOR, RolUsuario.SECRETARIO));
-        for (Usuario dest : gestores) {
-            if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
-                enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);
+        // Al radicar se inicia el proyecto productivo: notificar también a los técnicos
+        if (estadoNuevo == EstadoRadicacion.RADICADA) {
+            List<Usuario> tecnicos = repositorioUsuario.findActivosConRolesGestion(Set.of(RolUsuario.TECNICO));
+            for (Usuario dest : tecnicos) {
+                if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
+                    enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);
+                }
             }
         }
     }
