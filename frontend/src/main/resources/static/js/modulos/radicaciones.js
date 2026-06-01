@@ -71,18 +71,30 @@ const ModuloRadicaciones = (() => {
         badge.textContent = `${total} expediente${total !== 1 ? 's' : ''}`;
     }
 
+    function filtrarTexto() {
+        renderizarTabla();
+    }
+
     function renderizarTabla() {
         const cuerpo = document.getElementById('cuerpoTablaRadicaciones');
         if (!cuerpo) return;
 
-        if (radicaciones.length === 0) {
+        const textoBusq = (document.getElementById('filtroBusquedaRad')?.value || '').trim().toLowerCase();
+        const lista = textoBusq
+            ? radicaciones.filter(r =>
+                (r.nombreEmpresa || r.razonSocialEmpresa || '').toLowerCase().includes(textoBusq) ||
+                (r.numeroRadicado || '').toLowerCase().includes(textoBusq) ||
+                (r.cuitEmpresa || '').toLowerCase().includes(textoBusq))
+            : radicaciones;
+
+        if (lista.length === 0) {
             cuerpo.innerHTML = '<tr><td colspan="8" class="text-center py-3 text-muted">Sin registros</td></tr>';
             return;
         }
 
         const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']) && !Autenticacion.tieneAcceso(['EMPRESA']);
         const esEmpresa = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
-        cuerpo.innerHTML = radicaciones.map(r => `
+        cuerpo.innerHTML = lista.map(r => `
             <tr role="button" title="Seleccionar expediente" onclick="ModuloRadicaciones.seleccionarExpediente(${r.id}, '${r.numeroRadicado}')">
                 <td class="ps-3 fw-semibold">${r.numeroRadicado}</td>
                 <td>${r.nombreEmpresa || r.razonSocialEmpresa || '-'}</td>
@@ -940,7 +952,7 @@ const ModuloRadicaciones = (() => {
         }
 
         mostrarAlerta('Lote reservado para la solicitud correctamente.');
-        await cargar();
+        cargar(); // actualiza la lista en segundo plano sin bloquear
         await verDetalleAdmin(radicacionDetalleAdmin.id);
     }
 
@@ -1579,7 +1591,7 @@ const ModuloRadicaciones = (() => {
     }
 
     return {
-        cargar,
+        cargar, filtrarTexto,
         crear,
         subirDocumento,
         cambiarEstado,

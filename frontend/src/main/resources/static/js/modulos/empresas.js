@@ -20,6 +20,7 @@ const ModuloEmpresas = (() => {
         consumoInternetMbps: null,
         consumosAdicionales: []
     };
+    let _serviciosInfraestructuraCache = null;
 
     // ─── Punto de entrada ───────────────────────────────────────────────────────
 
@@ -292,8 +293,9 @@ const ModuloEmpresas = (() => {
             const servicios = await respServ.json();
             vehiculosEmpresaPropia = servicios.vehiculos || [];
             empresaPropia._cantidadEmpleados = servicios.cantidadEmpleados ?? 0;
+            empresaPropia._zonaLote = servicios.zonaLote || null;
             detalleServiciosPostRadicacion = {
-                solicitaAguaCruda: servicios.solicitaAguaCruda === true,
+                solicitaAguaCruda: servicios.solicitaAguaCruda ?? null,
                 consumoAguaCrudaM3: servicios.consumoAguaCrudaM3 ?? null,
                 consumoLuzKwh: servicios.consumoLuzKwh ?? null,
                 consumoGasM3: servicios.consumoGasM3 ?? null,
@@ -304,8 +306,9 @@ const ModuloEmpresas = (() => {
             serviciosHabilitados = false;
             vehiculosEmpresaPropia = parsearVehiculosDesdeTexto(empresaPropia.vehiculosAsignadosJson || '');
             empresaPropia._cantidadEmpleados = empresaPropia.cantidadEmpleados ?? 0;
+            empresaPropia._zonaLote = null;
             detalleServiciosPostRadicacion = {
-                solicitaAguaCruda: false,
+                solicitaAguaCruda: null,
                 consumoAguaCrudaM3: null,
                 consumoLuzKwh: null,
                 consumoGasM3: null,
@@ -762,21 +765,110 @@ const ModuloEmpresas = (() => {
 
     // ─── Modal Servicios ─────────────────────────────────────────────────────────
 
-    function abrirServiciosModal() {
+    function _claveServicio(nombre) {
+        const n = (nombre || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        if (n.includes('agua')) return 'aguacruda';
+        if (n.includes('luz') || n.includes('electr') || n.includes('energ')) return 'luz';
+        if (n.includes('gas')) return 'gas';
+        if (n.includes('internet') || n.includes('conectiv')) return 'internet';
+        return null;
+    }
+
+    function _badgeEstadoServicioModal(estado) {
+        if (estado === 'OPERATIVO') return '<span class="badge bg-success ms-2">Operativo</span>';
+        if (estado === 'MANTENIMIENTO') return '<span class="badge bg-warning text-dark ms-2">En mantenimiento</span>';
+        if (estado === 'FALLA_CRITICA') return '<span class="badge bg-danger ms-2">Falla crítica</span>';
+        return '';
+    }
+
+    function _unidadServicio(clave) {
+        if (clave === 'aguacruda') return 'm³/mes';
+        if (clave === 'luz') return 'kWh/mes';
+        if (clave === 'gas') return 'm³/mes';
+        if (clave === 'internet') return 'Mbps';
+        return 'unidades';
+    }
+
+    function _renderizarServiciosDinamicos(contenedor, servicios) {
+        if (!servicios?.length) {
+            contenedor.innerHTML = '<p class="text-muted small">No hay servicios de infraestructura configurados.</p>';
+            return;
+        }
+        contenedor.innerHTML = servicios.map(s => {
+            const clave = _claveServicio(s.nombre);
+            const disponible = s.estadoActual === 'OPERATIVO';
+            const disAttr = disponible ? '' : 'disabled';
+            const idCheck = `campoServicio_check_${s.id}`;
+            const idConsumo = `campoServicio_consumo_${s.id}`;
+            const unidad = _unidadServicio(clave);
+            return `
+                <div class="border rounded p-3 mb-2${disponible ? '' : ' bg-light opacity-75'}">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="form-check mb-0 me-2">
+                            <input class="form-check-input" type="checkbox" id="${idCheck}" ${disAttr}>
+                            <label class="form-check-label fw-semibold" for="${idCheck}">${s.nombre}</label>
+                        </div>
+                        ${_badgeEstadoServicioModal(s.estadoActual)}
+                    </div>
+                    ${s.descripcionTecnica ? `<p class="text-muted small mb-2">${s.descripcionTecnica}</p>` : ''}
+                    <div class="row g-2">
+                        <div class="col-md-7">
+                            <label class="form-label small mb-1" for="${idConsumo}">Consumo estimado (${unidad})</label>
+                            <div class="input-group input-group-sm">
+                                <input id="${idConsumo}" type="number" min="0" step="0.01" class="form-control"
+                                       placeholder="0.00" ${disAttr}>
+                                <span class="input-group-text">${unidad}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function _poblarCamposServiciosDinamicos(servicios) {
+        const datos = detalleServiciosPostRadicacion || {};
+        (servicios || []).forEach(s => {
+            const clave = _claveServicio(s.nombre);
+            const check = document.getElementById(`campoServicio_check_${s.id}`);
+            const consumo = document.getElementById(`campoServicio_consumo_${s.id}`);
+            if (!check) return;
+            if (clave === 'aguacruda') {
+                check.checked = datos.solicitaAguaCruda === true || datos.solicitaAguaCruda == null;
+                if (consumo) consumo.value = datos.consumoAguaCrudaM3 ?? '';
+            } else if (clave === 'luz') {
+                check.checked = datos.consumoLuzKwh != null;
+                if (consumo) consumo.value = datos.consumoLuzKwh ?? '';
+            } else if (clave === 'gas') {
+                check.checked = datos.consumoGasM3 != null;
+                if (consumo) consumo.value = datos.consumoGasM3 ?? '';
+            } else if (clave === 'internet') {
+                check.checked = datos.consumoInternetMbps != null;
+                if (consumo) consumo.value = datos.consumoInternetMbps ?? '';
+            } else {
+                const adicional = (datos.consumosAdicionales || []).find(
+                    a => (a.nombre || '').toLowerCase() === (s.nombre || '').toLowerCase()
+                );
+                if (adicional) {
+                    check.checked = true;
+                    if (consumo) consumo.value = adicional.consumoEstimado ?? '';
+                }
+            }
+        });
+    }
+
+    async function abrirServiciosModal() {
         const modal = asegurarModalServicios();
         setTexto('servEmpresaNombreModal', empresaPropia?.nombre || '-');
-        const checkAguaCruda = document.getElementById('campoServSolicitaAguaCruda');
-        if (checkAguaCruda) checkAguaCruda.checked = detalleServiciosPostRadicacion.solicitaAguaCruda === true;
-        const campoAguaCruda = document.getElementById('campoServConsumoAguaCruda');
-        if (campoAguaCruda) campoAguaCruda.value = detalleServiciosPostRadicacion.consumoAguaCrudaM3 ?? '';
-        const campoLuz = document.getElementById('campoServConsumoLuz');
-        if (campoLuz) campoLuz.value = detalleServiciosPostRadicacion.consumoLuzKwh ?? '';
-        const campoGas = document.getElementById('campoServConsumoGas');
-        if (campoGas) campoGas.value = detalleServiciosPostRadicacion.consumoGasM3 ?? '';
-        const campoInternet = document.getElementById('campoServConsumoInternet');
-        if (campoInternet) campoInternet.value = detalleServiciosPostRadicacion.consumoInternetMbps ?? '';
-        const campoAdicionales = document.getElementById('campoServConsumosAdicionales');
-        if (campoAdicionales) campoAdicionales.value = serializarConsumosAdicionales(detalleServiciosPostRadicacion.consumosAdicionales || []);
+        const contenedor = document.getElementById('contenedorServiciosDinamicos');
+        if (contenedor) {
+            if (!_serviciosInfraestructuraCache) {
+                contenedor.innerHTML = '<div class="text-center text-muted small py-2"><div class="spinner-border spinner-border-sm me-2"></div>Cargando servicios…</div>';
+                const resp = await ApiCliente.obtener('/api/infraestructura');
+                _serviciosInfraestructuraCache = resp?.ok ? await resp.json() : [];
+            }
+            _renderizarServiciosDinamicos(contenedor, _serviciosInfraestructuraCache);
+            _poblarCamposServiciosDinamicos(_serviciosInfraestructuraCache);
+        }
         bootstrap.Modal.getOrCreateInstance(modal).show();
     }
 
@@ -795,33 +887,7 @@ const ModuloEmpresas = (() => {
                                 <div id="alertaServiciosEmpresaModal" class="alert alert-danger alerta-modal d-none"></div>
                                 <p class="text-muted small mb-3">Empresa: <strong id="servEmpresaNombreModal">-</strong></p>
                                 <hr>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="campoServSolicitaAguaCruda">
-                                    <label class="form-check-label" for="campoServSolicitaAguaCruda">Solicitar agua cruda</label>
-                                </div>
-                                <div class="row g-2 mb-2">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Consumo estimado de agua cruda (m3/mes)</label>
-                                        <input id="campoServConsumoAguaCruda" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 180.50">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Consumo estimado de luz (kWh/mes)</label>
-                                        <input id="campoServConsumoLuz" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 1200">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Consumo estimado de gas (m3/mes)</label>
-                                        <input id="campoServConsumoGas" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 320">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Consumo estimado de internet (Mbps)</label>
-                                        <input id="campoServConsumoInternet" type="number" min="0" step="0.01" class="form-control" placeholder="Ej: 200">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="form-label fw-semibold">Servicios adicionales (futuro)</label>
-                                    <small class="text-muted d-block mb-1">Una línea por servicio: <code>NOMBRE|CONSUMO|UNIDAD|DETALLE</code></small>
-                                    <textarea id="campoServConsumosAdicionales" rows="3" class="form-control" placeholder="Comedor|1|unidad|Servicio diario"></textarea>
-                                </div>
+                                <div id="contenedorServiciosDinamicos"></div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -862,17 +928,31 @@ const ModuloEmpresas = (() => {
 
     // ─── Vista CRUD (ADMIN) ──────────────────────────────────────────────────────
 
+    function filtrar() {
+        _paginaActual = 0;
+        renderizarTabla();
+    }
+
     function renderizarTabla() {
         const cuerpo = document.getElementById('cuerpoTablaEmpresas');
         if (!cuerpo) return;
-        if (empresas.length === 0) {
+
+        const textoBusq = (document.getElementById('filtroBusquedaEmpresa')?.value || '').trim().toLowerCase();
+        const empresasFiltradas = textoBusq
+            ? empresas.filter(e =>
+                (e.nombre || '').toLowerCase().includes(textoBusq) ||
+                (e.razonSocial || '').toLowerCase().includes(textoBusq) ||
+                (e.cuit || '').toLowerCase().includes(textoBusq))
+            : empresas;
+
+        if (empresasFiltradas.length === 0) {
             cuerpo.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin empresas registradas</td></tr>';
             _actualizarPaginacionEmpresas(0, 0);
             return;
         }
-        const totalPaginas = Math.ceil(empresas.length / POR_PAGINA);
+        const totalPaginas = Math.ceil(empresasFiltradas.length / POR_PAGINA);
         if (_paginaActual >= totalPaginas) _paginaActual = totalPaginas - 1;
-        const pagina = empresas.slice(_paginaActual * POR_PAGINA, (_paginaActual + 1) * POR_PAGINA);
+        const pagina = empresasFiltradas.slice(_paginaActual * POR_PAGINA, (_paginaActual + 1) * POR_PAGINA);
         const puedeEditar   = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO', 'EMPRESA']);
         const puedeEliminar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
         cuerpo.innerHTML = pagina.map(e => {
@@ -905,7 +985,7 @@ const ModuloEmpresas = (() => {
                 </td>
             </tr>`;
         }).join('');
-        _actualizarPaginacionEmpresas(empresas.length, totalPaginas);
+        _actualizarPaginacionEmpresas(empresasFiltradas.length, totalPaginas);
     }
 
     function _actualizarPaginacionEmpresas(total, totalPaginas) {
@@ -1206,7 +1286,8 @@ const ModuloEmpresas = (() => {
             cantidadEmpleados: datos.cantidadEmpleados ?? 0,
             vehiculos: datos.vehiculos || []
         });
-        document.getElementById('campoSolicitaAguaCrudaPost').checked = datos.solicitaAguaCruda === true;
+        document.getElementById('campoSolicitaAguaCrudaPost').checked =
+            datos.solicitaAguaCruda === true || datos.solicitaAguaCruda == null;
         document.getElementById('campoConsumoAguaCrudaPost').value = datos.consumoAguaCrudaM3 ?? '';
         document.getElementById('campoConsumoLuzPost').value = datos.consumoLuzKwh ?? '';
         document.getElementById('campoConsumoGasPost').value = datos.consumoGasM3 ?? '';
@@ -1275,14 +1356,33 @@ const ModuloEmpresas = (() => {
     }
 
     function construirPayloadServiciosPostRadicacion() {
-        return {
-            solicitaAguaCruda: document.getElementById('campoServSolicitaAguaCruda')?.checked === true,
-            consumoAguaCrudaM3: parsearNumeroOpcional(document.getElementById('campoServConsumoAguaCruda')?.value),
-            consumoLuzKwh: parsearNumeroOpcional(document.getElementById('campoServConsumoLuz')?.value),
-            consumoGasM3: parsearNumeroOpcional(document.getElementById('campoServConsumoGas')?.value),
-            consumoInternetMbps: parsearNumeroOpcional(document.getElementById('campoServConsumoInternet')?.value),
-            consumosAdicionales: parsearConsumosAdicionales(document.getElementById('campoServConsumosAdicionales')?.value || '')
-        };
+        const servicios = _serviciosInfraestructuraCache || [];
+        let solicitaAguaCruda = false;
+        let consumoAguaCrudaM3 = null;
+        let consumoLuzKwh = null;
+        let consumoGasM3 = null;
+        let consumoInternetMbps = null;
+        const consumosAdicionales = [];
+
+        servicios.forEach(s => {
+            const clave = _claveServicio(s.nombre);
+            const checked = document.getElementById(`campoServicio_check_${s.id}`)?.checked === true;
+            const consumoVal = parsearNumeroOpcional(document.getElementById(`campoServicio_consumo_${s.id}`)?.value);
+            if (clave === 'aguacruda') {
+                solicitaAguaCruda = checked;
+                consumoAguaCrudaM3 = checked ? consumoVal : null;
+            } else if (clave === 'luz') {
+                consumoLuzKwh = checked ? consumoVal : null;
+            } else if (clave === 'gas') {
+                consumoGasM3 = checked ? consumoVal : null;
+            } else if (clave === 'internet') {
+                consumoInternetMbps = checked ? consumoVal : null;
+            } else if (checked) {
+                consumosAdicionales.push({ nombre: s.nombre, consumoEstimado: consumoVal, unidad: null, detalle: null });
+            }
+        });
+
+        return { solicitaAguaCruda, consumoAguaCrudaM3, consumoLuzKwh, consumoGasM3, consumoInternetMbps, consumosAdicionales };
     }
 
     function parsearNumeroOpcional(valor) {
@@ -1326,7 +1426,7 @@ const ModuloEmpresas = (() => {
     }
 
     return {
-        cargar, irPagina,
+        cargar, filtrar, irPagina,
         abrirCreacion, abrirEdicion, editarEmpresaPropia, editarDesdeDetalleAdmin, guardar,
         confirmarEliminacion, eliminar,
         confirmarInactivacion, inactivar,

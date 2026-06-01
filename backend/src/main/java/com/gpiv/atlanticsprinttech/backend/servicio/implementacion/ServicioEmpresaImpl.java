@@ -373,7 +373,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			datos.consumoLuzKwh(),
 			datos.consumoGasM3(),
 			datos.consumoInternetMbps(),
-			datos.consumosAdicionales()
+			datos.consumosAdicionales(),
+			_zonaLotePrincipal(empresa.getId())
 		);
 	}
 
@@ -425,7 +426,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			datosActualizados.consumoLuzKwh(),
 			datosActualizados.consumoGasM3(),
 			datosActualizados.consumoInternetMbps(),
-			datosActualizados.consumosAdicionales()
+			datosActualizados.consumosAdicionales(),
+			_zonaLotePrincipal(guardada.getId())
 		);
 	}
 
@@ -614,6 +616,15 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			|| repositorioRadicacionHistorial.existsByEmpresaIdAndEstado(empresaId, EstadoRadicacion.RADICADA);
 	}
 
+	private String _zonaLotePrincipal(Long empresaId) {
+		return repositorioLote.findAllByEmpresaIdConEmpresa(empresaId).stream()
+			.filter(l -> l.getParentLote() == null)
+			.map(l -> l.getZona())
+			.filter(z -> z != null)
+			.findFirst()
+			.orElse(null);
+	}
+
 	private record DatosServiciosPostRadicacion(
 		Boolean solicitaAguaCruda,
 		Double consumoAguaCrudaM3,
@@ -623,7 +634,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		List<RespuestaConsumoServicioPostRadicacion> consumosAdicionales
 	) {
 		private static DatosServiciosPostRadicacion vacio() {
-			return new DatosServiciosPostRadicacion(false, null, null, null, null, List.of());
+			return new DatosServiciosPostRadicacion(null, null, null, null, null, List.of());
 		}
 	}
 }

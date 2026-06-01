@@ -5,15 +5,19 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEvaluacionRadi
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioServicio;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEstadisticas;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDashboardGerencial;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeServicio;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
@@ -21,7 +25,9 @@ import com.gpiv.atlanticsprinttech.entities.dominio.EtapaCicloLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.EvaluacionRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
+import com.gpiv.atlanticsprinttech.entities.dominio.Servicio;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +46,8 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
     private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
     private final RepositorioEvaluacionRadicacion repositorioEvaluacion;
     private final RepositorioProyectoProductivo repositorioProyecto;
+    private final RepositorioServicio repositorioServicio;
+    private final ObjectMapper objectMapper;
     private final ServicioAuditLog servicioAuditLog;
     private final ServicioContextoUsuario servicioContextoUsuario;
 
@@ -49,6 +57,8 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
         RepositorioEvaluacionRadicacion repositorioEvaluacion,
         RepositorioProyectoProductivo repositorioProyecto,
+        RepositorioServicio repositorioServicio,
+        ObjectMapper objectMapper,
         ServicioAuditLog servicioAuditLog,
         ServicioContextoUsuario servicioContextoUsuario
     ) {
@@ -57,21 +67,30 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
         this.repositorioEvaluacion = repositorioEvaluacion;
         this.repositorioProyecto = repositorioProyecto;
+        this.repositorioServicio = repositorioServicio;
+        this.objectMapper = objectMapper;
         this.servicioAuditLog = servicioAuditLog;
         this.servicioContextoUsuario = servicioContextoUsuario;
     }
 
     @Override
     public RespuestaEstadisticas obtenerResumen() {
-        long totalEmpresas       = repositorioEmpresa.count();
-        long totalLotes          = repositorioLote.count();
-        long lotesOcupados       = repositorioLote.countByOcupado(true);
-        long lotesProyectoEnEvaluacion = repositorioLote.countByEtapa(EtapaCicloLote.PROYECTO_EN_EVALUACION);
-        long lotesAdjudicadoPrecario   = repositorioLote.countByEtapa(EtapaCicloLote.ADJUDICADO_PRECARIO);
-        long lotesEnConstruccion       = repositorioLote.countByEtapa(EtapaCicloLote.EN_CONSTRUCCION);
-        long lotesOperativos           = repositorioLote.countByEtapa(EtapaCicloLote.OPERATIVO);
-        long lotesEscriturados         = repositorioLote.countByEtapa(EtapaCicloLote.ESCRITURADO);
-        long lotesRevertidos           = repositorioLote.countByEtapa(EtapaCicloLote.REVERTIDO);
+        long totalEmpresas = repositorioEmpresa.count();
+        long totalLotes    = repositorioLote.countByParentLoteIsNull();
+        long lotesOcupados = repositorioLote.countByOcupadoAndParentLoteIsNull(true);
+
+        // Una sola query GROUP BY reemplaza 7 countByEtapa individuales
+        Map<EtapaCicloLote, Long> porEtapa = repositorioLote.contarPorEtapa().stream()
+            .collect(Collectors.toMap(
+                fila -> (EtapaCicloLote) fila[0],
+                fila -> (long) fila[1]
+            ));
+        long lotesProyectoEnEvaluacion = porEtapa.getOrDefault(EtapaCicloLote.PROYECTO_EN_EVALUACION, 0L);
+        long lotesAdjudicadoPrecario   = porEtapa.getOrDefault(EtapaCicloLote.ADJUDICADO_PRECARIO, 0L);
+        long lotesEnConstruccion       = porEtapa.getOrDefault(EtapaCicloLote.EN_CONSTRUCCION, 0L);
+        long lotesOperativos           = porEtapa.getOrDefault(EtapaCicloLote.OPERATIVO, 0L);
+        long lotesEscriturados         = porEtapa.getOrDefault(EtapaCicloLote.ESCRITURADO, 0L);
+        long lotesRevertidos           = porEtapa.getOrDefault(EtapaCicloLote.REVERTIDO, 0L);
 
         Map<String, Long> radicacionesPorEstado = repositorioRadicacionSolicitud.contarPorEstado().stream()
             .collect(Collectors.toMap(
@@ -130,17 +149,21 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             "consulta de informe completo de lotes",
             UtilRed.obtenerIpActual()
         );
-        List<Lote> lotes = repositorioLote.findAllConEmpresa();
-        Map<String, RadicacionSolicitud> radPorNumero = repositorioRadicacionSolicitud
-            .buscarFiltrado(null, null, null, null).stream()
-            .filter(r -> r.getNumeroRadicado() != null)
-            .collect(Collectors.toMap(RadicacionSolicitud::getNumeroRadicado, r -> r, (a, b) -> a));
+        List<Lote> lotes = repositorioLote.findAllPrincipalesConEmpresa();
+        // Proyección liviana: solo numero_radicado y fecha_plazo, sin cargar empresa ni lote completo
+        Map<String, java.time.LocalDate> fechaPlazoByNumero = repositorioRadicacionSolicitud
+            .findNumeroRadicadoYFechaPlazo().stream()
+            .filter(fila -> fila[0] != null)
+            .collect(Collectors.toMap(
+                fila -> (String) fila[0],
+                fila -> (java.time.LocalDate) fila[1],
+                (a, b) -> a
+            ));
         return lotes.stream().map(l -> {
             Empresa emp = l.getEmpresa();
             java.time.LocalDate fechaPlazo = null;
             if (l.getNumeroExpedienteReferencia() != null && !l.getNumeroExpedienteReferencia().isBlank()) {
-                fechaPlazo = Optional.ofNullable(radPorNumero.get(l.getNumeroExpedienteReferencia()))
-                    .map(RadicacionSolicitud::getFechaPlazo).orElse(null);
+                fechaPlazo = fechaPlazoByNumero.get(l.getNumeroExpedienteReferencia());
             }
             return new RespuestaInformeLote(
                 l.getId(),
@@ -148,6 +171,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
                 l.getSuperficieMetrosCuadrados(),
                 l.isOcupado(),
                 l.getEstadoAsignacionLegacy(),
+                l.getNombreEtapa(),
                 l.getZona(),
                 emp != null ? emp.getNombre() : null,
                 emp != null ? emp.getCuit() : null,
@@ -214,6 +238,98 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
     }
 
     @Override
+    public List<RespuestaInformeServicio> obtenerInformeServicios() {
+        List<Servicio> servicios = repositorioServicio.findAllConTecnico();
+        List<Lote> lotesOcupados = repositorioLote.findAllPrincipalesConEmpresa().stream()
+            .filter(l -> l.isOcupado() && l.getEmpresa() != null)
+            .toList();
+
+        Map<Long, Map<String, Object>> jsonPorEmpresa = new HashMap<>();
+        TypeReference<Map<String, Object>> tipoMapa = new TypeReference<>() {};
+        for (Lote lote : lotesOcupados) {
+            Long empId = lote.getEmpresa().getId();
+            if (!jsonPorEmpresa.containsKey(empId)) {
+                String json = lote.getEmpresa().getServiciosPostRadicacionJson();
+                try {
+                    jsonPorEmpresa.put(empId, json != null ? objectMapper.readValue(json, tipoMapa) : Map.of());
+                } catch (Exception e) {
+                    jsonPorEmpresa.put(empId, Map.of());
+                }
+            }
+        }
+
+        return servicios.stream().map(servicio -> {
+            String clave = _claveServicio(servicio.getNombre());
+            List<RespuestaInformeServicio.EmpresaConsumidora> empresas = lotesOcupados.stream()
+                .filter(l -> _usaServicio(l, clave, jsonPorEmpresa))
+                .map(l -> new RespuestaInformeServicio.EmpresaConsumidora(
+                    l.getEmpresa().getId(),
+                    l.getEmpresa().getNombre(),
+                    l.getEmpresa().getCuit(),
+                    l.getCodigo(),
+                    _consumoTexto(l, clave, jsonPorEmpresa)
+                ))
+                .toList();
+            return new RespuestaInformeServicio(
+                servicio.getId(),
+                servicio.getNombre(),
+                servicio.getEstadoActual().name(),
+                servicio.getDescripcionTecnica(),
+                empresas
+            );
+        }).toList();
+    }
+
+    private String _claveServicio(String nombre) {
+        if (nombre == null) return "";
+        String n = nombre.toLowerCase();
+        if (n.contains("agua")) return "agua";
+        if (n.contains("luz") || n.contains("eléctric") || n.contains("electr") || n.contains("energía")) return "luz";
+        if (n.contains("gas")) return "gas";
+        if (n.contains("internet") || n.contains("conectividad")) return "internet";
+        return nombre.toLowerCase().trim();
+    }
+
+    private boolean _usaServicio(Lote lote, String clave, Map<Long, Map<String, Object>> jsonPorEmpresa) {
+        if ("agua".equals(clave)) return true;
+        Map<String, Object> datos = jsonPorEmpresa.getOrDefault(lote.getEmpresa().getId(), Map.of());
+        if (datos.isEmpty()) return false;
+        return switch (clave) {
+            case "luz"      -> _num(datos, "consumoLuzKwh") > 0;
+            case "gas"      -> _num(datos, "consumoGasM3") > 0;
+            case "internet" -> _num(datos, "consumoInternetMbps") > 0;
+            default -> {
+                Object adicionales = datos.get("consumosAdicionales");
+                if (!(adicionales instanceof List<?> lista)) yield false;
+                yield lista.stream().anyMatch(item -> {
+                    if (!(item instanceof Map<?, ?> m)) return false;
+                    Object nom = m.get("nombre");
+                    return nom instanceof String s && s.toLowerCase().contains(clave);
+                });
+            }
+        };
+    }
+
+    private String _consumoTexto(Lote lote, String clave, Map<Long, Map<String, Object>> jsonPorEmpresa) {
+        Map<String, Object> datos = jsonPorEmpresa.getOrDefault(lote.getEmpresa().getId(), Map.of());
+        return switch (clave) {
+            case "agua" -> {
+                double val = _num(datos, "consumoAguaCrudaM3");
+                yield val > 0 ? val + " m³" : "Sí";
+            }
+            case "luz"      -> _num(datos, "consumoLuzKwh")      + " kWh";
+            case "gas"      -> _num(datos, "consumoGasM3")        + " m³";
+            case "internet" -> _num(datos, "consumoInternetMbps") + " Mbps";
+            default -> "—";
+        };
+    }
+
+    private double _num(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        return val instanceof Number n ? n.doubleValue() : 0;
+    }
+
+    @Override
     public RespuestaDashboardGerencial obtenerDashboardGerencial() {
         List<EstadoProyecto> estadosFinalesProyecto = List.of(EstadoProyecto.COMPLETADO, EstadoProyecto.CANCELADO);
         List<EstadoRadicacion> estadosFinalesRad = List.of(
@@ -242,7 +358,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             .toList();
 
         // Lotes y zonas
-        List<Lote> lotes = repositorioLote.findAllConEmpresa();
+        List<Lote> lotes = repositorioLote.findAllPrincipalesConEmpresa();
         long totalLotes = lotes.size();
         long lotesOcupados = lotes.stream().filter(Lote::isOcupado).count();
         double superficieTotalM2 = lotes.stream()

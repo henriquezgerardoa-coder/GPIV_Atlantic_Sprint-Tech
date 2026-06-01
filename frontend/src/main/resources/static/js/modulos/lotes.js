@@ -25,7 +25,6 @@ const ModuloLotes = (() => {
         lotes = lotesData.contenido ?? lotesData;
         _empresasCargadas = false;
         _paginaActual = 0;
-        resetearFiltros();
         renderizarTabla();
     }
 
@@ -45,7 +44,7 @@ const ModuloLotes = (() => {
     }
 
     function resetearFiltros() {
-        ['filtroZonaLote', 'filtroSuperficieLote', 'filtroEstadoLote'].forEach(id => {
+        ['filtroZonaLote', 'filtroSuperficieLote', 'filtroEstadoLote', 'filtroCodigoLote'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });
@@ -60,9 +59,10 @@ const ModuloLotes = (() => {
         const cuerpo = document.getElementById('cuerpoTablaLotes');
         if (!cuerpo) return;
 
-        const zona      = document.getElementById('filtroZonaLote')?.value || '';
-        const sup       = document.getElementById('filtroSuperficieLote')?.value || '';
-        const ocupacion = document.getElementById('filtroEstadoLote')?.value || '';
+        const zona       = document.getElementById('filtroZonaLote')?.value || '';
+        const sup        = document.getElementById('filtroSuperficieLote')?.value || '';
+        const ocupacion  = document.getElementById('filtroEstadoLote')?.value || '';
+        const codigoBusq = (document.getElementById('filtroCodigoLote')?.value || '').trim().toLowerCase();
 
         let filtrados = lotes.filter(l => {
             if (zona && l.zona !== zona) return false;
@@ -75,12 +75,13 @@ const ModuloLotes = (() => {
             }
             if (ocupacion === 'libre'   &&  l.ocupado) return false;
             if (ocupacion === 'ocupado' && !l.ocupado) return false;
+            if (codigoBusq && !(l.codigo || '').toLowerCase().includes(codigoBusq)) return false;
             return true;
         });
 
         const badge = document.getElementById('badgeTotalLotesFiltrados');
         if (badge) {
-            const hayFiltro = zona || sup || ocupacion;
+            const hayFiltro = zona || sup || ocupacion || codigoBusq;
             badge.textContent = hayFiltro ? `${filtrados.length} de ${lotes.length}` : `Total: ${lotes.length}`;
         }
 

@@ -341,6 +341,146 @@ body {
     line-height: 1.7;
 }
 
+/* ── Sección Requisitos ── */
+.requisitos-seccion {
+    padding: 100px 10%;
+    background-color: #0f1f14;
+    color: #e2ece7;
+}
+
+.requisitos-seccion .subtitulo-seccion {
+    color: var(--color-acentuado);
+}
+
+.req-encabezado {
+    max-width: 720px;
+    margin-bottom: 20px;
+}
+
+.req-encabezado h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 18px;
+}
+
+.req-intro {
+    font-size: 1rem;
+    color: #94a3b8;
+    line-height: 1.75;
+}
+
+.req-card {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(34, 197, 94, 0.18) !important;
+    color: #e2ece7;
+}
+
+.req-card:hover {
+    border-color: var(--color-acentuado) !important;
+    background: rgba(34, 197, 94, 0.07) !important;
+    box-shadow: 0 12px 30px rgba(34, 197, 94, 0.12) !important;
+}
+
+.req-card .pilar-icono {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--color-acentuado);
+}
+
+.req-card h4 {
+    color: #ffffff;
+    margin-bottom: 14px;
+}
+
+.req-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.req-lista li {
+    font-size: 0.92rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    padding-left: 14px;
+    border-left: 2px solid rgba(34, 197, 94, 0.35);
+}
+
+.req-lista li strong {
+    color: #d1fae5;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.req-compromisos {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(34, 197, 94, 0.18);
+    border-radius: 16px;
+    padding: 36px 40px;
+}
+
+.req-compromisos-titulo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.req-compromisos-titulo i {
+    font-size: 1.4rem;
+    color: var(--color-acentuado);
+}
+
+.req-compromisos-titulo h4 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.req-compromisos-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+}
+
+.req-compromiso-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex: 1 1 280px;
+}
+
+.req-compromiso-item > i {
+    font-size: 1.3rem;
+    color: var(--color-acentuado);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.req-compromiso-item strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #d1fae5;
+    margin-bottom: 5px;
+}
+
+.req-compromiso-item p {
+    font-size: 0.88rem;
+    color: #94a3b8;
+    line-height: 1.65;
+    margin: 0;
+}
+
+.req-cta {
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+}
+
 /* ── Consulta pública ── */
 .consulta-seccion {
     background: #e6efe9;
@@ -1543,6 +1683,12 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
     color: #555;
 }
 
+@page {
+    /* Márgenes en 0 para suprimir encabezados/pies automáticos del navegador (URL, fecha, n°pág).
+       El margen real del documento (2 cm) se aplica como padding en el cuerpo del modal. */
+    margin: 0;
+}
+
 @media print {
     /* Bootstrap agrega overflow:hidden a html y padding-right a body al abrir modales;
        ambos deben resetearse para que el contenido ocupe exactamente el ancho del papel */
@@ -1601,7 +1747,7 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
         overflow-y: visible !important;
         height: auto !important;
         max-height: none !important;
-        padding-bottom: 0 !important;
+        padding: 20mm !important;
     }
 
     /* Ocultar la barra del modal (botones de cerrar/imprimir) */
@@ -1741,6 +1887,18 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
         min-width: unset;
         width: 100%;
     }
+
+    .requisitos-seccion {
+        padding: 60px 5%;
+    }
+
+    .req-encabezado h2 {
+        font-size: 1.8rem;
+    }
+
+    .req-compromisos {
+        padding: 24px 20px;
+    }
 }
 
 /* Eliminar cursor de escritura (I-beam) en elementos no editables de la app */
@@ -1773,6 +1931,14 @@ body:has(.contenido-principal)
     ):not([type="radio"]):not([type="file"]):not([readonly]),
 body:has(.contenido-principal) textarea:not([readonly]) {
     cursor: text !important;
+}
+
+/* Suprimir outline de foco en contenedores de pestaña no interactivos */
+body:has(.contenido-principal) [role="tabpanel"]:focus,
+body:has(.contenido-principal) [role="tabpanel"]:focus-visible,
+body:has(.contenido-principal) div[tabindex]:not([tabindex="-1"]):focus,
+body:has(.contenido-principal) div[tabindex]:not([tabindex="-1"]):focus-visible {
+    outline: none !important;
 }
 
 /* Restaurar efecto seleccionado de btn-check (rúbricas evaluación y cambio de rubro) */

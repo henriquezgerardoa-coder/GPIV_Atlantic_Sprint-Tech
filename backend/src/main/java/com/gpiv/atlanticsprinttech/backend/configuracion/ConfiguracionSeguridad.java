@@ -84,6 +84,7 @@ public class ConfiguracionSeguridad {
                 .requestMatchers(HttpMethod.PATCH, "/api/proyectos/*/estado").hasAnyRole("ADMINISTRADOR", "SECRETARIO", "TECNICO")
                 .requestMatchers("/api/proyectos/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO", "TECNICO")
                 .requestMatchers(HttpMethod.DELETE, "/api/infraestructura/*").hasRole("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.GET, "/api/infraestructura").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO", "EMPRESA")
                 .requestMatchers("/api/infraestructura/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO")
                 .requestMatchers("/api/monitor/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
                 .requestMatchers(HttpMethod.GET, "/api/audit-log/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "AUDITOR")

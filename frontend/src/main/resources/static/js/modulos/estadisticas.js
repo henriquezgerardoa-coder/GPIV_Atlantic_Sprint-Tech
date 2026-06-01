@@ -11,6 +11,7 @@ const ModuloEstadisticas = (() => {
     let _empresasCache = null;
     let _lotesCache = null;
     let _radicacionesCache = null;
+    let _serviciosCache = null;
     let lotesInformeCache = [];
     let filtroActivoLotes = 'todos';
 
@@ -73,6 +74,7 @@ const ModuloEstadisticas = (() => {
             _empresasCache = null;
             _lotesCache = null;
             _radicacionesCache = null;
+            _serviciosCache = null;
             // Recargar el tab activo si ya cargó datos
             const tabActivo = document.querySelector('#tabsInformes .nav-link.active');
             if (tabActivo) _cargarTabActivo(tabActivo.getAttribute('data-bs-target'));
@@ -94,6 +96,74 @@ const ModuloEstadisticas = (() => {
         if (target === '#panel-inf-empresas') _cargarListaTabEmpresas();
         else if (target === '#panel-inf-lotes') _cargarListaTabLotes();
         else if (target === '#panel-inf-radicaciones') _cargarListaTabRadicaciones();
+        else if (target === '#panel-inf-servicios') _cargarListaTabServicios();
+    }
+
+    // ── Lista inline tab Servicios ───────────────────────────────────────────
+
+    const ETIQUETA_ESTADO_SERVICIO = {
+        OPERATIVO:      { texto: 'Operativo',     color: 'success' },
+        MANTENIMIENTO:  { texto: 'Mantenimiento', color: 'warning' },
+        FALLA_CRITICA:  { texto: 'Falla crítica', color: 'danger'  },
+    };
+
+    async function _cargarListaTabServicios() {
+        const cuerpo = document.getElementById('listaTabServicios');
+        if (!cuerpo) return;
+        if (_serviciosCache) { cuerpo.innerHTML = _renderListaServicios(_serviciosCache); return; }
+        cuerpo.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span><span class="text-muted ms-2 small">Cargando...</span></div>';
+        try {
+            const resp = await ApiCliente.obtener('/api/estadisticas/informes/servicios');
+            if (!resp?.ok) throw new Error();
+            _serviciosCache = await resp.json();
+            cuerpo.innerHTML = _renderListaServicios(_serviciosCache);
+        } catch {
+            cuerpo.innerHTML = '<div class="alert alert-danger m-3">Error al cargar servicios.</div>';
+        }
+    }
+
+    function _renderListaServicios(servicios) {
+        if (!servicios?.length) return '<p class="text-muted text-center py-3">No hay servicios de infraestructura registrados.</p>';
+        return servicios.map((s, idx) => {
+            const est = ETIQUETA_ESTADO_SERVICIO[s.estadoActual] ?? { texto: s.estadoActual, color: 'secondary' };
+            const total = s.empresas?.length ?? 0;
+            const filas = (s.empresas || []).map(e => `<tr>
+                <td class="small fw-semibold ps-3">${e.nombreEmpresa || '-'}</td>
+                <td class="small text-muted">${e.cuitEmpresa || '-'}</td>
+                <td class="small">${e.codigoLote || '-'}</td>
+                <td class="small text-end pe-3">${e.consumo || '—'}</td>
+            </tr>`).join('');
+            const tablaHtml = total > 0
+                ? `<div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Empresa</th><th>CUIT</th>
+                                <th>Lote</th><th class="text-end pe-3">Consumo estimado</th>
+                            </tr>
+                        </thead>
+                        <tbody>${filas}</tbody>
+                    </table>
+                   </div>`
+                : `<p class="text-muted small text-center py-2 mb-0">Sin empresas registradas para este servicio.</p>`;
+            return `<div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                    <button class="accordion-button ${idx > 0 ? 'collapsed' : ''} py-2 px-3"
+                        type="button" data-bs-toggle="collapse"
+                        data-bs-target="#colServicio${s.id}" aria-expanded="${idx === 0}">
+                        <span class="badge bg-${est.color} me-2">${est.texto}</span>
+                        <span class="fw-semibold">${s.nombre}</span>
+                        <span class="badge bg-secondary ms-2 rounded-pill">${total}</span>
+                        ${s.descripcionTecnica
+                            ? `<span class="text-muted small ms-3 d-none d-md-inline">${s.descripcionTecnica}</span>`
+                            : ''}
+                    </button>
+                </h2>
+                <div id="colServicio${s.id}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}">
+                    <div class="accordion-body p-0">${tablaHtml}</div>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     // ── Lista inline tab Empresas ────────────────────────────────────────────
@@ -437,6 +507,94 @@ const ModuloEstadisticas = (() => {
                 ${bloqueEtapa(3, r.etapa3Criterio1, r.etapa3Criterio2, r.etapa3Criterio3, r.etapa3Puntuacion, r.etapa3Observaciones, r.etapa3Completa)}
             </div>
         </div>`;
+    }
+
+    // ── Detalle por estadística (modal genérico) ─────────────────────────────
+
+    const _FILTROS_COMBINADOS = {
+        RECHAZADA_CANCELADA: ['RECHAZADA', 'CANCELADA'],
+    };
+
+    async function verDetalleEstadistica(tipo, filtro, titulo) {
+        const modalEl = document.getElementById('modalDetalleEstadistica');
+        if (!modalEl) return;
+        document.getElementById('modalDetalleEstadisticaLabel').textContent = titulo;
+        const cuerpo = document.getElementById('cuerpoModalDetalleEstadistica');
+        if (cuerpo) cuerpo.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span><span class="text-muted ms-2 small">Cargando...</span></div>';
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        try {
+            if (tipo === 'radicacion') {
+                if (!_radicacionesCache) {
+                    const resp = await ApiCliente.obtener('/api/estadisticas/informes/radicaciones');
+                    if (!resp?.ok) throw new Error();
+                    _radicacionesCache = await resp.json();
+                }
+                const claves = _FILTROS_COMBINADOS[filtro] || (filtro ? [filtro] : null);
+                const lista = claves ? _radicacionesCache.filter(r => claves.includes(r.estado)) : _radicacionesCache;
+                if (cuerpo) cuerpo.innerHTML = _renderDetalleRadicaciones(lista);
+            } else if (tipo === 'lote') {
+                if (!_lotesCache) {
+                    const resp = await ApiCliente.obtener('/api/estadisticas/informes/lotes');
+                    if (!resp?.ok) throw new Error();
+                    _lotesCache = await resp.json();
+                }
+                const lista = filtro ? _lotesCache.filter(l => l.etapa === filtro) : _lotesCache;
+                if (cuerpo) cuerpo.innerHTML = _renderDetalleLotes(lista);
+            }
+        } catch {
+            if (cuerpo) cuerpo.innerHTML = '<div class="alert alert-danger m-3">Error al cargar datos.</div>';
+        }
+    }
+
+    function _renderDetalleRadicaciones(lista) {
+        if (!lista?.length) return '<p class="text-muted text-center py-3">No hay radicaciones para este estado.</p>';
+        const filas = lista.map(r => {
+            const estadoRad = ETIQUETA_ESTADO_RAD[r.estado] || { texto: r.estado, color: 'secondary' };
+            return `<tr>
+                <td class="small fw-semibold ps-3">${r.numeroRadicado || '-'}</td>
+                <td class="small">${r.nombreEmpresa || '-'}</td>
+                <td><span class="badge bg-${estadoRad.color}">${estadoRad.texto}</span></td>
+                <td class="small text-muted">${r.fechaRadicacion || '-'}</td>
+                <td class="small">${r.codigoLote || '<span class="text-muted">Sin lote</span>'}</td>
+                <td class="text-center">
+                    <button class="btn btn-outline-secondary btn-sm py-0"
+                        onclick="ModuloEstadisticas.verInformeRadicacion(${r.id})">
+                        <i class="bi bi-eye me-1"></i>Ver
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+        return `<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light"><tr>
+                <th class="ps-3">N° Radicado</th><th>Empresa</th><th>Estado</th>
+                <th>Fecha</th><th>Lote</th><th class="text-center">Detalle</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+        </table></div>`;
+    }
+
+    function _renderDetalleLotes(lista) {
+        if (!lista?.length) return '<p class="text-muted text-center py-3">No hay lotes en esta etapa.</p>';
+        const filas = lista.map(l => `<tr>
+            <td class="fw-semibold ps-3">${l.codigo}</td>
+            <td>${l.zona ? (ETIQUETA_ZONA[l.zona] || l.zona) : '-'}</td>
+            <td>${(l.superficieMetrosCuadrados || 0).toLocaleString('es-AR')} m²</td>
+            <td>${l.nombreEmpresa || '<span class="text-muted small">Sin asignar</span>'}</td>
+            <td class="small text-muted">${l.fechaAsignacion || '-'}</td>
+            <td class="text-center">
+                <button class="btn btn-outline-secondary btn-sm py-0"
+                    onclick="ModuloEstadisticas.verInformeLote(${l.id})">
+                    <i class="bi bi-eye me-1"></i>Ver
+                </button>
+            </td>
+        </tr>`).join('');
+        return `<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light"><tr>
+                <th class="ps-3">Código</th><th>Zona</th><th>Superficie</th>
+                <th>Empresa</th><th>Fecha asignación</th><th class="text-center">Detalle</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+        </table></div>`;
     }
 
     // ── Informe completo Radicaciones (modal) ────────────────────────────────
@@ -850,6 +1008,7 @@ const ModuloEstadisticas = (() => {
     return {
         cargar,
         generarGrafico,
+        verDetalleEstadistica,
         abrirInformeEmpresas,
         imprimirInformeEmpresas,
         abrirInformeLotes,

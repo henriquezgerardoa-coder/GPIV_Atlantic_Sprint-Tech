@@ -6,6 +6,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadistica
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeServicio;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,6 +61,15 @@ public class ControladorEstadisticas {
     @GetMapping("/informes/radicaciones")
     public List<RespuestaInformeRadicacion> informeRadicaciones() {
         return servicioEstadisticas.obtenerInformeRadicaciones();
+    }
+
+    /**
+     * Informe de servicios de infraestructura con empresas/lotes consumidoras.
+     * GET /api/estadisticas/informes/servicios
+     */
+    @GetMapping("/informes/servicios")
+    public List<RespuestaInformeServicio> informeServicios() {
+        return servicioEstadisticas.obtenerInformeServicios();
     }
 
     /**

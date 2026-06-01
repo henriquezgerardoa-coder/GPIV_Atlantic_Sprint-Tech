@@ -5,6 +5,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadistica
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeServicio;
 import java.util.List;
 
 /**
@@ -24,6 +25,9 @@ public interface ServicioEstadisticas {
 
     /** Informe por radicaciones con datos de evaluación por etapas. */
     List<RespuestaInformeRadicacion> obtenerInformeRadicaciones();
+
+    /** Informe de servicios de infraestructura con las empresas/lotes que los utilizan. */
+    List<RespuestaInformeServicio> obtenerInformeServicios();
 
     /** Dashboard gerencial con KPIs, distribución por rubro y zona. */
     RespuestaDashboardGerencial obtenerDashboardGerencial();

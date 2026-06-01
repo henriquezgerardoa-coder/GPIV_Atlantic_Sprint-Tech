@@ -4,12 +4,14 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaOperacion;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
@@ -55,12 +57,37 @@ public class ControladorErroresApi {
         return ResponseEntity.badRequest().body(new RespuestaOperacion(mensaje));
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<RespuestaOperacion> manejarIntegridad(DataIntegrityViolationException ex) {
+        log.warn("Violación de integridad referencial: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new RespuestaOperacion("No se puede realizar la operación: el registro tiene datos relacionados que lo impiden."));
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void manejarClienteDesconectado(AsyncRequestNotUsableException ex) {
+        log.debug("Cliente desconectado antes de recibir la respuesta: {}", ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<RespuestaOperacion> manejarExcepcionGeneral(Exception ex) {
+        if (esCierreDeConexion(ex)) {
+            log.debug("Conexión cerrada por el cliente durante la respuesta");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
         log.error("Error no controlado en la API", ex);
         String mensaje = ex.getMessage() != null ? ex.getMessage() : "Error interno del servidor";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new RespuestaOperacion(mensaje));
+    }
+
+    private static boolean esCierreDeConexion(Throwable ex) {
+        if (ex == null) return false;
+        if (ex.getClass().getName().contains("ClientAbortException")) return true;
+        String msg = ex.getMessage();
+        if (msg != null && (msg.contains("Broken pipe") || msg.contains("Tubería rota")
+                || msg.contains("Connection reset"))) return true;
+        return esCierreDeConexion(ex.getCause());
     }
 }
 

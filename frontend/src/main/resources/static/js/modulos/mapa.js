@@ -4,6 +4,7 @@ const ModuloMapa = (() => {
     let _lotePorEmpresa = {};
     let _lotePorCodigo = {};
     let _soloDisponibles = false;
+    let _lotesPropio = new Set();
 
     async function cargar() {
         _soloDisponibles = Autenticacion.tieneAcceso(['EMPRESA'])
@@ -28,10 +29,25 @@ const ModuloMapa = (() => {
 
         _activarRotacionClickDerecho(_mapa);
 
-        const endpointLotes = _soloDisponibles ? '/api/lotes/disponibles' : '/api/lotes?tamanio=500';
-        const [respGeo, respLotes] = await Promise.all([
+        let lotesPromise;
+        if (_soloDisponibles) {
+            lotesPromise = Promise.all([
+                ApiCliente.obtener('/api/lotes/disponibles'),
+                ApiCliente.obtener('/api/lotes')
+            ]).then(async ([respDisp, respPropios]) => {
+                const disponibles = respDisp?.ok ? await respDisp.json() : [];
+                const propios = respPropios?.ok ? await respPropios.json() : [];
+                _lotesPropio = new Set(propios.map(l => l.id));
+                const propiosIds = _lotesPropio;
+                return [...propios, ...(disponibles.filter(l => !propiosIds.has(l.id)))];
+            });
+        } else {
+            lotesPromise = ApiCliente.obtener('/api/lotes?tamanio=500').then(r => r?.ok ? r.json() : []);
+        }
+
+        const [respGeo, lotesRaw] = await Promise.all([
             fetch('/data/parque-industrial.geojson'),
-            ApiCliente.obtener(endpointLotes)
+            lotesPromise
         ]);
 
         if (!respGeo.ok) {
@@ -40,8 +56,7 @@ const ModuloMapa = (() => {
         }
 
         const geojson = await respGeo.json();
-        const lotesData = respLotes?.ok ? await respLotes.json() : [];
-        const lotes = lotesData.contenido ?? lotesData;
+        const lotes = (lotesRaw?.contenido ?? lotesRaw) || [];
 
         _lotePorEmpresa = {};
         _lotePorCodigo = {};
@@ -75,8 +90,8 @@ const ModuloMapa = (() => {
             PROYECTO_EN_EVALUACION: ['bg-warning-subtle text-warning',    'Proyecto en evaluación'],
             ADJUDICADO_PRECARIO:    ['bg-warning text-dark',              'Adjudicado precario'],
             EN_CONSTRUCCION:        ['',                                   'En construcción'],
-            OPERATIVO:              ['bg-success-subtle text-success',     'Operativo'],
-            ESCRITURADO:            ['bg-primary-subtle text-primary',     'Escriturado'],
+            OPERATIVO:              ['bg-success-subtle text-success',     'Operativo / Radicado'],
+            ESCRITURADO:            ['bg-success-subtle text-success',     'Operativo / Radicado'],
             REVERTIDO:              ['bg-danger-subtle text-danger',       'Desadjudicado'],
         };
         const [cls, label] = cfg[etapa] ?? ['bg-secondary-subtle text-muted', etapa ?? '—'];
@@ -103,9 +118,12 @@ const ModuloMapa = (() => {
 
         const lote = _resolverLote(nombre);
 
-        // Vista empresa: solo lotes disponibles visibles (gris), el resto invisible
+        // Vista empresa: lotes disponibles (gris) + propios (azul), resto invisible
         if (_soloDisponibles) {
-            if (!lote || lote.ocupado) return { opacity: 0, fillOpacity: 0 };
+            if (!lote) return { opacity: 0, fillOpacity: 0 };
+            if (_lotesPropio.has(lote.id))
+                return { color: '#003f7f', weight: 2.5, fillColor: '#0d6efd', fillOpacity: 0.65 };
+            if (lote.ocupado) return { opacity: 0, fillOpacity: 0 };
             return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
         }
 
@@ -119,11 +137,12 @@ const ModuloMapa = (() => {
             };
         }
 
-        if (!lote || !lote.ocupado) {
+        if (!lote) {
             return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
         }
 
-        if (lote.colorPersonalizado) {
+        const etapaFinal = lote.etapa === 'OPERATIVO' || lote.etapa === 'ESCRITURADO';
+        if (lote.colorPersonalizado && !etapaFinal) {
             return { color: '#343a40', weight: 1.5, fillColor: lote.colorPersonalizado, fillOpacity: 0.65 };
         }
 
@@ -131,12 +150,10 @@ const ModuloMapa = (() => {
     }
 
     function _estiloEtapa(lote) {
-        if (!lote || !lote.ocupado) {
+        if (!lote) {
             return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
         }
         switch (lote.etapa) {
-            case 'DISPONIBLE':
-                return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
             case 'PROYECTO_EN_EVALUACION':
                 return { color: '#997404', weight: 1.5, fillColor: '#fff3cd', fillOpacity: 0.75 };
             case 'ADJUDICADO_PRECARIO':
@@ -144,9 +161,8 @@ const ModuloMapa = (() => {
             case 'EN_CONSTRUCCION':
                 return { color: '#a44a00', weight: 2,   fillColor: '#fd7e14', fillOpacity: 0.65 };
             case 'OPERATIVO':
-                return { color: '#146c43', weight: 1.5, fillColor: '#198754', fillOpacity: 0.60 };
             case 'ESCRITURADO':
-                return { color: '#084298', weight: 1.5, fillColor: '#0d6efd', fillOpacity: 0.60 };
+                return { color: '#146c43', weight: 1.5, fillColor: '#198754', fillOpacity: 0.60 };
             case 'REVERTIDO':
                 return { color: '#b02a37', weight: 1.5, fillColor: '#dc3545', fillOpacity: 0.55 };
             default:
@@ -159,8 +175,8 @@ const ModuloMapa = (() => {
         const props = feature.properties || {};
         const lote = _resolverLote(nombre);
 
-        // Vista empresa: sin interacción en lotes no disponibles
-        if (_soloDisponibles && (!lote || lote.ocupado)) return;
+        // Vista empresa: sin interacción en lotes que no son disponibles ni propios
+        if (_soloDisponibles && (!lote || (lote.ocupado && !_lotesPropio.has(lote.id)))) return;
 
         layer.on('mouseover', () => {
             layer.setStyle({ weight: 3, fillOpacity: 0.80 });

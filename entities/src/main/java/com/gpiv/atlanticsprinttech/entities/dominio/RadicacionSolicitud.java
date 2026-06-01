@@ -250,9 +250,17 @@ public class RadicacionSolicitud {
 
 	public void sincronizarLote(Lote lote) {
 		if (lote == null) return;
-		if (estado == EstadoRadicacion.APROBADA || estado == EstadoRadicacion.RADICADA) {
+		if (estado == EstadoRadicacion.REQUIERE_INFORMACION_ADICIONAL) {
+			if (lote.getEtapa().puedeTransicionarA(EtapaCicloLote.PROYECTO_EN_EVALUACION)) {
+				lote.transicionar(EtapaCicloLote.PROYECTO_EN_EVALUACION);
+			}
+		} else if (estado == EstadoRadicacion.APROBADA) {
 			if (lote.getEtapa().puedeTransicionarA(EtapaCicloLote.ADJUDICADO_PRECARIO)) {
 				lote.transicionar(EtapaCicloLote.ADJUDICADO_PRECARIO);
+			}
+		} else if (estado == EstadoRadicacion.RADICADA) {
+			if (lote.getEtapa().puedeTransicionarA(EtapaCicloLote.OPERATIVO)) {
+				lote.transicionar(EtapaCicloLote.OPERATIVO);
 			}
 		} else if (estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA
 				|| estado == EstadoRadicacion.DESADJUDICACION) {

@@ -33,16 +33,28 @@ const ModuloUsuarios = (() => {
         selector.value = valorActual;
     }
 
+    function filtrar() {
+        renderizarTabla();
+    }
+
     function renderizarTabla() {
         const cuerpo = document.getElementById('cuerpoTablaUsuarios');
         if (!cuerpo) return;
 
-        if (usuarios.length === 0) {
+        const textoBusq = (document.getElementById('filtroBusquedaUsuario')?.value || '').trim().toLowerCase();
+        const lista = textoBusq
+            ? usuarios.filter(u =>
+                (u.nombreUsuario || '').toLowerCase().includes(textoBusq) ||
+                (u.nombreCompleto || '').toLowerCase().includes(textoBusq) ||
+                (u.nombreEmpresa || '').toLowerCase().includes(textoBusq))
+            : usuarios;
+
+        if (lista.length === 0) {
             cuerpo.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>Sin usuarios registrados</td></tr>';
             return;
         }
 
-        cuerpo.innerHTML = usuarios.map(u => {
+        cuerpo.innerHTML = lista.map(u => {
             const rolesHtml = [...u.roles]
                 .map(r => `<span class="badge ${COLOR_ROL[r] || 'bg-secondary'} me-1">${r}</span>`)
                 .join('');
@@ -225,6 +237,6 @@ const ModuloUsuarios = (() => {
         }
     }
 
-    return { cargar, abrirCreacion, abrirEdicion, guardar, abrirRestablecerClave, restablecerClave, confirmarCambioActivacion, cambiarActivacion };
+    return { cargar, filtrar, abrirCreacion, abrirEdicion, guardar, abrirRestablecerClave, restablecerClave, confirmarCambioActivacion, cambiarActivacion };
 })();
 

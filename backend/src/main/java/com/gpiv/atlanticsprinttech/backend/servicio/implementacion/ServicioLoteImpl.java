@@ -10,6 +10,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.util.List;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +67,7 @@ public class ServicioLoteImpl implements ServicioLote {
     }
 
     @Override
+    @CacheEvict(value = "lotes", allEntries = true)
     public Lote crear(
         String codigo,
         Double superficieMetrosCuadrados,
@@ -97,6 +99,7 @@ public class ServicioLoteImpl implements ServicioLote {
     }
 
     @Override
+    @CacheEvict(value = "lotes", allEntries = true)
     public Lote actualizar(
         Long id,
         String codigo,
@@ -130,6 +133,7 @@ public class ServicioLoteImpl implements ServicioLote {
     }
 
     @Override
+    @CacheEvict(value = "lotes", allEntries = true)
     public void eliminar(Long id, String identificadorIngreso) {
         Lote loteActual = obtenerPorId(id, identificadorIngreso);
         String codigoLote = loteActual.getCodigo();
@@ -145,6 +149,7 @@ public class ServicioLoteImpl implements ServicioLote {
     }
 
     @Override
+    @CacheEvict(value = "lotes", allEntries = true)
     public Lote actualizarColor(Long id, String color, String identificadorIngreso) {
         Lote lote = obtenerPorId(id, identificadorIngreso);
         lote.asignarColor(color);

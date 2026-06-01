@@ -8,6 +8,7 @@ public record RespuestaInformeLote(
     Double superficieMetrosCuadrados,
     boolean ocupado,
     String estadoAsignacion,
+    String etapa,
     String zona,
     String nombreEmpresa,
     String cuitEmpresa,

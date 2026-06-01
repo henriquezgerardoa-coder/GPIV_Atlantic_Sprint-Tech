@@ -243,6 +243,14 @@ public class Lote {
         }
     }
 
+    /** Libera la asignación de empresa sin cambiar la etapa (usar al revertir). */
+    public void liberar() {
+        this.ocupado = false;
+        this.empresa = null;
+        this.fechaAsignacion = null;
+        this.numeroExpedienteReferencia = null;
+    }
+
     // Nuevos getters/setters para geometría y relaciones
     public String getGeom() {
         return geom;

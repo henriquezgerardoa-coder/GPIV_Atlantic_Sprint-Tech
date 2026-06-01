@@ -11,6 +11,7 @@ public record RespuestaServiciosPostRadicacion(
     Double consumoLuzKwh,
     Double consumoGasM3,
     Double consumoInternetMbps,
-    List<RespuestaConsumoServicioPostRadicacion> consumosAdicionales
+    List<RespuestaConsumoServicioPostRadicacion> consumosAdicionales,
+    String zonaLote
 ) {
 }

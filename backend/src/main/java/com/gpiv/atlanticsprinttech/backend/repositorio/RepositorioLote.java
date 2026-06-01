@@ -4,6 +4,8 @@ import com.gpiv.atlanticsprinttech.entities.dominio.EtapaCicloLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -23,9 +25,15 @@ public interface RepositorioLote extends JpaRepository<Lote, Long> {
     @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa e LEFT JOIN FETCH e.rubro WHERE l.id = :id")
     Optional<Lote> findByIdConEmpresa(@Param("id") Long id);
 
+    @Cacheable("lotes")
     @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa e LEFT JOIN FETCH e.rubro")
     List<Lote> findAllConEmpresa();
 
+    @Cacheable(value = "lotes", key = "'principales'")
+    @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa e LEFT JOIN FETCH e.rubro WHERE l.parentLote IS NULL")
+    List<Lote> findAllPrincipalesConEmpresa();
+
+    @Cacheable(value = "lotes", key = "'disponibles'")
     @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa e LEFT JOIN FETCH e.rubro WHERE l.ocupado = false")
     List<Lote> findAllDisponiblesConEmpresa();
 
@@ -35,9 +43,18 @@ public interface RepositorioLote extends JpaRepository<Lote, Long> {
     @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa e LEFT JOIN FETCH e.rubro WHERE l.id = :id AND e.id = :empresaId")
     Optional<Lote> findByIdAndEmpresaIdConEmpresa(@Param("id") Long id, @Param("empresaId") Long empresaId);
 
+    long countByParentLoteIsNull();
+
     long countByOcupado(boolean ocupado);
 
+    long countByOcupadoAndParentLoteIsNull(boolean ocupado);
+
     long countByEtapa(EtapaCicloLote etapa);
+
+    long countByEtapaAndParentLoteIsNull(EtapaCicloLote etapa);
+
+    @Query("SELECT l.etapa, COUNT(l) FROM Lote l WHERE l.parentLote IS NULL GROUP BY l.etapa")
+    List<Object[]> contarPorEtapa();
 
     @Query("SELECT l FROM Lote l LEFT JOIN FETCH l.empresa e LEFT JOIN FETCH e.rubro " +
            "WHERE l.fechaLimiteEtapaActual IS NOT NULL " +

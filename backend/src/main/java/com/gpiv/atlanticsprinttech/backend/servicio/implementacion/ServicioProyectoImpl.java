@@ -1,11 +1,14 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioHitoObra;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import java.time.format.DateTimeFormatter;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
+import com.gpiv.atlanticsprinttech.entities.dominio.EtapaCicloLote;
+import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioProyecto;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
@@ -18,6 +21,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,6 +36,7 @@ public class ServicioProyectoImpl implements ServicioProyecto {
 
     private final RepositorioProyectoProductivo repositorioProyecto;
     private final RepositorioHitoObra repositorioHito;
+    private final RepositorioLote repositorioLote;
     private final RepositorioRadicacionSolicitud repositorioRadicacion;
     private final RepositorioUsuario repositorioUsuario;
     private final ServicioContextoUsuario servicioContextoUsuario;
@@ -40,6 +45,7 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     public ServicioProyectoImpl(
         RepositorioProyectoProductivo repositorioProyecto,
         RepositorioHitoObra repositorioHito,
+        RepositorioLote repositorioLote,
         RepositorioRadicacionSolicitud repositorioRadicacion,
         RepositorioUsuario repositorioUsuario,
         ServicioContextoUsuario servicioContextoUsuario,
@@ -47,6 +53,7 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     ) {
         this.repositorioProyecto = repositorioProyecto;
         this.repositorioHito = repositorioHito;
+        this.repositorioLote = repositorioLote;
         this.repositorioRadicacion = repositorioRadicacion;
         this.repositorioUsuario = repositorioUsuario;
         this.servicioContextoUsuario = servicioContextoUsuario;
@@ -182,6 +189,16 @@ public class ServicioProyectoImpl implements ServicioProyecto {
 
         HitoObra hito = HitoObra.crear(proyecto, descripcion, fechaVencimiento);
         HitoObra guardado = repositorioHito.save(hito);
+
+        // Al agregar el primer hito, avanzar el lote a EN_CONSTRUCCION
+        Lote lote = Optional.ofNullable(proyecto.getSolicitudOrigen())
+            .map(RadicacionSolicitud::getLote)
+            .orElse(null);
+        if (lote != null && lote.getEtapa() == EtapaCicloLote.ADJUDICADO_PRECARIO) {
+            lote.transicionar(EtapaCicloLote.EN_CONSTRUCCION);
+            repositorioLote.save(lote);
+        }
+
         notificarEmpresaHitosActualizados(proyecto);
         return guardado;
     }

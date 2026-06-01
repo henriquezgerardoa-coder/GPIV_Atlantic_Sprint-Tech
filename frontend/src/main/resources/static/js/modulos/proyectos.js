@@ -362,11 +362,15 @@ const ModuloProyectos = (() => {
             } else {
                 tiempoLabel = `<span class="badge bg-secondary">${diffDias} días</span>`;
             }
-            const accion = _puedeGestionarHitos ? `
+            const btnVerProyecto = `<button class="btn btn-sm btn-outline-primary me-1" title="Ver proyecto"
+                        onclick="ModuloProyectos.abrirHitos(${h.proyectoId})">
+                    <i class="bi bi-list-check"></i>
+                </button>`;
+            const accion = btnVerProyecto + (_puedeGestionarHitos ? `
                 <button class="btn btn-sm btn-outline-success" title="Marcar cumplido"
                         onclick="ModuloProyectos.marcarHitoCumplido(${h.hitoId}, ${h.proyectoId})">
                     <i class="bi bi-check-lg"></i>
-                </button>` : '—';
+                </button>` : '');
             return `
             <tr>
                 <td class="ps-3 fw-semibold">${_esc(h.nombreProyecto)}</td>

@@ -49,6 +49,9 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
     @Query("SELECT r.estado, COUNT(r) FROM RadicacionSolicitud r GROUP BY r.estado")
     List<Object[]> contarPorEstado();
 
+    @Query("SELECT r.numeroRadicado, r.fechaPlazo FROM RadicacionSolicitud r WHERE r.fechaPlazo IS NOT NULL")
+    List<Object[]> findNumeroRadicadoYFechaPlazo();
+
     @Query("SELECT COALESCE(SUM(r.empleadosPrevistos), 0) FROM RadicacionSolicitud r WHERE r.estado IN :estados AND r.empleadosPrevistos IS NOT NULL")
     Long sumEmpleadosPrevistos(@Param("estados") List<EstadoRadicacion> estados);
 
