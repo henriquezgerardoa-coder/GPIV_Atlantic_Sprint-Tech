@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -62,11 +61,11 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     }
     @Override
     public List<Usuario> listar() {
-        return repositorioUsuario.findAll(Sort.by(Sort.Direction.ASC, "nombreCompleto"));
+        return repositorioUsuario.findAllConRolesOrderByNombreCompletoAsc();
     }
     @Override
     public List<Usuario> listarPorEmpresa(Long empresaId) {
-        return repositorioUsuario.findByEmpresa_IdOrderByIdAsc(empresaId);
+        return repositorioUsuario.findByEmpresaIdConRolesOrderByIdAsc(empresaId);
     }
     @Override
     public Usuario obtenerPorId(Long id) {

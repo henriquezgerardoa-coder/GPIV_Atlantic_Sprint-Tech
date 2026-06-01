@@ -265,7 +265,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             cuerpo += "\n\nObservación: " + comentario;
         }
         // Siempre notificar a la empresa que realizó la solicitud
-        List<Usuario> usuariosEmpresa = repositorioUsuario.findByEmpresa_IdOrderByIdAsc(radicacion.getEmpresa().getId());
+        List<Usuario> usuariosEmpresa = repositorioUsuario.findByEmpresaIdConRolesOrderByIdAsc(radicacion.getEmpresa().getId());
         for (Usuario dest : usuariosEmpresa) {
             if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
                 enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);

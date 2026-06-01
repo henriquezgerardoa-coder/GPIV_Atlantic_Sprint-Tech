@@ -105,7 +105,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             "consulta de informe completo de empresas",
             UtilRed.obtenerIpActual()
         );
-        List<Empresa> empresas = repositorioEmpresa.findAll();
+        List<Empresa> empresas = repositorioEmpresa.findAllWithRubroOrderByNombre();
         return empresas.stream().map(this::aInformeEmpresa).toList();
     }
 
@@ -155,7 +155,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         List<EstadoRadicacion> estadosConEmpleados = List.of(EstadoRadicacion.APROBADA, EstadoRadicacion.RADICADA);
 
         // Empresas y empleo
-        List<Empresa> empresas = repositorioEmpresa.findAll();
+        List<Empresa> empresas = repositorioEmpresa.findAllWithRubroOrderByNombre();
         long totalEmpresas = empresas.size();
         long empleosActuales = empresas.stream()
             .filter(e -> e.getCantidadEmpleados() != null)

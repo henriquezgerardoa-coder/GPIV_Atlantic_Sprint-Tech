@@ -139,6 +139,13 @@ public class ServicioLoteImpl implements ServicioLote {
         );
     }
 
+    @Override
+    public Lote actualizarColor(Long id, String color, String identificadorIngreso) {
+        Lote lote = obtenerPorId(id, identificadorIngreso);
+        lote.asignarColor(color);
+        return repositorioLote.findByIdConEmpresa(repositorioLote.save(lote).getId()).orElse(lote);
+    }
+
     private Empresa obtenerEmpresa(Long empresaId) {
         return repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa indicada no existe"));

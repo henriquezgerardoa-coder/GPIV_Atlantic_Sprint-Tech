@@ -11,7 +11,12 @@ public record RespuestaLote(
     String estadoAsignacion,
     String fechaAsignacion,
     String numeroExpedienteReferencia,
-    String zona
+    String zona,
+    String colorPersonalizado,
+    String rubroEmpresa,
+    String referenteEmpresa,
+    String correoElectronicoEmpresa,
+    String telefonoEmpresa
 ) {
 }
 

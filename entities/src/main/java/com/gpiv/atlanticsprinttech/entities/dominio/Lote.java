@@ -65,6 +65,9 @@ public class Lote {
     @Column(name = "properties", columnDefinition = "jsonb", insertable = false, updatable = false)
     private String properties;
 
+    @Column(name = "color_personalizado", length = 20)
+    private String colorPersonalizado;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "parent_lote_id")
     private Lote parentLote;
@@ -133,6 +136,22 @@ public class Lote {
 
     public String getCuitEmpresa() {
         return empresa != null ? empresa.getCuit() : null;
+    }
+
+    public String getRubroEmpresa() {
+        return empresa != null && empresa.getRubro() != null ? empresa.getRubro().getNombre() : null;
+    }
+
+    public String getReferenteEmpresa() {
+        return empresa != null ? empresa.getReferente() : null;
+    }
+
+    public String getCorreoElectronicoEmpresa() {
+        return empresa != null ? empresa.getCorreoElectronico() : null;
+    }
+
+    public String getTelefonoEmpresa() {
+        return empresa != null ? empresa.getTelefono() : null;
     }
 
     public String getFechaAsignacionTexto() {
@@ -241,5 +260,13 @@ public class Lote {
 
     public boolean esSubdividido() {
         return !subLotes.isEmpty();
+    }
+
+    public String getColorPersonalizado() {
+        return colorPersonalizado;
+    }
+
+    public void asignarColor(String color) {
+        this.colorPersonalizado = (color == null || color.isBlank()) ? null : color.trim();
     }
 }

@@ -10,7 +10,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface RepositorioRadicacionDocumento extends JpaRepository<RadicacionDocumento, Long> {
 
-    List<RadicacionDocumento> findByRadicacionIdOrderByFechaSubidaDesc(Long radicacionId);
+    @Query("""
+        SELECT d FROM RadicacionDocumento d
+        JOIN FETCH d.radicacion
+        WHERE d.radicacion.id = :radicacionId
+        ORDER BY d.fechaSubida DESC
+        """)
+    List<RadicacionDocumento> findByRadicacionIdOrderByFechaSubidaDesc(@Param("radicacionId") Long radicacionId);
 
     Optional<RadicacionDocumento> findByIdAndRadicacionId(Long id, Long radicacionId);
 

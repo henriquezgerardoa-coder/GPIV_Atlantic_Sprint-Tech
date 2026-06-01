@@ -74,7 +74,12 @@ public class MapeadorRadicacion {
             lote.getNombreEstadoAsignacion(),
             lote.getFechaAsignacionTexto(),
             lote.getNumeroExpedienteReferencia(),
-            lote.getZona()
+            lote.getZona(),
+            lote.getColorPersonalizado(),
+            lote.getRubroEmpresa(),
+            lote.getReferenteEmpresa(),
+            lote.getCorreoElectronicoEmpresa(),
+            lote.getTelefonoEmpresa()
         );
     }
 

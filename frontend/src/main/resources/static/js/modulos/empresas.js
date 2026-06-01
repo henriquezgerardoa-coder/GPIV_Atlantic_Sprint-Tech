@@ -59,7 +59,7 @@ const ModuloEmpresas = (() => {
         document.getElementById('panelEmpresaPropia')?.classList.toggle('d-none', !mostrar);
         document.getElementById('panelEmpresasGestion')?.classList.toggle('d-none', mostrar);
         document.getElementById('panelEmpresasAdminVisualizacion')?.classList.toggle('d-none', true);
-        document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
+        if (mostrar) document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
     }
 
     async function cargarVistaAdmin() {
@@ -345,6 +345,32 @@ const ModuloEmpresas = (() => {
         const tieneRubro = !!emp.rubroId;
         document.getElementById('btnSeleccionarRubroInicial')?.classList.toggle('d-none', tieneRubro);
         document.getElementById('btnSolicitarCambioRubro')?.classList.toggle('d-none', !tieneRubro);
+
+        // Encabezado de sección personalizado
+        const icono = '<i class="bi bi-building text-primary me-2"></i>';
+        const titulo = document.getElementById('tituloSeccionEmpresas');
+        const subtitulo = document.getElementById('subtituloSeccionEmpresas');
+        if (titulo) titulo.innerHTML = `${icono}Empresa: ${emp.nombre || ''}`;
+        if (subtitulo) subtitulo.textContent = emp.razonSocial || emp.nombre || '';
+
+        // Foto local (localStorage, nunca va al servidor)
+        const fotoGuardada = emp.id ? localStorage.getItem(`empresa_foto_${emp.id}`) : null;
+        const imgFoto = document.getElementById('empFotoPropia');
+        if (imgFoto && fotoGuardada) imgFoto.src = fotoGuardada;
+    }
+
+    function cambiarFotoEmpresa(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const dataUrl = e.target.result;
+            const imgFoto = document.getElementById('empFotoPropia');
+            if (imgFoto) imgFoto.src = dataUrl;
+            if (empresaPropia?.id) localStorage.setItem(`empresa_foto_${empresaPropia.id}`, dataUrl);
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
     }
 
     let _rubrosCache = [];
@@ -896,11 +922,8 @@ const ModuloEmpresas = (() => {
         if (!empresaPropia) return;
         modoEdicion = true;
         idEdicion = empresaPropia.id;
-        const soloContacto = !!empresaPropia.permiteServiciosPostRadicacion;
-        _editandoSoloContacto = soloContacto;
-        document.getElementById('tituloModalEmpresa').textContent = soloContacto
-            ? 'Editar datos de contacto'
-            : 'Editar datos de empresa';
+        _editandoSoloContacto = false;
+        document.getElementById('tituloModalEmpresa').textContent = 'Editar datos de empresa';
         document.getElementById('campoNombreEmpresa').value = empresaPropia.nombre;
         document.getElementById('campoRazonSocialEmpresa').value = empresaPropia.razonSocial || '';
         document.getElementById('campoCuitEmpresa').value = empresaPropia.cuit;
@@ -911,7 +934,7 @@ const ModuloEmpresas = (() => {
         document.getElementById('campoReferenteEmpresa').value = empresaPropia.referente || '';
         document.getElementById('campoIngresosBrutosEmpresa').value = empresaPropia.ingresosBrutos || '';
         document.getElementById('campoCantidadEmpleadosEmpresa').value = empresaPropia.cantidadEmpleados ?? '';
-        _aplicarModoContactoModal(soloContacto);
+        _aplicarModoContactoModal(false);
         ocultarAlertaModal('alertaModalEmpresa');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa')).show();
     }
@@ -1208,6 +1231,7 @@ const ModuloEmpresas = (() => {
         abrirListadoVehiculos, mostrarFormularioVehiculo, ocultarFormularioVehiculo,
         guardarVehiculo, quitarVehiculo,
         abrirServiciosModal, guardarServiciosModal,
-        abrirSeleccionRubroInicial, confirmarRubroInicial
+        abrirSeleccionRubroInicial, confirmarRubroInicial,
+        cambiarFotoEmpresa
     };
 })();
