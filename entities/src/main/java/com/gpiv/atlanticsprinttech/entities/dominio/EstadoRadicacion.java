@@ -44,6 +44,24 @@ public enum EstadoRadicacion {
 		return this == APROBADA || this == RADICADA;
 	}
 
+	public boolean requiereRegistrarResolucion() {
+		return this == APROBADA || this == RADICADA || this == RECHAZADA
+			|| this == CANCELADA || this == DESADJUDICACION;
+	}
+
+	public String etiquetaLegible() {
+		return switch (this) {
+			case PENDIENTE -> "Pendiente";
+			case EN_REVISION -> "En revisión";
+			case APROBADA -> "Aprobada";
+			case RADICADA -> "Radicada";
+			case RECHAZADA -> "Rechazada";
+			case REQUIERE_INFORMACION_ADICIONAL -> "Requiere información adicional";
+			case CANCELADA -> "Cancelada";
+			case DESADJUDICACION -> "Desadjudicación";
+		};
+	}
+
 	public int etapa() {
 		return switch (this) {
 			case PENDIENTE, EN_REVISION, REQUIERE_INFORMACION_ADICIONAL -> 2;

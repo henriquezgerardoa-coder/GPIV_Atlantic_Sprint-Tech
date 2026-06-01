@@ -1,6 +1,8 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.seguridad;
 
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.time.LocalDateTime;
@@ -15,9 +17,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class ServicioContextoUsuario {
 
 	private final RepositorioUsuario repositorioUsuario;
+	private final RepositorioEmpresa repositorioEmpresa;
 
-	public ServicioContextoUsuario(RepositorioUsuario repositorioUsuario) {
+	public ServicioContextoUsuario(RepositorioUsuario repositorioUsuario, RepositorioEmpresa repositorioEmpresa) {
 		this.repositorioUsuario = repositorioUsuario;
+		this.repositorioEmpresa = repositorioEmpresa;
 	}
 
 	public Usuario obtenerUsuarioPorIngreso(String identificadorIngreso) {
@@ -31,7 +35,7 @@ public class ServicioContextoUsuario {
 	}
 
 	public boolean esRolEmpresa(Usuario usuario) {
-		return usuario.tieneRol(RolUsuario.EMPRESA);
+		return usuario.esEmpresa();
 	}
 
 	public boolean esRolAdministrador(Usuario usuario) {
@@ -64,6 +68,18 @@ public class ServicioContextoUsuario {
 			if (!propiaEmpresaId.equals(empresaId)) {
 				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes acceder a recursos de otra empresa");
 			}
+		}
+	}
+
+	public void exigirEmpresaActivaParaEscritura(Usuario usuario) {
+		if (!esRolEmpresa(usuario)) return;
+		Long empresaId = usuario.getEmpresaId();
+		if (empresaId == null) return;
+		Empresa empresa = repositorioEmpresa.findById(empresaId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
+		if (!empresa.permiteEscritura()) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+				"La empresa está en estado " + empresa.getStatus() + " y solo permite operaciones de lectura y mensajería");
 		}
 	}
 }

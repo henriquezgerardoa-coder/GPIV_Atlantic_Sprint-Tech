@@ -114,6 +114,16 @@ public class ControladorUsuario {
         servicioUsuario.cambiarClavePropia(autenticacion.getName(), solicitud.claveActual(), solicitud.claveNueva());
         return ResponseEntity.noContent().build();
     }
+    @PatchMapping("/{id}/desactivar")
+    public RespuestaUsuario desactivar(@PathVariable Long id, Authentication autenticacion) {
+        return crearRespuesta(servicioUsuario.desactivar(id, autenticacion.getName()));
+    }
+
+    @PatchMapping("/{id}/activar")
+    public RespuestaUsuario activar(@PathVariable Long id, Authentication autenticacion) {
+        return crearRespuesta(servicioUsuario.activar(id, autenticacion.getName()));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         servicioUsuario.eliminar(id);

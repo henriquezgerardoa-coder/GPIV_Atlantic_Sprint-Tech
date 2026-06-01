@@ -181,6 +181,20 @@ public class Empresa {
 		return "ACTIVA".equals(status);
 	}
 
+	public boolean permiteEscritura() {
+		return "ACTIVA".equals(status);
+	}
+
+	public void inactivar() {
+		if ("INACTIVA".equals(status)) throw new IllegalStateException("La empresa ya está inactiva");
+		this.status = "INACTIVA";
+	}
+
+	public void reactivar() {
+		if ("ACTIVA".equals(status)) throw new IllegalStateException("La empresa ya está activa");
+		this.status = "ACTIVA";
+	}
+
 	public void actualizarDatosContacto(String email, String tel) {
 		this.correoElectronico = email;
 		this.telefono = tel;

@@ -16,6 +16,8 @@ public interface RepositorioSolicitudCambioRubro extends JpaRepository<Solicitud
     @Query("SELECT s FROM SolicitudCambioRubro s JOIN FETCH s.empresa JOIN FETCH s.rubroSolicitado WHERE s.empresa.id = :empresaId ORDER BY s.fechaSolicitud DESC")
     List<SolicitudCambioRubro> findByEmpresaIdConDetalle(@Param("empresaId") Long empresaId);
 
+    boolean existsByEmpresaId(Long empresaId);
+
     boolean existsByEmpresaIdAndEstado(Long empresaId, EstadoCambioRubro estado);
 
     @Query("SELECT s FROM SolicitudCambioRubro s JOIN FETCH s.empresa JOIN FETCH s.rubroSolicitado WHERE s.id = :id")

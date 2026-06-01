@@ -67,6 +67,7 @@ public class ServicioSolicitudCambioRubroImpl implements ServicioSolicitudCambio
                 "Solo el rol EMPRESA puede solicitar cambio de rubro");
         }
         Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
+        servicioContextoUsuario.exigirEmpresaActivaParaEscritura(usuario);
 
         if (repositorioSolicitud.existsByEmpresaIdAndEstado(empresaId, EstadoCambioRubro.PENDIENTE)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,

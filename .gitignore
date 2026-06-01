@@ -24,3 +24,6 @@ backend/src/main/resources/application-neon.properties
 backend/src/main/resources/application-local.properties
 backend/compose-local.yaml
 
+# Backups locales
+.backup-*/
+

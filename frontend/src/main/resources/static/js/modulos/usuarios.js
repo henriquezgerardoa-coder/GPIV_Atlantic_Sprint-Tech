@@ -70,10 +70,16 @@ const ModuloUsuarios = (() => {
                             onclick="ModuloUsuarios.abrirRestablecerClave(${u.id}, '${u.nombreUsuario}')">
                         <i class="bi bi-key"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
-                            onclick="ModuloUsuarios.confirmarEliminacion(${u.id}, '${u.nombreUsuario}')">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    ${u.activo
+                        ? `<button class="btn btn-sm btn-outline-secondary" title="Desactivar usuario"
+                                onclick="ModuloUsuarios.confirmarCambioActivacion(${u.id}, '${u.nombreUsuario}', false)">
+                            <i class="bi bi-person-dash"></i>
+                           </button>`
+                        : `<button class="btn btn-sm btn-outline-success" title="Activar usuario"
+                                onclick="ModuloUsuarios.confirmarCambioActivacion(${u.id}, '${u.nombreUsuario}', true)">
+                            <i class="bi bi-person-check"></i>
+                           </button>`
+                    }
                 </td>
             </tr>`;
         }).join('');
@@ -191,24 +197,34 @@ const ModuloUsuarios = (() => {
         }
     }
 
-    function confirmarEliminacion(id, nombre) {
+    function confirmarCambioActivacion(id, nombre, activar) {
+        document.getElementById('tituloModalConfirmacion').innerHTML = activar
+            ? '<i class="bi bi-person-check-fill me-2"></i>Confirmar activación'
+            : '<i class="bi bi-person-dash-fill me-2"></i>Confirmar desactivación';
         document.getElementById('mensajeConfirmacionEliminar').textContent =
-            `¿Está seguro que desea eliminar el usuario "${nombre}"?`;
-        document.getElementById('btnConfirmarEliminar').dataset.eliminarId   = id;
-        document.getElementById('btnConfirmarEliminar').dataset.eliminarTipo = 'usuario';
+            activar
+                ? `¿Activar el usuario "${nombre}"?`
+                : `¿Desactivar el usuario "${nombre}"? No podrá iniciar sesión hasta ser reactivado.`;
+        const btn = document.getElementById('btnConfirmarEliminar');
+        btn.dataset.eliminarId   = id;
+        btn.dataset.eliminarTipo = activar ? 'activarUsuario' : 'desactivarUsuario';
+        btn.className = 'btn btn-primary';
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Aceptar';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmacion')).show();
     }
 
-    async function eliminar(id) {
-        const respuesta = await ApiCliente.eliminar(`/api/usuarios/${id}`);
-        if (respuesta?.status === 204 || respuesta?.ok) {
+    async function cambiarActivacion(id, activar) {
+        const ruta     = activar ? `/api/usuarios/${id}/activar` : `/api/usuarios/${id}/desactivar`;
+        const respuesta = await ApiCliente.parche(ruta, {});
+        if (respuesta?.ok) {
             await cargar();
-            mostrarAlerta('Usuario eliminado correctamente.');
+            mostrarAlerta(activar ? 'Usuario activado correctamente.' : 'Usuario desactivado correctamente.');
         } else {
-            mostrarAlerta('No se pudo eliminar el usuario.', 'danger');
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlerta(error?.message || 'No se pudo cambiar el estado del usuario.', 'danger');
         }
     }
 
-    return { cargar, abrirCreacion, abrirEdicion, guardar, abrirRestablecerClave, restablecerClave, confirmarEliminacion, eliminar };
+    return { cargar, abrirCreacion, abrirEdicion, guardar, abrirRestablecerClave, restablecerClave, confirmarCambioActivacion, cambiarActivacion };
 })();
 

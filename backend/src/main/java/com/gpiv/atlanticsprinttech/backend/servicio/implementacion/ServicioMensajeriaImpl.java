@@ -62,7 +62,7 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
         Map<Long, ConversacionMensajeria> merged = new LinkedHashMap<>();
         porParticipante.forEach(c -> merged.put(c.getId(), c));
 
-        if (usuario.getRoles().contains(RolUsuario.SECRETARIO)) {
+        if (usuario.tieneRol(RolUsuario.SECRETARIO)) {
             repositorioConversacion.findPublicasConDetalleOrderByFechaUltimaActualizacionDesc()
                 .forEach(c -> merged.putIfAbsent(c.getId(), c));
         }
@@ -222,7 +222,7 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
         Long uid = usuario.getId();
         if (uid.equals(conversacion.getUsuarioResponsableId())) return true;
         if (conversacion.getUsuarioIniciadorId() != null && uid.equals(conversacion.getUsuarioIniciadorId())) return true;
-        if (usuario.getRoles().contains(RolUsuario.SECRETARIO)
+        if (usuario.tieneRol(RolUsuario.SECRETARIO)
                 && ConversacionMensajeria.ORIGEN_PUBLICO.equals(conversacion.getTipoOrigen())) return true;
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             Long empresaId = usuario.getEmpresaId();

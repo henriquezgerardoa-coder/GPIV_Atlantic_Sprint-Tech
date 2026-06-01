@@ -54,7 +54,7 @@ public class ServicioInfraestructuraImpl implements ServicioInfraestructura {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o DIRECTIVO pueden crear servicios");
+                "Solo ADMINISTRADOR, DIRECTIVO o SECRETARIO pueden crear servicios");
         }
         Servicio servicio = Servicio.crear(nombre, descripcionTecnica);
         servicio = repositorioServicio.save(servicio);
@@ -67,7 +67,7 @@ public class ServicioInfraestructuraImpl implements ServicioInfraestructura {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o DIRECTIVO pueden actualizar el estado de servicios");
+                "Solo ADMINISTRADOR, DIRECTIVO o SECRETARIO pueden actualizar el estado de servicios");
         }
 
         EstadoServicio nuevoEstado;
@@ -92,11 +92,37 @@ public class ServicioInfraestructuraImpl implements ServicioInfraestructura {
     }
 
     @Override
+    public Servicio modificar(String identificadorIngreso, Long servicioId, String nombre, String descripcionTecnica) {
+        Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Solo ADMINISTRADOR, DIRECTIVO o SECRETARIO pueden modificar servicios");
+        }
+        Servicio servicio = repositorioServicio.findByIdConTecnico(servicioId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Servicio no encontrado"));
+        servicio.actualizarDatos(nombre, descripcionTecnica);
+        return repositorioServicio.save(servicio);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<ServicioEvento> listarHistorial(Long servicioId) {
         if (!repositorioServicio.existsById(servicioId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Servicio no encontrado");
         }
         return repositorioEvento.findByServicioIdOrderByFechaEventoDesc(servicioId);
+    }
+
+    @Override
+    public void eliminar(String identificadorIngreso, Long servicioId) {
+        Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+        if (!servicioContextoUsuario.esRolAdministrador(usuario)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMINISTRADOR puede eliminar servicios");
+        }
+        if (!repositorioServicio.existsById(servicioId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Servicio no encontrado");
+        }
+        repositorioEvento.deleteByServicioId(servicioId);
+        repositorioServicio.deleteById(servicioId);
     }
 }

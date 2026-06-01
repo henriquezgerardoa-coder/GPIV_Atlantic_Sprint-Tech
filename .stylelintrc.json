@@ -1,0 +1,34 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "at-rule-no-unknown": [true, {
+      "ignoreAtRules": ["supports", "document"]
+    }],
+    "color-named": "never",
+    "color-no-hex": false,
+    "declaration-block-no-duplicate-properties": true,
+    "declaration-no-important": true,
+    "font-family-no-missing-generic-family-keyword": true,
+    "function-url-quotes": "always",
+    "indentation": 4,
+    "max-nesting-depth": 3,
+    "no-descending-specificity": true,
+    "no-duplicate-selectors": true,
+    "number-max-precision": 4,
+    "property-no-unknown": true,
+    "rule-empty-line-before": ["always", {
+      "except": ["first-nested"],
+      "ignore": ["after-comment"]
+    }],
+    "selector-class-pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+    "selector-id-pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+    "selector-max-specificity": "0,3,1",
+    "selector-no-qualifying-type": true,
+    "selector-pseudo-class-parentheses-space-inside": "never",
+    "string-quotes": "single",
+    "unit-allowed-list": ["em", "rem", "%", "px", "deg", "s", "ms"],
+    "value-no-vendor-prefix": true,
+    "alpha-value-notation": "number"
+  },
+  "ignoreFiles": ["**/node_modules/**", "dist/**"]
+}

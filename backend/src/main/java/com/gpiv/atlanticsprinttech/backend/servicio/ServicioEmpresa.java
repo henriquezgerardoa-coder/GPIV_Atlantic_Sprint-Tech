@@ -23,4 +23,6 @@ public interface ServicioEmpresa {
 	boolean permiteServiciosPostRadicacion(Long empresaId, String identificadorIngreso);
 	RespuestaServiciosPostRadicacion obtenerServiciosPostRadicacion(Long empresaId, String identificadorIngreso);
 	RespuestaServiciosPostRadicacion actualizarServiciosPostRadicacion(Long empresaId, SolicitudServiciosPostRadicacion solicitud, String identificadorIngreso);
+	void inactivar(Long id, String identificadorIngreso);
+	void reactivar(Long id, String identificadorIngreso);
 }

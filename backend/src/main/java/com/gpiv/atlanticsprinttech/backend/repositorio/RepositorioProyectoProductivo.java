@@ -2,6 +2,7 @@ package com.gpiv.atlanticsprinttech.backend.repositorio;
 
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
 import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -44,6 +45,9 @@ public interface RepositorioProyectoProductivo extends JpaRepository<ProyectoPro
     boolean existsBySolicitudOrigenId(Long solicitudId);
 
     Optional<ProyectoProductivo> findBySolicitudOrigenId(Long solicitudId);
+
+    @Query("SELECT p FROM ProyectoProductivo p JOIN FETCH p.solicitudOrigen WHERE p.solicitudOrigen.id IN :ids")
+    List<ProyectoProductivo> findBySolicitudOrigenIdIn(@Param("ids") Collection<Long> ids);
 
     long countByEstadoNotIn(List<EstadoProyecto> estados);
 

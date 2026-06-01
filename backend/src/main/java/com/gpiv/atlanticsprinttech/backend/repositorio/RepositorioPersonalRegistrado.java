@@ -9,6 +9,8 @@ public interface RepositorioPersonalRegistrado extends JpaRepository<PersonalReg
 
     List<PersonalRegistrado> findByEmpresaIdOrderByNombreCompletoAsc(Long empresaId);
 
+    void deleteByEmpresaId(Long empresaId);
+
     Optional<PersonalRegistrado> findByIdAndEmpresaId(Long id, Long empresaId);
 
     boolean existsByEmpresaIdAndCuit(Long empresaId, String cuit);

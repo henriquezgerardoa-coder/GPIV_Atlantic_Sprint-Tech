@@ -13,6 +13,8 @@ public interface ServicioUsuario {
     Usuario crear(String nombreUsuario, String nombreCompleto, String clavePlano, boolean activo, Set<RolUsuario> roles, Long empresaId);
     Usuario crearComoEmpresa(String nombreUsuario, String nombreCompleto, String clavePlano, Long empresaId, String autorizador);
     Usuario actualizar(Long id, String nombreCompleto, boolean activo, Set<RolUsuario> roles, Long empresaId);
+    Usuario desactivar(Long id, String solicitadoPor);
+    Usuario activar(Long id, String solicitadoPor);
     void eliminar(Long id);
     void restablecerClave(Long id, String claveNueva);
     void cambiarClavePropia(String nombreUsuario, String claveActual, String claveNueva);

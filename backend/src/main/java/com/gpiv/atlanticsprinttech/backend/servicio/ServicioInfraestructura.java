@@ -14,5 +14,9 @@ public interface ServicioInfraestructura {
 
     Servicio actualizarEstado(String identificadorIngreso, Long servicioId, String estado, String comentario);
 
+    Servicio modificar(String identificadorIngreso, Long servicioId, String nombre, String descripcionTecnica);
+
     List<ServicioEvento> listarHistorial(Long servicioId);
+
+    void eliminar(String identificadorIngreso, Long servicioId);
 }

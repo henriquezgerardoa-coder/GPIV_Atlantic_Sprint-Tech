@@ -1,16 +1,16 @@
 const Credenciales = (() => {
     function convertirBytesABase64(bytes) {
-        if (typeof btoa === 'function') {
-            let binario = '';
+        if (typeof btoa === "function") {
+            let binario = "";
             bytes.forEach((byte) => {
                 binario += String.fromCharCode(byte);
             });
             return btoa(binario);
         }
-        if (typeof Buffer !== 'undefined') {
-            return Buffer.from(bytes).toString('base64');
+        if (typeof Buffer !== "undefined") {
+            return Buffer.from(bytes).toString("base64");
         }
-        throw new Error('No hay un codificador Base64 disponible.');
+        throw new Error("No hay un codificador Base64 disponible.");
     }
 
     function codificarBasicAuth(identificador, clave) {
@@ -20,11 +20,10 @@ const Credenciales = (() => {
     }
 
     return {
-        codificarBasicAuth
+        codificarBasicAuth,
     };
 })();
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     window.Credenciales = Credenciales;
 }
-

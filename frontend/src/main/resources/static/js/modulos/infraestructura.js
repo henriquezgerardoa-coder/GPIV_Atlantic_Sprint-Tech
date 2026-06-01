@@ -1,5 +1,5 @@
 const ModuloInfraestructura = (() => {
-    let _servicioActualId = null;
+    let _servicioModificarId = null;
     let _esGestor = false;
 
     function _esc(val) {
@@ -29,8 +29,7 @@ const ModuloInfraestructura = (() => {
             const { clsCard, clsBadge, label, icono } = _cfgEstado(s.estadoActual);
             return `
             <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100 ${clsCard}" style="cursor:pointer"
-                     onclick="ModuloInfraestructura.abrirDetalle(${s.id})">
+                <div class="card border-0 shadow-sm h-100 ${clsCard}">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h6 class="fw-bold mb-0">${_esc(s.nombre)}</h6>
@@ -42,6 +41,13 @@ const ModuloInfraestructura = (() => {
                             ${s.ultimoTecnicoResponsable ? `Por: ${_esc(s.ultimoTecnicoResponsable)} · ` : ''}
                             ${s.fechaUltimaActualizacion ? s.fechaUltimaActualizacion.substring(0, 10) : ''}
                         </small>
+                        ${_esGestor ? `
+                        <div class="mt-2 pt-2 border-top text-end">
+                            <button class="btn btn-sm btn-outline-primary"
+                                onclick="ModuloInfraestructura.abrirModificacion(${s.id})">
+                                <i class="bi bi-pencil-square me-1"></i>Modificar
+                            </button>
+                        </div>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -60,34 +66,33 @@ const ModuloInfraestructura = (() => {
             ${fallas ? `<span class="badge bg-danger-subtle text-danger me-1">${fallas} falla crítica</span>` : ''}`;
     }
 
-    async function abrirDetalle(servicioId) {
-        _servicioActualId = servicioId;
+    async function abrirModificacion(servicioId) {
+        _servicioModificarId = servicioId;
         const resp = await ApiCliente.obtener('/api/infraestructura');
         if (!resp?.ok) return;
         const servicios = await resp.json();
         const servicio = servicios.find(s => s.id === servicioId);
         if (!servicio) return;
 
-        document.getElementById('tituloModalServicio').textContent = servicio.nombre;
-        const { clsBadge, label, icono } = _cfgEstado(servicio.estadoActual);
-        document.getElementById('estadoBadgeServicio').innerHTML =
-            `<span class="badge ${clsBadge}"><i class="bi ${icono} me-1"></i>${label}</span>`;
+        document.getElementById('campoNombreModificarServicio').value = servicio.nombre || '';
+        document.getElementById('campoDescripcionModificarServicio').value = servicio.descripcionTecnica || '';
+        document.getElementById('alertaModalModificarServicio').classList.add('d-none');
 
-        document.getElementById('bloqueActualizarEstado')?.classList.toggle('d-none', !_esGestor);
-        if (_esGestor) {
-            const selector = document.getElementById('selectorNuevoEstado');
-            if (selector) selector.value = servicio.estadoActual;
-            const campoComentario = document.getElementById('campoComentarioServicio');
-            if (campoComentario) campoComentario.value = '';
-        }
+        const selector = document.getElementById('selectorEstadoModificar');
+        if (selector) selector.value = servicio.estadoActual;
+        const campoComentario = document.getElementById('campoComentarioModificar');
+        if (campoComentario) campoComentario.value = '';
+        document.getElementById('alertaEstadoModificar')?.classList.add('d-none');
 
-        await _cargarHistorial(servicioId);
-        ocultarAlertaModal('alertaModalServicio');
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleServicio')).show();
+        const btnEliminar = document.getElementById('btnEliminarServicio');
+        if (btnEliminar) btnEliminar.classList.toggle('d-none', !Autenticacion.tieneAcceso(['ADMINISTRADOR']));
+
+        await _cargarHistorialModificar(servicioId);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalModificarServicio')).show();
     }
 
-    async function _cargarHistorial(servicioId) {
-        const contenedor = document.getElementById('historialServicioLista');
+    async function _cargarHistorialModificar(servicioId) {
+        const contenedor = document.getElementById('historialModificarLista');
         if (!contenedor) return;
         contenedor.innerHTML = '<p class="text-muted small">Cargando historial...</p>';
         const resp = await ApiCliente.obtener(`/api/infraestructura/${servicioId}/historial`);
@@ -110,34 +115,58 @@ const ModuloInfraestructura = (() => {
             + '</ul>';
     }
 
-    async function guardarEstado() {
-        if (!_servicioActualId) return;
-        ocultarAlertaModal('alertaModalServicio');
-        const estado = document.getElementById('selectorNuevoEstado').value;
-        const comentario = document.getElementById('campoComentarioServicio').value.trim() || null;
-        if ((estado === 'MANTENIMIENTO' || estado === 'FALLA_CRITICA') && !comentario) {
-            mostrarAlertaModal('alertaModalServicio', 'El comentario es obligatorio para este estado.');
+    async function guardarModificacion() {
+        if (!_servicioModificarId) return;
+        const alerta = document.getElementById('alertaModalModificarServicio');
+        alerta.classList.add('d-none');
+        const nombre = document.getElementById('campoNombreModificarServicio').value.trim();
+        const descripcion = document.getElementById('campoDescripcionModificarServicio').value.trim() || null;
+        if (!nombre) { alerta.textContent = 'El nombre del servicio es obligatorio.'; alerta.classList.remove('d-none'); return; }
+        const resp = await ApiCliente.actualizar(`/api/infraestructura/${_servicioModificarId}`, { nombre, descripcionTecnica: descripcion });
+        if (!resp?.ok) {
+            const err = await resp?.json().catch(() => ({}));
+            alerta.textContent = err?.mensaje || 'Error al modificar el servicio.';
+            alerta.classList.remove('d-none');
             return;
         }
-        const resp = await ApiCliente.parche(`/api/infraestructura/${_servicioActualId}/estado`, { estado, comentario });
+        await _cargarServicios();
+        mostrarAlerta('Datos del servicio actualizados.');
+    }
+
+    async function guardarEstadoModificar() {
+        if (!_servicioModificarId) return;
+        const alerta = document.getElementById('alertaEstadoModificar');
+        alerta?.classList.add('d-none');
+        const estado = document.getElementById('selectorEstadoModificar').value;
+        const comentario = document.getElementById('campoComentarioModificar').value.trim() || null;
+        if ((estado === 'MANTENIMIENTO' || estado === 'FALLA_CRITICA') && !comentario) {
+            if (alerta) { alerta.textContent = 'El comentario es obligatorio para este estado.'; alerta.classList.remove('d-none'); }
+            return;
+        }
+        const resp = await ApiCliente.parche(`/api/infraestructura/${_servicioModificarId}/estado`, { estado, comentario });
         if (resp?.ok) {
-            await _cargarHistorial(_servicioActualId);
-            const respLista = await ApiCliente.obtener('/api/infraestructura');
-            if (respLista?.ok) {
-                const servicios = await respLista.json();
-                const s = servicios.find(x => x.id === _servicioActualId);
-                if (s) {
-                    const { clsBadge, label, icono } = _cfgEstado(s.estadoActual);
-                    document.getElementById('estadoBadgeServicio').innerHTML =
-                        `<span class="badge ${clsBadge}"><i class="bi ${icono} me-1"></i>${label}</span>`;
-                    _actualizarResumenEstado(servicios);
-                }
-            }
+            document.getElementById('campoComentarioModificar').value = '';
+            await _cargarHistorialModificar(_servicioModificarId);
             await _cargarServicios();
             mostrarAlerta('Estado actualizado.');
         } else {
-            const err = await resp.json().catch(() => ({}));
-            mostrarAlertaModal('alertaModalServicio', err?.mensaje || 'Error al actualizar el estado.');
+            const err = await resp?.json().catch(() => ({}));
+            if (alerta) { alerta.textContent = err?.mensaje || 'Error al actualizar el estado.'; alerta.classList.remove('d-none'); }
+        }
+    }
+
+    async function eliminar() {
+        if (!_servicioModificarId) return;
+        if (!confirm('¿Eliminar este servicio y todo su historial? Esta acción no se puede deshacer.')) return;
+        const resp = await ApiCliente.eliminar(`/api/infraestructura/${_servicioModificarId}`);
+        if (resp?.ok || resp?.status === 204) {
+            bootstrap.Modal.getInstance(document.getElementById('modalModificarServicio'))?.hide();
+            await _cargarServicios();
+            mostrarAlerta('Servicio eliminado.');
+        } else {
+            const err = await resp?.json().catch(() => ({}));
+            const alerta = document.getElementById('alertaModalModificarServicio');
+            if (alerta) { alerta.textContent = err?.mensaje || 'Error al eliminar el servicio.'; alerta.classList.remove('d-none'); }
         }
     }
 
@@ -172,5 +201,5 @@ const ModuloInfraestructura = (() => {
         return cfg[estado] ?? { clsCard: '', clsBadge: 'bg-light text-muted', label: _esc(estado), icono: 'bi-circle' };
     }
 
-    return { cargar, abrirDetalle, guardarEstado, abrirCreacion, guardarNuevoServicio };
+    return { cargar, abrirCreacion, guardarNuevoServicio, abrirModificacion, guardarModificacion, guardarEstadoModificar, eliminar };
 })();

@@ -1,7 +1,9 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.configuracion.PropiedadesRegistroPublico;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioConversacionMensajeria;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioMensajeMensajeria;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCorreoVerificacion;
@@ -33,6 +35,8 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
 
     private final RepositorioUsuario repositorioUsuario;
     private final RepositorioEmpresa repositorioEmpresa;
+    private final RepositorioConversacionMensajeria repositorioConversacionMensajeria;
+    private final RepositorioMensajeMensajeria repositorioMensajeMensajeria;
     private final PasswordEncoder codificadorClave;
     private final ServicioCorreoVerificacion servicioCorreoVerificacion;
     private final PropiedadesRegistroPublico propiedadesRegistroPublico;
@@ -43,6 +47,8 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     public ServicioUsuarioImpl(
         RepositorioUsuario repositorioUsuario,
         RepositorioEmpresa repositorioEmpresa,
+        RepositorioConversacionMensajeria repositorioConversacionMensajeria,
+        RepositorioMensajeMensajeria repositorioMensajeMensajeria,
         PasswordEncoder codificadorClave,
         ServicioCorreoVerificacion servicioCorreoVerificacion,
         PropiedadesRegistroPublico propiedadesRegistroPublico,
@@ -52,6 +58,8 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     ) {
         this.repositorioUsuario = repositorioUsuario;
         this.repositorioEmpresa = repositorioEmpresa;
+        this.repositorioConversacionMensajeria = repositorioConversacionMensajeria;
+        this.repositorioMensajeMensajeria = repositorioMensajeMensajeria;
         this.codificadorClave = codificadorClave;
         this.servicioCorreoVerificacion = servicioCorreoVerificacion;
         this.propiedadesRegistroPublico = propiedadesRegistroPublico;
@@ -112,6 +120,10 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         }
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa indicada no existe"));
+        if (!empresa.permiteEscritura()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "La empresa está en estado " + empresa.getStatus() + " y no puede crear usuarios");
+        }
         Usuario usuario = Usuario.crear(
             nombreUsuario,
             nombreCompleto,
@@ -150,8 +162,55 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
         return guardado;
     }
     @Override
+    public Usuario desactivar(Long id, String solicitadoPor) {
+        Usuario usuario = obtenerPorId(id);
+        if (!usuario.isActivo()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El usuario ya está inactivo");
+        }
+        String autorizador = servicioContextoUsuario.obtenerIdentificadorActual();
+        if (autorizador.equals(usuario.getNombreUsuario())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No puedes desactivar tu propia cuenta");
+        }
+        usuario.bloquearCuenta();
+        Usuario guardado = repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            autorizador, "DESACTIVACION_USUARIO", "Usuario",
+            guardado.getNombreUsuario(), "activo=true", "activo=false", UtilRed.obtenerIpActual()
+        );
+        return guardado;
+    }
+
+    @Override
+    public Usuario activar(Long id, String solicitadoPor) {
+        Usuario usuario = obtenerPorId(id);
+        if (usuario.isActivo()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El usuario ya está activo");
+        }
+        String autorizador = servicioContextoUsuario.obtenerIdentificadorActual();
+        usuario.habilitarCuenta();
+        Usuario guardado = repositorioUsuario.save(usuario);
+        servicioAuditLog.registrarEvento(
+            autorizador, "ACTIVACION_USUARIO", "Usuario",
+            guardado.getNombreUsuario(), "activo=false", "activo=true", UtilRed.obtenerIpActual()
+        );
+        return guardado;
+    }
+
+    @Override
     public void eliminar(Long id) {
         Usuario usuario = obtenerPorId(id);
+        if (usuario.isActivo()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Solo se puede eliminar un usuario inactivo. Desactívelo primero");
+        }
+        if (repositorioConversacionMensajeria.existsByUsuarioResponsable_Id(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "No se puede eliminar el usuario porque tiene conversaciones de mensajería asignadas");
+        }
+        if (repositorioMensajeMensajeria.existsByUsuarioEmisor_Id(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "No se puede eliminar el usuario porque tiene mensajes enviados en el sistema");
+        }
         String nombreUsuario = usuario.getNombreUsuario();
         String datos = usuario.getNombreCompleto() + " | roles=" + usuario.getRoles();
         repositorioUsuario.delete(usuario);
@@ -303,7 +362,7 @@ public class ServicioUsuarioImpl implements ServicioUsuario {
     @Override
     public void vincularUsuarioEmpresa(String identificadorIngreso, Long empresaId) {
         Usuario usuario = obtenerUsuarioPorIdentificador(identificadorIngreso);
-        if (!usuario.getRoles().contains(RolUsuario.EMPRESA)) {
+        if (!usuario.esEmpresa()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo usuarios EMPRESA pueden vincularse");
         }
         if (usuario.getEmpresaId() != null) {

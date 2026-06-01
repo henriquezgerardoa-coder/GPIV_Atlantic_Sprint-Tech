@@ -61,9 +61,9 @@ public class ControladorRadicacion {
         @RequestParam(value = "desde", required = false) LocalDate desde,
         @RequestParam(value = "hasta", required = false) LocalDate hasta
     ) {
-        return servicioRadicacion.listar(autenticacion.getName(), estado, desde, hasta).stream()
-            .map(mapeador::toRespuesta)
-            .toList();
+        return mapeador.toRespuestas(
+            servicioRadicacion.listar(autenticacion.getName(), estado, desde, hasta)
+        );
     }
 
     @GetMapping("/{id}")

@@ -76,5 +76,9 @@ public interface RepositorioConversacionMensajeria extends JpaRepository<Convers
         ORDER BY c.fechaUltimaActualizacion DESC
         """)
     List<ConversacionMensajeria> findPublicasConDetalleOrderByFechaUltimaActualizacionDesc();
+
+    boolean existsByUsuarioResponsable_Id(Long usuarioId);
+
+    boolean existsByEmpresa_Id(Long empresaId);
 }
 

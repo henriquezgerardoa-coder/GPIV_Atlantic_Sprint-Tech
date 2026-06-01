@@ -4,6 +4,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioHitoObra;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import java.time.format.DateTimeFormatter;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioProyecto;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
@@ -26,6 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @Transactional
 public class ServicioProyectoImpl implements ServicioProyecto {
+
+    private static final DateTimeFormatter FMT_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final RepositorioProyectoProductivo repositorioProyecto;
     private final RepositorioHitoObra repositorioHito;
@@ -92,7 +95,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
             proyecto.vincularRadicacion(radicacion);
         }
 
-        return repositorioProyecto.save(proyecto);
+        ProyectoProductivo guardado = repositorioProyecto.save(proyecto);
+        notificarNuevoProyecto(identificadorIngreso, guardado);
+        return guardado;
     }
 
     @Override
@@ -123,10 +128,25 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         return guardado;
     }
 
+    private void notificarNuevoProyecto(String remitenteIngreso, ProyectoProductivo proyecto) {
+        String asunto = "[Nuevo] Proyecto productivo: «" + proyecto.getNombre() + "»";
+        String cuerpo = "Se ha iniciado el proyecto productivo «" + proyecto.getNombre() + "».";
+        List<Usuario> destinatarios = repositorioUsuario.findActivosConRolesGestion(Set.of(RolUsuario.TECNICO));
+        for (Usuario dest : destinatarios) {
+            if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
+                try {
+                    servicioMensajeria.crear(remitenteIngreso, dest.getId(), asunto, cuerpo);
+                } catch (Exception e) {
+                    // Notificación no crítica
+                }
+            }
+        }
+    }
+
     private void notificarProyectoCompletado(String remitenteIngreso, ProyectoProductivo proyecto) {
-        String asunto = "Proyecto «" + proyecto.getNombre() + "» completado";
+        String asunto = "[Finalizado] Proyecto: «" + proyecto.getNombre() + "»";
         String cuerpo = "El proyecto productivo «" + proyecto.getNombre()
-            + "» ha sido marcado como COMPLETADO por el técnico responsable.";
+            + "» ha sido marcado como COMPLETADO.";
         List<Usuario> destinatarios = repositorioUsuario.findActivosConRolesGestion(
             Set.of(RolUsuario.SECRETARIO, RolUsuario.ADMINISTRADOR, RolUsuario.DIRECTIVO));
         for (Usuario dest : destinatarios) {
@@ -161,7 +181,9 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         proyecto.validarPermiteModificarHitos();
 
         HitoObra hito = HitoObra.crear(proyecto, descripcion, fechaVencimiento);
-        return repositorioHito.save(hito);
+        HitoObra guardado = repositorioHito.save(hito);
+        notificarEmpresaHitosActualizados(proyecto);
+        return guardado;
     }
 
     @Override
@@ -203,5 +225,33 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Transactional(readOnly = true)
     public List<HitoObra> listarHitosVencidos() {
         return repositorioHito.findHitosVencidos();
+    }
+
+    private void notificarEmpresaHitosActualizados(ProyectoProductivo proyecto) {
+        if (proyecto.getSolicitudOrigen() == null) return;
+        Long empresaId = proyecto.getSolicitudOrigen().getEmpresa().getId();
+        String fechaFin = proyecto.getFechaEstimadaFin() != null
+            ? proyecto.getFechaEstimadaFin().format(FMT_FECHA) : "a confirmar";
+        List<HitoObra> hitos = repositorioHito.findByProyectoIdOrderByFechaVencimientoRealAsc(proyecto.getId());
+        StringBuilder sb = new StringBuilder();
+        sb.append("Se ha actualizado el plan de hitos para el proyecto productivo «")
+          .append(proyecto.getNombre()).append("».\n\n")
+          .append("⏰ FECHA DE VENCIMIENTO DEL PROYECTO: ").append(fechaFin).append("\n\n")
+          .append("📋 HITOS DE OBRA:\n");
+        for (int i = 0; i < hitos.size(); i++) {
+            HitoObra h = hitos.get(i);
+            String fechaHito = h.getFechaVencimientoReal() != null
+                ? h.getFechaVencimientoReal().format(FMT_FECHA) : "sin fecha";
+            sb.append(i + 1).append(". ").append(h.getDescripcion())
+              .append(" — Fecha límite: ").append(fechaHito);
+            if (h.isCumplido()) sb.append(" ✓");
+            sb.append("\n");
+        }
+        String asunto = "📋 Hitos actualizados — Proyecto «" + proyecto.getNombre() + "»";
+        try {
+            servicioMensajeria.notificarEmpresa(empresaId, asunto, sb.toString());
+        } catch (Exception ignored) {
+            // Notificación no crítica
+        }
     }
 }

@@ -1,0 +1,10 @@
+json
+{
+"name": "enrepavi-frontend",
+"version": "1.0.0",
+"scripts": {
+"format": "prettier --write \"**/*.{html,css,js}\"",
+"lint": "eslint js/**/*.js --fix && htmlhint *.html && stylelint css/**/*.css --fix",
+"minify": "cleancss -o css/estilos.min.css css/estilos.css"
+}
+}

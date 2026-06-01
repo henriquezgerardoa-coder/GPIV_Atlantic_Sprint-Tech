@@ -261,10 +261,15 @@ const ModuloLotes = (() => {
     }
 
     function confirmarEliminacion(id, codigo) {
+        document.getElementById('tituloModalConfirmacion').innerHTML =
+            '<i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación';
         document.getElementById('mensajeConfirmacionEliminar').textContent =
             `¿Está seguro que desea eliminar el lote "${codigo}"?`;
-        document.getElementById('btnConfirmarEliminar').dataset.eliminarId   = id;
-        document.getElementById('btnConfirmarEliminar').dataset.eliminarTipo = 'lote';
+        const btn = document.getElementById('btnConfirmarEliminar');
+        btn.dataset.eliminarId   = id;
+        btn.dataset.eliminarTipo = 'lote';
+        btn.className = 'btn btn-danger';
+        btn.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmacion')).show();
     }
 

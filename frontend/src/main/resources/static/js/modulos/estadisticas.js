@@ -640,7 +640,7 @@ const ModuloEstadisticas = (() => {
         }).join('');
 
         if (!filtrados.length) {
-            return `<div class="mb-3">${botones}</div><p class="text-muted text-center py-3">Sin lotes para el filtro seleccionado.</p>`;
+            return `<div class="mb-3 filtros-informe-impresion">${botones}</div><p class="text-muted text-center py-3">Sin lotes para el filtro seleccionado.</p>`;
         }
 
         const filas = filtrados.map(l => {
@@ -663,7 +663,7 @@ const ModuloEstadisticas = (() => {
             </tr>`;
         }).join('');
 
-        return `<div class="mb-3">${botones}</div>
+        return `<div class="mb-3 filtros-informe-impresion">${botones}</div>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead class="table-light">
@@ -800,12 +800,10 @@ const ModuloEstadisticas = (() => {
         const modal = document.getElementById(idModal);
         if (!modal) return;
 
-        // Fecha actual en formato largo español
         const fechaLarga = new Date().toLocaleDateString('es-AR', {
             day: 'numeric', month: 'long', year: 'numeric'
         });
 
-        // Inyectar encabezado institucional al inicio del cuerpo del modal
         const encabezado = document.createElement('div');
         encabezado.className = 'encabezado-impresion';
         encabezado.id = '_encabezadoImpresionTemp';
@@ -824,9 +822,20 @@ const ModuloEstadisticas = (() => {
 
         modal.classList.add('modal-impresion');
 
+        // El modal está anidado dentro de un contenedor; para que la regla
+        // CSS "body > *:not(.modal-impresion)" funcione debe ser hijo directo de body.
+        const padreOriginal = modal.parentElement;
+        const siguienteHermano = modal.nextSibling;
+        document.body.appendChild(modal);
+
         const limpiar = () => {
             modal.classList.remove('modal-impresion');
             document.getElementById('_encabezadoImpresionTemp')?.remove();
+            if (siguienteHermano) {
+                padreOriginal.insertBefore(modal, siguienteHermano);
+            } else {
+                padreOriginal.appendChild(modal);
+            }
             window.removeEventListener('afterprint', limpiar);
         };
         window.addEventListener('afterprint', limpiar);

@@ -189,6 +189,31 @@ public class RadicacionSolicitud {
 		return fechaUltimaActualizacion;
 	}
 
+	// Retorna el estado previo para auditoría e historial.
+	public EstadoRadicacion aplicarTransicion(
+		EstadoRadicacion nuevoEstado,
+		String comentario,
+		LocalDate nuevaFechaPlazo,
+		Integer nuevoTiempoObraMeses,
+		LocalDate fechaAprobacionExplicita,
+		String numeroResolucion,
+		String responsable
+	) {
+		EstadoRadicacion anterior = this.estado;
+		if (nuevoEstado == EstadoRadicacion.APROBADA && fechaAprobacionExplicita != null) {
+			this.fechaAprobacion = fechaAprobacionExplicita;
+		}
+		validarYCambiarEstado(nuevoEstado, comentario, nuevaFechaPlazo);
+		if (nuevoTiempoObraMeses != null || nuevaFechaPlazo != null) {
+			establecerDatosPlazo(nuevoTiempoObraMeses, nuevaFechaPlazo);
+		}
+		if (nuevoEstado.requiereRegistrarResolucion()) {
+			establecerResolucion(numeroResolucion, responsable);
+		}
+		sincronizarLote(this.lote);
+		return anterior;
+	}
+
 	public void validarYCambiarEstado(EstadoRadicacion nuevo, String comentario, LocalDate fechaPlazo) {
 		if (this.estado == nuevo) {
 			throw new IllegalStateException("La radicacion ya se encuentra en ese estado");
@@ -267,6 +292,14 @@ public class RadicacionSolicitud {
 		return lote;
 	}
 
+	public Long obtenerIdLote() {
+		return lote != null ? lote.getId() : null;
+	}
+
+	public String obtenerCodigoLote() {
+		return lote != null ? lote.getCodigo() : null;
+	}
+
 	public void asignarLote(Lote lote) {
 		this.lote = lote;
 	}
@@ -292,45 +325,28 @@ public class RadicacionSolicitud {
 		this.fechaPlazo = fechaPlazo;
 	}
 
-        /**
-         * Indica si el plazo de radicación está vencido y el expediente aún está activo.
-         * Encapsula la lógica "plazo pasado y estado no final" para que el llamador no tenga que preguntar.
-         */
         public boolean esPlazoVencido() {
                 return fechaPlazo != null
                         && fechaPlazo.isBefore(LocalDate.now())
                         && !estado.esFinal();
         }
 
-        /**
-         * Texto del plazo o {@code null} si no hay plazo establecido.
-         */
         public String getFechaPlazoTexto() {
                 return fechaPlazo != null ? fechaPlazo.toString() : null;
         }
 
-        /**
-         * Texto de la fecha de aprobación o {@code null} si no fue aprobada.
-         */
         public String getFechaAprobacionTexto() {
                 return fechaAprobacion != null ? fechaAprobacion.toString() : null;
         }
 
-        /**
-         * Texto de la fecha de radicación o {@code null} si no fue radicada.
-         */
         public String getFechaRadicacionTexto() {
                 return fechaRadicacion != null ? fechaRadicacion.toString() : null;
         }
 
-        /**
-         * Texto de la fecha de última actualización o {@code null}.
-         */
         public String getFechaUltimaActualizacionTexto() {
                 return fechaUltimaActualizacion != null ? fechaUltimaActualizacion.toString() : null;
         }
 
-        /** Valida que el CUIT de la empresa cumpla el formato XX-XXXXXXXX-X. */
         public boolean validarCuit() {
                 String cuit = empresa.getCuit();
                 if (cuit == null || cuit.isBlank()) return false;

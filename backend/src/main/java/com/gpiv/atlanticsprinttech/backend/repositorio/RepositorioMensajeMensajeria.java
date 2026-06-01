@@ -28,5 +28,7 @@ public interface RepositorioMensajeMensajeria extends JpaRepository<MensajeMensa
     Optional<MensajeMensajeria> findFirstByConversacionIdOrderByFechaEnvioDesc(Long conversacionId);
 
     long countByConversacionId(Long conversacionId);
+
+    boolean existsByUsuarioEmisor_Id(Long usuarioId);
 }
 

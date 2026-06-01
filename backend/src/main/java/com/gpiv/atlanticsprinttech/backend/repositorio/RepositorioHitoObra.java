@@ -12,6 +12,8 @@ public interface RepositorioHitoObra extends JpaRepository<HitoObra, Long> {
 
     Optional<HitoObra> findByIdAndProyectoId(Long id, Long proyectoId);
 
+    List<HitoObra> findByProyectoIdOrderByFechaVencimientoRealAsc(Long proyectoId);
+
     @Query("""
         SELECT h FROM HitoObra h
         JOIN FETCH h.proyecto p

@@ -103,4 +103,9 @@ public class Servicio {
         this.ultimoTecnicoResponsable = tecnico;
         this.fechaUltimaActualizacion = LocalDateTime.now();
     }
+
+    public void actualizarDatos(String nombre, String descripcionTecnica) {
+        this.nombre = nombre;
+        this.descripcionTecnica = descripcionTecnica;
+    }
 }

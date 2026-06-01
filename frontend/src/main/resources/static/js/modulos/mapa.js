@@ -103,10 +103,10 @@ const ModuloMapa = (() => {
 
         const lote = _resolverLote(nombre);
 
-        // Vista empresa: solo lotes disponibles visibles (verde), el resto invisible
+        // Vista empresa: solo lotes disponibles visibles (gris), el resto invisible
         if (_soloDisponibles) {
             if (!lote || lote.ocupado) return { opacity: 0, fillOpacity: 0 };
-            return { color: '#146c43', weight: 2, fillColor: '#25a567', fillOpacity: 0.70 };
+            return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
         }
 
         // Lote ENREPAVI: usa color de etapa pero con borde azul-marino distintivo

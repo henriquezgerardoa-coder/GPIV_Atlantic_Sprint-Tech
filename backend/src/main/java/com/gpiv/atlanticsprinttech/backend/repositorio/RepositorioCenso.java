@@ -9,5 +9,7 @@ public interface RepositorioCenso extends JpaRepository<Censo, Long> {
 
     List<Censo> findByEmpresaIdOrderByAnioPeriodoDescSemestreDesc(Long empresaId);
 
+    void deleteByEmpresaId(Long empresaId);
+
     Optional<Censo> findByEmpresaIdAndAnioPeriodoAndSemestre(Long empresaId, int anioPeriodo, int semestre);
 }

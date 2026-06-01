@@ -14,7 +14,8 @@
     --color-acentuado: #22c55e;
     --color-fondo-landing: #f8fafc;
     --color-texto-landing: #1e293b;
-    --sombra-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --sombra-card:
+        0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --transicion: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -26,7 +27,7 @@
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     background: var(--color-fondo-landing);
     color: #1f2937;
 }
@@ -75,7 +76,7 @@ body {
 }
 
 .nav-enlace-simple {
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 1);
     font-size: 0.95rem;
     font-weight: 500;
     transition: var(--transicion);
@@ -90,8 +91,9 @@ body {
 /* ── Hero ── */
 .hero {
     min-height: 100vh;
-    background: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.7)),
-    url('../img/viedma.jpg');
+    background:
+        linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.7)),
+        url("../img/viedma.jpg");
     background-size: cover;
     background-position: center;
     display: flex;
@@ -147,7 +149,7 @@ body {
     background-color: var(--color-primario);
     color: #ffffff;
     border: 1px solid var(--color-primario);
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
@@ -169,7 +171,7 @@ body {
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #ffffff;
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
     font-weight: 500;
     display: inline-flex;
     align-items: center;
@@ -310,7 +312,7 @@ body {
 .pilar-card:hover {
     transform: translateY(-5px);
     border-color: var(--color-primario);
-    box-shadow: 0 12px 30px rgba(26, 92, 55, 0.10);
+    box-shadow: 0 12px 30px rgba(26, 92, 55, 0.1);
 }
 
 .pilar-icono {
@@ -349,7 +351,7 @@ body {
     border: 1px solid #c7d7cc;
     border-radius: 18px;
     padding: 2.5rem;
-    box-shadow: 0 8px 28px rgba(26, 107, 48, 0.10);
+    box-shadow: 0 8px 28px rgba(26, 107, 48, 0.1);
 }
 
 .consulta-grid {
@@ -389,7 +391,9 @@ body {
     font-size: 0.95rem;
     color: #1f2937;
     background: #ffffff;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
     font-family: inherit;
     outline: none;
 }
@@ -413,7 +417,7 @@ body {
     background-color: #0f172a;
     color: #94a3b8;
     padding: 60px 10% 30px;
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
 }
 
 .footer-principal {
@@ -490,7 +494,7 @@ body {
     align-items: center;
     gap: 8px;
     color: #64748b;
-    font-size: 0.80rem;
+    font-size: 0.8rem;
     white-space: nowrap;
 }
 
@@ -519,7 +523,9 @@ body {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition:
+        opacity 0.3s ease,
+        visibility 0.3s ease;
 }
 
 .auth-modal.auth-modal--open,
@@ -563,8 +569,9 @@ body {
     border: none;
     background: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15),
-    0 10px 10px -5px rgba(0, 0, 0, 0.05);
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.15),
+        0 10px 10px -5px rgba(0, 0, 0, 0.05);
     opacity: 0;
     transition: opacity 0.2s ease;
 }
@@ -785,7 +792,9 @@ body:has(.contenido-principal) .card .card-header {
     border: none;
     border-radius: 14px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
 }
 
 .tarjeta-stat:hover {
@@ -1051,7 +1060,12 @@ body:has(.contenido-principal) {
 
 /* Navbar superior del dashboard */
 body:has(.contenido-principal) > .navbar.bg-primary {
-    background: linear-gradient(90deg, #123322 0%, #1a5c37 55%, #227c4b 100%) !important;
+    background: linear-gradient(
+        90deg,
+        #123322 0%,
+        #1a5c37 55%,
+        #227c4b 100%
+    ) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -1060,7 +1074,7 @@ body:has(.contenido-principal) .navbar-brand {
 }
 
 body:has(.contenido-principal) .navbar-brand .text-white-50 {
-    color: rgba(255, 255, 255, 0.70) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
 }
 
 body:has(.contenido-principal) #nombreUsuarioNavbar {
@@ -1324,28 +1338,49 @@ body:has(.contenido-principal) .btn-outline-danger i {
    ========================================================= */
 
 /* Conversación seleccionada */
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item.active,
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item.active:hover {
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item.active,
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item.active:hover {
     background-color: #dff1e7 !important;
     border-color: #b7d8c5 !important;
     color: #123322 !important;
 }
 
 /* Texto dentro de la conversación seleccionada */
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item.active *,
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item.active .text-muted,
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item.active small {
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item.active
+    *,
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item.active
+    .text-muted,
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item.active
+    small {
     color: #123322 !important;
 }
 
 /* Título de la conversación seleccionada */
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item.active strong,
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item.active .fw-semibold {
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item.active
+    strong,
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item.active
+    .fw-semibold {
     color: #0f3d27 !important;
 }
 
 /* Hover de conversaciones no seleccionadas */
-body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item:hover {
+body:has(.contenido-principal)
+    #listaConversacionesMensajeria
+    .list-group-item:hover {
     background-color: #f1f8f4;
     color: #123322;
 }
@@ -1365,7 +1400,9 @@ body:has(.contenido-principal) #contenedorMensajesMensajeria {
 /* Mensajes del sistema / alertas amarillas más suaves */
 body:has(.contenido-principal) #contenedorMensajesMensajeria .alert-warning,
 body:has(.contenido-principal) #contenedorMensajesMensajeria .bg-warning,
-body:has(.contenido-principal) #contenedorMensajesMensajeria [class*="warning"] {
+body:has(.contenido-principal)
+    #contenedorMensajesMensajeria
+    [class*="warning"] {
     background-color: #fff7df !important;
     border-color: #d9a441 !important;
     color: #3f2d08 !important;
@@ -1380,7 +1417,9 @@ body:has(.contenido-principal) #formRespuestaMensajeria button[type="submit"] {
 }
 
 body:has(.contenido-principal) #formRespuestaMensajeria .btn-primary:hover,
-body:has(.contenido-principal) #formRespuestaMensajeria button[type="submit"]:hover {
+body:has(.contenido-principal)
+    #formRespuestaMensajeria
+    button[type="submit"]:hover {
     background-color: #227c4b !important;
     border-color: #227c4b !important;
 }
@@ -1410,9 +1449,17 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
     min-width: 80px;
     position: relative;
 }
-.timeline-lote .paso .icono { display: block; }
-.timeline-lote .paso .nombre { font-size: 0.72rem; margin-top: 0.25rem; line-height: 1.25; }
-.timeline-lote .paso.futuro { opacity: 0.42; }
+.timeline-lote .paso .icono {
+    display: block;
+}
+.timeline-lote .paso .nombre {
+    font-size: 0.72rem;
+    margin-top: 0.25rem;
+    line-height: 1.25;
+}
+.timeline-lote .paso.futuro {
+    opacity: 0.42;
+}
 .timeline-lote .conector {
     flex: 0 0 1rem;
     height: 2px;
@@ -1420,13 +1467,24 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
     align-self: center;
     margin-bottom: 1.8rem;
 }
-.timeline-lote .conector.completado { background: #198754; }
+.timeline-lote .conector.completado {
+    background: #198754;
+}
 
 @keyframes parpadeoAzul {
-    0%, 100% { color: #0d6efd; transform: scale(1); }
-    50%       { color: #6ea8fe; transform: scale(1.18); }
+    0%,
+    100% {
+        color: #0d6efd;
+        transform: scale(1);
+    }
+    50% {
+        color: #6ea8fe;
+        transform: scale(1.18);
+    }
 }
-.parpadeo-azul { animation: parpadeoAzul 1.4s ease-in-out infinite; }
+.parpadeo-azul {
+    animation: parpadeoAzul 1.4s ease-in-out infinite;
+}
 
 /* =========================================================
    IMPRESIÓN DE INFORMES
@@ -1486,9 +1544,25 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
 }
 
 @media print {
+    /* Bootstrap agrega overflow:hidden a html y padding-right a body al abrir modales;
+       ambos deben resetearse para que el contenido ocupe exactamente el ancho del papel */
+    html {
+        overflow: visible !important;
+    }
+    body {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        width: 100% !important;
+    }
+
     /* Eliminar del flujo todos los hijos directos del body excepto el modal de impresión */
-    body > *:not(.modal-impresion) { display: none !important; }
-    .modal-backdrop { display: none !important; }
+    body > *:not(.modal-impresion) {
+        display: none !important;
+    }
+    .modal-backdrop {
+        display: none !important;
+    }
 
     /* Mostrar el modal de impresión en flujo natural para que el documento tenga solo su altura */
     .modal.modal-impresion {
@@ -1527,17 +1601,186 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
         overflow-y: visible !important;
         height: auto !important;
         max-height: none !important;
-        page-break-inside: auto;
+        padding-bottom: 0 !important;
     }
 
     /* Ocultar la barra del modal (botones de cerrar/imprimir) */
-    .modal.modal-impresion .modal-header { display: none !important; }
+    .modal.modal-impresion .modal-header {
+        display: none !important;
+    }
+
+    /* table-responsive tiene overflow-x:auto que recorta tablas en papel */
+    .modal.modal-impresion .table-responsive {
+        overflow: visible !important;
+    }
+
+    /* Botones de filtro del informe de lotes: interfaz interactiva, no pertenece al documento */
+    .modal.modal-impresion .filtros-informe-impresion {
+        display: none !important;
+    }
 
     /* Mostrar el encabezado institucional */
-    .encabezado-impresion { display: flex !important; }
+    .encabezado-impresion {
+        display: flex !important;
+    }
 
     /* Evitar cortes bruscos en filas de tablas */
-    table { page-break-inside: auto; }
-    tr    { page-break-inside: avoid; page-break-after: auto; }
+    table {
+        page-break-inside: auto;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    /* Evitar página en blanco al final: el último elemento no fuerza salto */
+    .modal.modal-impresion .modal-body > *:last-child {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
 }
 
+/* ── Clases utilitarias: estilos inline migrados ── */
+.logo-auth {
+    max-height: 200px;
+    width: auto;
+    object-fit: contain;
+}
+
+.navbar-app {
+    height: var(--alto-navbar);
+}
+
+.logo-navbar-app {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+}
+
+.info-usuario-navbar {
+    line-height: 1.2;
+}
+
+.rol-usuario-navbar {
+    font-size: 0.7rem;
+}
+
+.btn-usuario-navbar {
+    width: 34px;
+    height: 34px;
+}
+
+/* ── Menú hamburger landing (mobile) ── */
+.btn-hamburger {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: var(--transicion);
+}
+
+.btn-hamburger:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Accesibilidad: focus visible ── */
+.pagina-ingreso .form-control:focus {
+    border-color: #1a5c37;
+    box-shadow: 0 0 0 0.2rem rgba(26, 92, 55, 0.2);
+}
+
+.pagina-ingreso .btn-primary {
+    background-color: #1a5c37;
+    border-color: #1a5c37;
+}
+
+.pagina-ingreso .btn-primary:hover,
+.pagina-ingreso .btn-primary:focus {
+    background-color: #227c4b;
+    border-color: #227c4b;
+}
+
+/* ── Responsive: pantallas muy pequeñas (< 480px) ── */
+@media (max-width: 480px) {
+    .navbar {
+        padding: 16px 5%;
+    }
+
+    .logo-texto {
+        font-size: 18px;
+    }
+
+    .hero-content h1 {
+        font-size: clamp(32px, 9vw, 44px);
+    }
+
+    .hero-btns {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-lg {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nosotros {
+        padding: 60px 5%;
+    }
+
+    .nosotros-principal {
+        flex-direction: column;
+    }
+
+    .nosotros-badge-industrial {
+        min-width: unset;
+        width: 100%;
+    }
+}
+
+/* Eliminar cursor de escritura (I-beam) en elementos no editables de la app */
+body:has(.contenido-principal)
+    *:not(input):not(textarea):not(select):not(.leaflet-container):not(
+        .leaflet-container *
+    ) {
+    cursor: default !important;
+}
+/* Restaurar cursor pointer en elementos interactivos */
+body:has(.contenido-principal) .btn,
+body:has(.contenido-principal) button:not(:disabled),
+body:has(.contenido-principal) a[href],
+body:has(.contenido-principal) [onclick],
+body:has(.contenido-principal) [role="button"],
+body:has(.contenido-principal) .nav-link,
+body:has(.contenido-principal) .dropdown-item,
+body:has(.contenido-principal) .dropdown-toggle,
+body:has(.contenido-principal) .form-check-label,
+body:has(.contenido-principal) label.btn,
+body:has(.contenido-principal) .list-group-item-action,
+body:has(.contenido-principal) [style*="cursor:pointer"],
+body:has(.contenido-principal) [style*="cursor: pointer"] {
+    cursor: pointer !important;
+}
+/* Cursor de texto solo en campos editables */
+body:has(.contenido-principal)
+    input:not([type="button"]):not([type="submit"]):not([type="reset"]):not(
+        [type="checkbox"]
+    ):not([type="radio"]):not([type="file"]):not([readonly]),
+body:has(.contenido-principal) textarea:not([readonly]) {
+    cursor: text !important;
+}
+
+/* Restaurar efecto seleccionado de btn-check (rúbricas evaluación y cambio de rubro) */
+body:has(.contenido-principal) .btn-check:checked + .btn-outline-primary,
+body:has(.contenido-principal) .btn-check:checked + .btn-outline-primary:hover,
+body:has(.contenido-principal) .btn-check:checked + .btn-outline-primary:focus {
+    color: #ffffff !important;
+    background-color: #1a5c37 !important;
+    border-color: #1a5c37 !important;
+    box-shadow: 0 0 0 0.15rem rgba(26, 92, 55, 0.25) !important;
+}

@@ -1,11 +1,16 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioCenso;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioConversacionMensajeria;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpleado;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioPersonalRegistrado;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioSolicitudCambioRubro;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioVehiculo;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
@@ -27,8 +32,12 @@ import com.gpiv.atlanticsprinttech.entities.dominio.Rubro;
 import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
+import com.gpiv.atlanticsprinttech.entities.dominio.Vehiculo;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,36 +46,51 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @Transactional
 public class ServicioEmpresaImpl implements ServicioEmpresa {
+	private final RepositorioCenso repositorioCenso;
+	private final RepositorioConversacionMensajeria repositorioConversacionMensajeria;
 	private final RepositorioEmpleado repositorioEmpleado;
 	private final RepositorioEmpresa repositorioEmpresa;
 	private final RepositorioLote repositorioLote;
+	private final RepositorioPersonalRegistrado repositorioPersonalRegistrado;
 	private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
 	private final RepositorioRadicacionHistorial repositorioRadicacionHistorial;
+	private final RepositorioSolicitudCambioRubro repositorioSolicitudCambioRubro;
 	private final RepositorioUsuario repositorioUsuario;
 	private final com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro repositorioRubro;
+	private final RepositorioVehiculo repositorioVehiculo;
 	private final ServicioContextoUsuario servicioContextoUsuario;
 	private final ServicioAuditLog servicioAuditLog;
 	private final ObjectMapper objectMapper;
 
 	public ServicioEmpresaImpl(
+		RepositorioCenso repositorioCenso,
+		RepositorioConversacionMensajeria repositorioConversacionMensajeria,
 		RepositorioEmpleado repositorioEmpleado,
 		RepositorioEmpresa repositorioEmpresa,
 		RepositorioLote repositorioLote,
+		RepositorioPersonalRegistrado repositorioPersonalRegistrado,
 		RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
 		RepositorioRadicacionHistorial repositorioRadicacionHistorial,
+		RepositorioSolicitudCambioRubro repositorioSolicitudCambioRubro,
 		RepositorioUsuario repositorioUsuario,
 		com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRubro repositorioRubro,
+		RepositorioVehiculo repositorioVehiculo,
 		ServicioContextoUsuario servicioContextoUsuario,
 		ServicioAuditLog servicioAuditLog,
 		ObjectMapper objectMapper
 	) {
+		this.repositorioCenso = repositorioCenso;
+		this.repositorioConversacionMensajeria = repositorioConversacionMensajeria;
 		this.repositorioEmpleado = repositorioEmpleado;
 		this.repositorioEmpresa = repositorioEmpresa;
 		this.repositorioLote = repositorioLote;
+		this.repositorioPersonalRegistrado = repositorioPersonalRegistrado;
 		this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
 		this.repositorioRadicacionHistorial = repositorioRadicacionHistorial;
+		this.repositorioSolicitudCambioRubro = repositorioSolicitudCambioRubro;
 		this.repositorioUsuario = repositorioUsuario;
 		this.repositorioRubro = repositorioRubro;
+		this.repositorioVehiculo = repositorioVehiculo;
 		this.servicioContextoUsuario = servicioContextoUsuario;
 		this.servicioAuditLog = servicioAuditLog;
 		this.objectMapper = objectMapper;
@@ -115,6 +139,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		return obtenerPorIdInterno(id);
 	}
 	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
 	public Empresa crear(Empresa empresa, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 		if (servicioContextoUsuario.esRolEmpresa(usuario) && usuario.getEmpresaId() != null) {
@@ -136,6 +161,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		return guardada;
 	}
 	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
 	public Empresa actualizar(Long id, Empresa empresa, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -143,6 +169,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			if (!empresaId.equals(id)) {
 				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
 			}
+			servicioContextoUsuario.exigirEmpresaActivaParaEscritura(usuario);
 		}
 		Empresa empresaActual = obtenerPorIdInterno(id);
 		validarCuitDisponible(empresa.getCuit(), empresaActual.getCuit());
@@ -170,6 +197,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		return guardada;
 	}
 	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
 	public Empresa actualizarContacto(Long id, String correoElectronico, String telefono, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -177,6 +205,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			if (!empresaId.equals(id)) {
 				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
 			}
+			servicioContextoUsuario.exigirEmpresaActivaParaEscritura(usuario);
 		}
 		Empresa empresa = obtenerPorIdInterno(id);
 		empresa.actualizarDatosContacto(correoElectronico, telefono);
@@ -191,6 +220,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	}
 
 	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
 	public void asignarRubroInicial(Long empresaId, Long rubroId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -198,6 +228,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			if (!propiaEmpresaId.equals(empresaId)) {
 				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
 			}
+			servicioContextoUsuario.exigirEmpresaActivaParaEscritura(usuario);
 		}
 		Empresa empresa = obtenerPorIdInterno(empresaId);
 		if (empresa.getRubro() != null) {
@@ -214,6 +245,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		);
 	}
 	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
 	public void eliminar(Long id, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -223,6 +255,20 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		if (repositorioLote.existsByEmpresa_Id(id)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar la empresa porque tiene lotes asociados");
 		}
+		if (repositorioRadicacionSolicitud.existsByEmpresaId(id)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar la empresa porque tiene radicaciones asociadas");
+		}
+		if (repositorioSolicitudCambioRubro.existsByEmpresaId(id)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar la empresa porque tiene solicitudes de cambio de rubro");
+		}
+		if (repositorioConversacionMensajeria.existsByEmpresa_Id(id)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar la empresa porque tiene conversaciones de mensajería");
+		}
+		// Borrado en cascada de datos propios de la empresa
+		repositorioPersonalRegistrado.deleteByEmpresaId(id);
+		repositorioCenso.deleteByEmpresaId(id);
+		repositorioEmpleado.deleteAll(repositorioEmpleado.findByEmpresa_Id(id));
+		repositorioVehiculo.deleteAll(repositorioVehiculo.findByEmpresaIdOrderByPatenteAsc(id));
 		String datosEmpresa = empresaActual.getNombre() + " | CUIT=" + empresaActual.getCuit();
 		String cuit = empresaActual.getCuit();
 		repositorioEmpresa.delete(empresaActual);
@@ -238,9 +284,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	@Override
 	public List<RespuestaEmpresaListadoAdmin> listarVistaAdmin(String identificadorIngreso) {
 		validarAccesoAdmin(identificadorIngreso);
-		return repositorioEmpresa.findAllIdNombre().stream()
-			.map(row -> new RespuestaEmpresaListadoAdmin((Long) row[0], (String) row[1]))
-			.toList();
+		return repositorioEmpresa.findAllIdNombre();
 	}
 
 	@Override
@@ -334,11 +378,14 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	}
 
 	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
 	public RespuestaServiciosPostRadicacion actualizarServiciosPostRadicacion(
 		Long empresaId,
 		SolicitudServiciosPostRadicacion solicitud,
 		String identificadorIngreso
 	) {
+		Usuario usuarioActualizacion = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+		servicioContextoUsuario.exigirEmpresaActivaParaEscritura(usuarioActualizacion);
 		validarAccesoEmpresa(empresaId, identificadorIngreso);
 		if (!tieneHabilitacionServiciosPostRadicacion(empresaId)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo puedes gestionar servicios despues de la radicacion");
@@ -361,6 +408,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			serializarDatosServiciosPostRadicacion(datosActualizados)
 		);
 		Empresa guardada = repositorioEmpresa.save(empresa);
+		sincronizarVehiculosCenso(guardada, vehiculos);
 		servicioAuditLog.registrarEvento(
 			identificadorIngreso, "ACTUALIZACION_SERVICIOS_EMPRESA", "Empresa",
 			guardada.getCuit(),
@@ -379,6 +427,73 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			datosActualizados.consumoInternetMbps(),
 			datosActualizados.consumosAdicionales()
 		);
+	}
+
+	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
+	public void inactivar(Long id, String identificadorIngreso) {
+		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+		if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMINISTRADOR o SECRETARIO puede inactivar empresas");
+		}
+		Empresa empresa = obtenerPorIdInterno(id);
+		try {
+			empresa.inactivar();
+		} catch (IllegalStateException e) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+		}
+		repositorioEmpresa.save(empresa);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "INACTIVACION_EMPRESA", "Empresa",
+			empresa.getCuit(), "ACTIVA", "INACTIVA", UtilRed.obtenerIpActual()
+		);
+	}
+
+	@Override
+	@CacheEvict(value = "empresas", allEntries = true)
+	public void reactivar(Long id, String identificadorIngreso) {
+		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+		if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo ADMINISTRADOR o SECRETARIO puede reactivar empresas");
+		}
+		Empresa empresa = obtenerPorIdInterno(id);
+		try {
+			empresa.reactivar();
+		} catch (IllegalStateException e) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+		}
+		repositorioEmpresa.save(empresa);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "REACTIVACION_EMPRESA", "Empresa",
+			empresa.getCuit(), "INACTIVA", "ACTIVA", UtilRed.obtenerIpActual()
+		);
+	}
+
+	private void sincronizarVehiculosCenso(Empresa empresa, List<RespuestaVehiculoEmpresa> vehiculosDeclarados) {
+		List<Vehiculo> existentes = repositorioVehiculo.findByEmpresaIdOrderByPatenteAsc(empresa.getId());
+		Set<String> patentesDeclaradas = vehiculosDeclarados.stream()
+			.map(RespuestaVehiculoEmpresa::placa)
+			.collect(Collectors.toSet());
+		Set<String> patentesExistentes = existentes.stream()
+			.map(Vehiculo::getPatente)
+			.collect(Collectors.toSet());
+
+		// Agregar al censo los vehículos nuevos que aún no están registrados
+		vehiculosDeclarados.stream()
+			.filter(v -> !patentesExistentes.contains(v.placa()))
+			.forEach(v -> repositorioVehiculo.save(
+				Vehiculo.crear(
+					empresa,
+					v.placa(),
+					v.descripcion() != null && !v.descripcion().isBlank() ? v.descripcion() : v.placa(),
+					v.tipo()
+				)
+			));
+
+		// Eliminar del censo los vehículos que ya no están declarados
+		existentes.stream()
+			.filter(v -> !patentesDeclaradas.contains(v.getPatente()))
+			.forEach(repositorioVehiculo::delete);
 	}
 
 	private DatosServiciosPostRadicacion construirDatosServiciosPostRadicacion(

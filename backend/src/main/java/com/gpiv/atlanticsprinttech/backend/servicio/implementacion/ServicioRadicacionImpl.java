@@ -2,17 +2,18 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gpiv.atlanticsprinttech.backend.evento.RadicacionCreadaEvent;
+import com.gpiv.atlanticsprinttech.backend.evento.RadicacionEstadoCambiadoEvent;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionDocumento;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionHistorial;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
-import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
-import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioRadicacion;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
+import org.springframework.context.ApplicationEventPublisher;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudRelevamientoPedidoLotes;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
@@ -22,13 +23,13 @@ import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionHistorial;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
-import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.TipoDocumentoRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -48,16 +49,26 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     private static final Set<Integer> OPCIONES_NECESIDAD_M2 = Set.of(1200, 1800, 2500, 3300, 5000, 6000);
     private static final String TIPO_SOLICITUD_PEDIDO_LOTES = "PEDIDO_LOTES";
 
+    // Firmas binarias (magic bytes) por extensión permitida.
+    // Cada extensión puede tener múltiples firmas válidas (el array interno es la secuencia de bytes).
+    private static final Map<String, byte[][]> MAGIC_BYTES = Map.of(
+        "pdf",  new byte[][]{{0x25, 0x50, 0x44, 0x46}},                            // %PDF
+        "png",  new byte[][]{{(byte) 0x89, 0x50, 0x4E, 0x47}},                     // \x89PNG
+        "jpg",  new byte[][]{{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}},             // JFIF/EXIF
+        "jpeg", new byte[][]{{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}},
+        "doc",  new byte[][]{{(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0}},      // OLE2
+        "docx", new byte[][]{{0x50, 0x4B, 0x03, 0x04}}                             // ZIP (OOXML)
+    );
+
     private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
     private final RepositorioRadicacionHistorial repositorioRadicacionHistorial;
     private final RepositorioRadicacionDocumento repositorioRadicacionDocumento;
     private final RepositorioEmpresa repositorioEmpresa;
     private final RepositorioLote repositorioLote;
     private final RepositorioProyectoProductivo repositorioProyecto;
-    private final RepositorioUsuario repositorioUsuario;
     private final ServicioContextoUsuario servicioContextoUsuario;
     private final ServicioAuditLog servicioAuditLog;
-    private final ServicioMensajeria servicioMensajeria;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
     public ServicioRadicacionImpl(
@@ -67,10 +78,9 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         RepositorioEmpresa repositorioEmpresa,
         RepositorioLote repositorioLote,
         RepositorioProyectoProductivo repositorioProyecto,
-        RepositorioUsuario repositorioUsuario,
         ServicioContextoUsuario servicioContextoUsuario,
         ServicioAuditLog servicioAuditLog,
-        ServicioMensajeria servicioMensajeria,
+        ApplicationEventPublisher eventPublisher,
         ObjectMapper objectMapper
     ) {
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
@@ -79,10 +89,9 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         this.repositorioEmpresa = repositorioEmpresa;
         this.repositorioLote = repositorioLote;
         this.repositorioProyecto = repositorioProyecto;
-        this.repositorioUsuario = repositorioUsuario;
         this.servicioContextoUsuario = servicioContextoUsuario;
         this.servicioAuditLog = servicioAuditLog;
-        this.servicioMensajeria = servicioMensajeria;
+        this.eventPublisher = eventPublisher;
         this.objectMapper = objectMapper;
     }
 
@@ -120,6 +129,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         SolicitudRelevamientoPedidoLotes relevamientoPedidoLotes
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+        servicioContextoUsuario.exigirEmpresaActivaParaEscritura(usuario);
         Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La empresa asociada no existe"));
@@ -149,6 +159,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             guardada.getTipoSolicitud() + " | " + guardada.getEstado().name(),
             UtilRed.obtenerIpActual()
         );
+        eventPublisher.publishEvent(new RadicacionCreadaEvent(guardada, identificadorIngreso));
         return guardada;
     }
 
@@ -206,41 +217,28 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         }
 
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, id);
-        EstadoRadicacion estadoAnterior = radicacion.getEstado();
-        if (estado == EstadoRadicacion.APROBADA && fechaAprobacion != null) {
-            radicacion.establecerFechaAprobacion(fechaAprobacion);
+
+        if (estado == EstadoRadicacion.RADICADA) {
+            validarRequisitosParaRadicar(radicacion.getId());
         }
+
+        EstadoRadicacion estadoAnterior;
         try {
-            radicacion.validarYCambiarEstado(estado, comentario, fechaPlazo);
+            estadoAnterior = radicacion.aplicarTransicion(
+                estado, comentario, fechaPlazo, tiempoEstimadoObraMeses,
+                fechaAprobacion, numeroResolucion, identificadorIngreso
+            );
         } catch (IllegalStateException | IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
-        // Solo actualizar plazo cuando se proporciona explicitamente (evita borrar datos al cambiar a RADICADA)
-        if (tiempoEstimadoObraMeses != null || fechaPlazo != null) {
-            radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
-        }
-        if (estado == EstadoRadicacion.RADICADA) {
-            repositorioProyecto.findBySolicitudOrigenId(radicacion.getId()).ifPresent(p -> {
-                if (p.getEstado() != com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto.COMPLETADO) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "El proyecto productivo asociado debe estar en estado COMPLETADO para radicar el expediente");
-                }
-            });
-            if (!repositorioProyecto.existsBySolicitudOrigenId(radicacion.getId())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "No existe proyecto productivo asociado al expediente");
-            }
-        }
-        if (estado == EstadoRadicacion.APROBADA || estado == EstadoRadicacion.RADICADA
-                || estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA
-                || estado == EstadoRadicacion.DESADJUDICACION) {
-            radicacion.establecerResolucion(numeroResolucion, identificadorIngreso);
-        }
+
         Lote lote = radicacion.getLote();
-        radicacion.sincronizarLote(lote);
         if (lote != null) repositorioLote.save(lote);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
-        repositorioRadicacionHistorial.save(RadicacionHistorial.crear(actualizada, estadoAnterior, estado, comentario, identificadorIngreso));
+
+        repositorioRadicacionHistorial.save(
+            RadicacionHistorial.crear(actualizada, estadoAnterior, estado, comentario, identificadorIngreso)
+        );
         servicioAuditLog.registrarEvento(
             identificadorIngreso, "CAMBIO_ESTADO", "RadicacionSolicitud",
             actualizada.getNumeroRadicado(),
@@ -248,61 +246,28 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             estado.name(),
             UtilRed.obtenerIpActual()
         );
+
         if (estado == EstadoRadicacion.APROBADA && !repositorioProyecto.existsBySolicitudOrigenId(actualizada.getId())) {
             crearProyectoDesdeRadicacion(actualizada, usuario);
         }
-        notificarCambioEstado(identificadorIngreso, actualizada, estadoAnterior, estado, comentario);
+        eventPublisher.publishEvent(
+            new RadicacionEstadoCambiadoEvent(actualizada, estadoAnterior, estado, comentario, identificadorIngreso)
+        );
         return actualizada;
     }
 
-    private void notificarCambioEstado(String remitenteIngreso, RadicacionSolicitud radicacion,
-            EstadoRadicacion estadoAnterior, EstadoRadicacion estadoNuevo, String comentario) {
-        String asunto = "Expediente " + radicacion.getNumeroRadicado()
-            + " — cambio de estado: " + etiquetaEstado(estadoAnterior) + " → " + etiquetaEstado(estadoNuevo);
-        String cuerpo = "El expediente " + radicacion.getNumeroRadicado()
-            + " ha pasado al estado «" + etiquetaEstado(estadoNuevo) + "».";
-        if (comentario != null && !comentario.isBlank()) {
-            cuerpo += "\n\nObservación: " + comentario;
-        }
-        // Siempre notificar a la empresa que realizó la solicitud
-        List<Usuario> usuariosEmpresa = repositorioUsuario.findByEmpresaIdConRolesOrderByIdAsc(radicacion.getEmpresa().getId());
-        for (Usuario dest : usuariosEmpresa) {
-            if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
-                enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);
-            }
-        }
-        // Al radicar se inicia el proyecto productivo: notificar también a los técnicos
-        if (estadoNuevo == EstadoRadicacion.RADICADA) {
-            List<Usuario> tecnicos = repositorioUsuario.findActivosConRolesGestion(Set.of(RolUsuario.TECNICO));
-            for (Usuario dest : tecnicos) {
-                if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
-                    enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);
+    private void validarRequisitosParaRadicar(Long radicacionId) {
+        repositorioProyecto.findBySolicitudOrigenId(radicacionId).ifPresentOrElse(
+            p -> {
+                if (p.getEstado() != com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto.COMPLETADO) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El proyecto productivo asociado debe estar en estado COMPLETADO para radicar el expediente");
                 }
-            }
-        }
+            },
+            () -> { throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "No existe proyecto productivo asociado al expediente"); }
+        );
     }
-
-    private void enviarMensaje(String remitente, Long destinatarioId, String asunto, String cuerpo) {
-        try {
-            servicioMensajeria.crear(remitente, destinatarioId, asunto, cuerpo);
-        } catch (Exception e) {
-            // Notificación no crítica
-        }
-    }
-
-    private static String etiquetaEstado(EstadoRadicacion estado) {
-        return switch (estado) {
-            case PENDIENTE -> "Pendiente";
-            case EN_REVISION -> "En revisión";
-            case APROBADA -> "Aprobada";
-            case RADICADA -> "Radicada";
-            case RECHAZADA -> "Rechazada";
-            case REQUIERE_INFORMACION_ADICIONAL -> "Requiere información adicional";
-            case CANCELADA -> "Cancelada";
-            case DESADJUDICACION -> "Desadjudicación";
-        };
-    }
-
 
     @Override
     public void registrarObservacion(String identificadorIngreso, Long id, String comentario) {
@@ -389,7 +354,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         radicacion.validarPermiteAsignarLote();
         Lote lote = repositorioLote.findByIdConEmpresa(loteId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lote no encontrado"));
-        String codigoAnterior = radicacion.getLote() != null ? radicacion.getLote().getCodigo() : null;
+        String codigoAnterior = radicacion.obtenerCodigoLote();
         lote.ocuparConEmpresa(radicacion.getEmpresa(), radicacion.getNumeroRadicado());
         repositorioLote.save(lote);
         radicacion.asignarLote(lote);
@@ -417,7 +382,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         byte[] contenido
     ) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!usuario.tieneRol(RolUsuario.ADMINISTRADOR) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
+        if (!usuario.tieneRolDeGestion()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el Secretario o Administrador puede cargar el Acta de Rubrica");
         }
         RadicacionSolicitud radicacion = obtenerPorId(identificadorIngreso, radicacionId);
@@ -512,11 +477,26 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo MIME no permitido");
         }
 
-        // Escaneo basico: bloquea payloads con patrones de script embebido.
-        String muestra = new String(contenido, 0, Math.min(contenido.length, 2048));
-        String muestraNormalizada = muestra.toLowerCase(Locale.ROOT);
-        if (muestraNormalizada.contains("<script") || muestraNormalizada.contains("javascript:")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Archivo rechazado por validacion de seguridad");
+        if (!verificarMagicBytes(extension, contenido)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "El contenido del archivo no corresponde al formato declarado (" + extension + ")");
         }
+    }
+
+    private boolean verificarMagicBytes(String extension, byte[] contenido) {
+        byte[][] firmas = MAGIC_BYTES.get(extension);
+        if (firmas == null) return false;
+        for (byte[] firma : firmas) {
+            if (contenido.length < firma.length) continue;
+            boolean coincide = true;
+            for (int i = 0; i < firma.length; i++) {
+                if (contenido[i] != firma[i]) {
+                    coincide = false;
+                    break;
+                }
+            }
+            if (coincide) return true;
+        }
+        return false;
     }
 }

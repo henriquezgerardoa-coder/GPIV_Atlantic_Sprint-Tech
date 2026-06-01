@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface RepositorioServicioEvento extends JpaRepository<ServicioEvento, Long> {
 
     List<ServicioEvento> findByServicioIdOrderByFechaEventoDesc(Long servicioId);
+
+    void deleteByServicioId(Long servicioId);
 }

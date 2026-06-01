@@ -124,4 +124,16 @@ public class ControladorEmpresa {
             .toList();
     }
 
+    @PatchMapping("/{id}/inactivar")
+    public ResponseEntity<Void> inactivar(@PathVariable Long id, Authentication autenticacion) {
+        servicioEmpresa.inactivar(id, autenticacion.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<Void> reactivar(@PathVariable Long id, Authentication autenticacion) {
+        servicioEmpresa.reactivar(id, autenticacion.getName());
+        return ResponseEntity.noContent().build();
+    }
+
 }

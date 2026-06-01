@@ -196,8 +196,20 @@ public class Usuario {
         return roles.stream().anyMatch(r -> r.name().equalsIgnoreCase(nombreRol));
     }
 
+    public boolean esEmpresa() {
+        return tieneRol(RolUsuario.EMPRESA);
+    }
+
+    public boolean tieneRolDeGestion() {
+        return tieneRol(RolUsuario.ADMINISTRADOR) || tieneRol(RolUsuario.SECRETARIO);
+    }
+
     public void bloquearCuenta() {
         this.activo = false;
+    }
+
+    public void habilitarCuenta() {
+        this.activo = true;
     }
 }
 

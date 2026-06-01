@@ -76,7 +76,7 @@ const ModuloRadicaciones = (() => {
         if (!cuerpo) return;
 
         if (radicaciones.length === 0) {
-            cuerpo.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">Sin registros</td></tr>';
+            cuerpo.innerHTML = '<tr><td colspan="8" class="text-center py-3 text-muted">Sin registros</td></tr>';
             return;
         }
 
@@ -85,11 +85,12 @@ const ModuloRadicaciones = (() => {
         cuerpo.innerHTML = radicaciones.map(r => `
             <tr role="button" title="Seleccionar expediente" onclick="ModuloRadicaciones.seleccionarExpediente(${r.id}, '${r.numeroRadicado}')">
                 <td class="ps-3 fw-semibold">${r.numeroRadicado}</td>
+                <td>${r.nombreEmpresa || r.razonSocialEmpresa || '-'}</td>
                 <td>${r.tipoSolicitud}</td>
                 <td>${r.usoEstimativo || '-'}</td>
                 <td><span class="badge bg-secondary">${formatearEstado(r.estado)}</span></td>
                 <td>${r.fechaRadicacion || '-'}</td>
-                <td>${(r.fechaUltimaActualizacion || '').replace('T', ' ').slice(0, 16)}</td>
+                <td>${formatearFechaEvento(r.fechaUltimaActualizacion)}</td>
                 <td class="text-center">${(esGestor || esEmpresa) ? `<button class="btn btn-sm btn-outline-dark" onclick="event.stopPropagation(); ModuloRadicaciones.verDetalleAdmin(${r.id})">Detalle</button>` : '<span class="text-muted small">-</span>'}</td>
             </tr>
         `).join('');
@@ -503,8 +504,12 @@ const ModuloRadicaciones = (() => {
             let detalle = await respDetalle.json();
             const documentos = respDocs?.ok ? await respDocs.json() : [];
             const historial = respHist?.ok ? await respHist.json() : [];
-            const loteAsignado = (respLoteAsignado?.ok && respLoteAsignado.status !== 204)
-                ? await respLoteAsignado.json() : null;
+            let loteAsignado = (respLoteAsignado?.ok && respLoteAsignado.status !== 204)
+                ? await respLoteAsignado.json().catch(() => null) : null;
+            // Fallback: si el endpoint de lote falló pero el detalle indica que hay lote asignado
+            if (!loteAsignado && detalle.loteId) {
+                loteAsignado = { id: detalle.loteId, codigo: detalle.codigoLote, superficieMetrosCuadrados: null };
+            }
 
             // Auto-transición PENDIENTE → EN_REVISION al visualizar el detalle (Secretario/Admin)
             const esEmpresaVisor = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO', 'TECNICO']);

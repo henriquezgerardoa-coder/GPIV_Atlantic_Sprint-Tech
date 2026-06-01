@@ -12,6 +12,10 @@ import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionDocumento;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionHistorial;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -25,10 +29,24 @@ public class MapeadorRadicacion {
         this.repositorioProyecto = repositorioProyecto;
     }
 
+    /** Mapeo para una lista: resuelve todos los proyectos en una sola consulta (evita N+1). */
+    public List<RespuestaRadicacion> toRespuestas(List<RadicacionSolicitud> radicaciones) {
+        List<Long> ids = radicaciones.stream().map(RadicacionSolicitud::getId).toList();
+        Map<Long, ProyectoProductivo> proyectos = repositorioProyecto.findBySolicitudOrigenIdIn(ids).stream()
+            .collect(Collectors.toMap(p -> p.getSolicitudOrigen().getId(), Function.identity()));
+        return radicaciones.stream()
+            .map(r -> toRespuesta(r, proyectos.get(r.getId())))
+            .toList();
+    }
+
+    /** Mapeo para un único registro: consulta el proyecto individualmente. */
     public RespuestaRadicacion toRespuesta(RadicacionSolicitud radicacion) {
-        String json = radicacion.getRelevamientoPedidoLotesJson();
-        Lote lote = radicacion.getLote();
         ProyectoProductivo proyecto = repositorioProyecto.findBySolicitudOrigenId(radicacion.getId()).orElse(null);
+        return toRespuesta(radicacion, proyecto);
+    }
+
+    public RespuestaRadicacion toRespuesta(RadicacionSolicitud radicacion, ProyectoProductivo proyecto) {
+        String json = radicacion.getRelevamientoPedidoLotesJson();
         return new RespuestaRadicacion(
             radicacion.getId(),
             radicacion.getNumeroRadicado(),
@@ -52,8 +70,8 @@ public class MapeadorRadicacion {
             radicacion.getFechaPlazo(),
             radicacion.getFechaAprobacion(),
             extraerCampoEntero(json, "tiempoRadicacionMeses"),
-            lote != null ? lote.getId() : null,
-            lote != null ? lote.getCodigo() : null,
+            radicacion.obtenerIdLote(),
+            radicacion.obtenerCodigoLote(),
             extraerCampoEntero(json, "necesidadMetrosCuadrados"),
             radicacion.getNumeroResolucion(),
             radicacion.getResueltoPor(),

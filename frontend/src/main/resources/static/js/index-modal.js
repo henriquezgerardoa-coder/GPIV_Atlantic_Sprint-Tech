@@ -1,8 +1,8 @@
 (() => {
-    const modal = document.getElementById('authModal');
-    const frame = document.getElementById('authModalFrame');
-    const btnClose = document.getElementById('authModalClose');
-    const triggers = document.querySelectorAll('[data-auth-modal]');
+    const modal = document.getElementById("authModal");
+    const frame = document.getElementById("authModalFrame");
+    const btnClose = document.getElementById("authModalClose");
+    const triggers = document.querySelectorAll("[data-auth-modal]");
     const DURACION_CIERRE_MS = 220;
 
     let temporizadorCierre = null;
@@ -11,16 +11,17 @@
         return;
     }
 
-    frame.addEventListener('load', () => {
-        if (frame.src === 'about:blank') return;
+    frame.addEventListener("load", () => {
+        if (frame.src === "about:blank") return;
         try {
-            const alturaContenido = frame.contentDocument.documentElement.scrollHeight;
-            const alturaMaxima = Math.floor(window.innerHeight * 0.80);
-            frame.style.height = Math.min(alturaContenido, alturaMaxima) + 'px';
+            const alturaContenido =
+                frame.contentDocument.documentElement.scrollHeight;
+            const alturaMaxima = Math.floor(window.innerHeight * 0.8);
+            frame.style.height = Math.min(alturaContenido, alturaMaxima) + "px";
         } catch (_) {
-            frame.style.height = '520px';
+            frame.style.height = "520px";
         }
-        frame.classList.add('auth-modal__frame--ready');
+        frame.classList.add("auth-modal__frame--ready");
     });
 
     function abrirModal(url) {
@@ -28,37 +29,37 @@
             window.clearTimeout(temporizadorCierre);
             temporizadorCierre = null;
         }
-        frame.classList.remove('auth-modal__frame--ready');
+        frame.classList.remove("auth-modal__frame--ready");
         frame.src = url;
-        modal.classList.add('auth-modal--open');
-        modal.setAttribute('aria-hidden', 'false');
-        document.body.classList.add('auth-modal-open');
+        modal.classList.add("auth-modal--open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("auth-modal-open");
         btnClose.focus();
     }
 
     function cerrarModal() {
-        if (!modal.classList.contains('auth-modal--open')) {
+        if (!modal.classList.contains("auth-modal--open")) {
             return;
         }
 
-        modal.classList.remove('auth-modal--open');
+        modal.classList.remove("auth-modal--open");
 
         if (temporizadorCierre) {
             window.clearTimeout(temporizadorCierre);
         }
 
         temporizadorCierre = window.setTimeout(() => {
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('auth-modal-open');
-            frame.classList.remove('auth-modal__frame--ready');
-            frame.src = 'about:blank';
+            modal.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("auth-modal-open");
+            frame.classList.remove("auth-modal__frame--ready");
+            frame.src = "about:blank";
             temporizadorCierre = null;
         }, DURACION_CIERRE_MS);
     }
 
     triggers.forEach((trigger) => {
-        trigger.addEventListener('click', (event) => {
-            const destino = trigger.getAttribute('data-auth-modal');
+        trigger.addEventListener("click", (event) => {
+            const destino = trigger.getAttribute("data-auth-modal");
             if (!destino) {
                 return;
             }
@@ -67,16 +68,19 @@
         });
     });
 
-    btnClose.addEventListener('click', cerrarModal);
+    btnClose.addEventListener("click", cerrarModal);
 
-    modal.addEventListener('click', (event) => {
+    modal.addEventListener("click", (event) => {
         if (event.target === modal) {
             cerrarModal();
         }
     });
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.classList.contains('auth-modal--open')) {
+    document.addEventListener("keydown", (event) => {
+        if (
+            event.key === "Escape" &&
+            modal.classList.contains("auth-modal--open")
+        ) {
             cerrarModal();
         }
     });

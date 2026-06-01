@@ -1,12 +1,13 @@
 package com.gpiv.atlanticsprinttech.backend.repositorio;
 
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaListadoAdmin;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.cache.annotation.Cacheable;
 
 public interface RepositorioEmpresa extends JpaRepository<Empresa, Long> {
 
@@ -24,7 +25,7 @@ public interface RepositorioEmpresa extends JpaRepository<Empresa, Long> {
 	@Cacheable(value = "empresas", key = "#id")
 	Optional<Empresa> findByIdWithRubro(@Param("id") Long id);
 
-	@Query("SELECT e.id, e.nombre FROM Empresa e ORDER BY e.nombre ASC")
+	@Query("SELECT new com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaListadoAdmin(e.id, e.nombre) FROM Empresa e ORDER BY e.nombre ASC")
 	@Cacheable(value = "empresas", key = "'idNombre'")
-	List<Object[]> findAllIdNombre();
+	List<RespuestaEmpresaListadoAdmin> findAllIdNombre();
 }

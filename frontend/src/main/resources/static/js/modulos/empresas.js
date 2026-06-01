@@ -332,7 +332,10 @@ const ModuloEmpresas = (() => {
         setTexto('empNombrePropio', emp.nombre || '-');
         setTexto('empRazonSocialPropio', emp.razonSocial || '-');
         setTexto('empCuitPropio', emp.cuit || '-');
-        setTexto('empStatusPropio', emp.statusEmpresa || '-');
+
+        const statusEl = document.getElementById('empStatusPropio');
+        if (statusEl) statusEl.innerHTML = _badgeStatusEmpresa(emp.statusEmpresa);
+
         setTexto('empActividadPropia', emp.actividadEconomica || '-');
         setTexto('empFechaRegistroPropio', formatearFechaHora(emp.fechaRegistro));
         setTexto('empRubroPropio', emp.rubroNombre || 'Sin rubro asignado');
@@ -342,9 +345,25 @@ const ModuloEmpresas = (() => {
         setTexto('empReferentePropio', emp.referente || '-');
         setTexto('empIngresosBrutosPropio', emp.ingresosBrutos || '-');
         setTexto('empCantidadEmpleadosActivosPropio', emp.cantidadEmpleados != null ? String(emp.cantidadEmpleados) : '-');
+
+        const activa = emp.statusEmpresa === 'ACTIVA';
+        const inactiva = emp.statusEmpresa === 'INACTIVA';
+
+        // Banner de estado inactiva
+        const bannerInactivacion = document.getElementById('bannerInactivacionEmpresa');
+        if (bannerInactivacion) {
+            if (inactiva) {
+                bannerInactivacion.className = 'alert alert-secondary mb-3';
+                bannerInactivacion.innerHTML = '<i class="bi bi-pause-circle me-2"></i>Empresa <strong>INACTIVA</strong>. Solo puede acceder en modo lectura y mensajería. Contacte al administrador para reactivar.';
+                bannerInactivacion.classList.remove('d-none');
+            } else {
+                bannerInactivacion.classList.add('d-none');
+            }
+        }
+
         const tieneRubro = !!emp.rubroId;
-        document.getElementById('btnSeleccionarRubroInicial')?.classList.toggle('d-none', tieneRubro);
-        document.getElementById('btnSolicitarCambioRubro')?.classList.toggle('d-none', !tieneRubro);
+        document.getElementById('btnSeleccionarRubroInicial')?.classList.toggle('d-none', tieneRubro || !activa);
+        document.getElementById('btnSolicitarCambioRubro')?.classList.toggle('d-none', !tieneRubro || !activa);
 
         // Encabezado de sección personalizado
         const icono = '<i class="bi bi-building text-primary me-2"></i>';
@@ -625,8 +644,16 @@ const ModuloEmpresas = (() => {
                                             <input id="campoMarcaModelo" class="form-control form-control-sm" placeholder="Ej: Ford Ranger" maxlength="80">
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label small">Tipo</label>
-                                            <input id="campoTipoVehiculo" class="form-control form-control-sm" placeholder="Ej: CAMIÓN" maxlength="40">
+                                            <label class="form-label small">Tipo <span class="text-danger">*</span></label>
+                                            <select id="campoTipoVehiculoEmpresa" class="form-select form-select-sm">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="Camión">Camión</option>
+                                                <option value="Utilitario">Utilitario</option>
+                                                <option value="Sedán">Sedán</option>
+                                                <option value="Pick Up">Pick Up</option>
+                                                <option value="Transporte de pasajeros">Transporte de pasajeros</option>
+                                                <option value="Transporte de carga">Transporte de carga</option>
+                                            </select>
                                         </div>
                                         <div class="col-12 d-flex gap-2 justify-content-end">
                                             <button class="btn btn-sm btn-secondary" type="button" onclick="ModuloEmpresas.ocultarFormularioVehiculo()">Cancelar</button>
@@ -678,7 +705,7 @@ const ModuloEmpresas = (() => {
         document.getElementById('formularioNuevoVehiculo')?.classList.remove('d-none');
         document.getElementById('campoPatente').value = '';
         document.getElementById('campoMarcaModelo').value = '';
-        document.getElementById('campoTipoVehiculo').value = '';
+        document.getElementById('campoTipoVehiculoEmpresa').value = '';
     }
 
     function ocultarFormularioVehiculo() {
@@ -688,10 +715,10 @@ const ModuloEmpresas = (() => {
     async function guardarVehiculo() {
         const placa = document.getElementById('campoPatente')?.value?.trim().toUpperCase();
         const marcaModelo = document.getElementById('campoMarcaModelo')?.value?.trim();
-        const tipo = document.getElementById('campoTipoVehiculo')?.value?.trim() || 'GENERAL';
+        const tipo = document.getElementById('campoTipoVehiculoEmpresa')?.value?.trim();
 
-        if (!placa || !marcaModelo) {
-            mostrarAlertaModal('alertaVehiculosEmpresa', 'Patente y marca/modelo son obligatorios.');
+        if (!placa || !marcaModelo || !tipo) {
+            mostrarAlertaModal('alertaVehiculosEmpresa', 'Patente, marca/modelo y tipo son obligatorios.');
             return;
         }
 
@@ -846,23 +873,38 @@ const ModuloEmpresas = (() => {
         const totalPaginas = Math.ceil(empresas.length / POR_PAGINA);
         if (_paginaActual >= totalPaginas) _paginaActual = totalPaginas - 1;
         const pagina = empresas.slice(_paginaActual * POR_PAGINA, (_paginaActual + 1) * POR_PAGINA);
-        const puedeEditar  = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO', 'EMPRESA']);
+        const puedeEditar   = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO', 'EMPRESA']);
         const puedeEliminar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
-        cuerpo.innerHTML = pagina.map(e => `
+        cuerpo.innerHTML = pagina.map(e => {
+            const statusBadge = _badgeStatusEmpresa(e.statusEmpresa);
+            const btnEstado = puedeEliminar
+                ? e.statusEmpresa === 'ACTIVA'
+                    ? `<button class="btn btn-sm btn-outline-warning me-1" title="Inactivar empresa"
+                            onclick="ModuloEmpresas.confirmarInactivacion(${e.id}, '${e.nombre.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-pause-circle"></i>
+                       </button>`
+                    : `<button class="btn btn-sm btn-outline-success me-1" title="Reactivar empresa"
+                            onclick="ModuloEmpresas.confirmarReactivacion(${e.id}, '${e.nombre.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                       </button>`
+                : '';
+            return `
             <tr>
                 <td class="text-muted">${e.id}</td>
                 <td class="fw-semibold">${e.nombre}</td>
                 <td>${e.razonSocial || '-'}</td>
                 <td>${e.cuit}</td>
                 <td>${e.correoElectronico}</td>
+                <td class="text-center">${statusBadge}</td>
                 <td class="text-center">
                     <button class="btn btn-sm btn-outline-secondary me-1" title="Detalle" onclick="ModuloEmpresas.verDetalleAdmin(${e.id})"><i class="bi bi-eye"></i></button>
                     ${puedeEditar ? `
                     <button class="btn btn-sm btn-outline-primary me-1" title="Editar" onclick="ModuloEmpresas.abrirEdicion(${e.id})"><i class="bi bi-pencil"></i></button>
-                    ${puedeEliminar ? `<button class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="ModuloEmpresas.confirmarEliminacion(${e.id}, '${e.nombre.replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>` : ''}
+                    ${btnEstado}
                     ` : ''}
                 </td>
-            </tr>`).join('');
+            </tr>`;
+        }).join('');
         _actualizarPaginacionEmpresas(empresas.length, totalPaginas);
     }
 
@@ -1060,11 +1102,25 @@ const ModuloEmpresas = (() => {
         }
     }
 
+    function _badgeStatusEmpresa(status) {
+        const mapa = {
+            'ACTIVA':   { cls: 'bg-success',   txt: 'Activa' },
+            'INACTIVA': { cls: 'bg-secondary',  txt: 'Inactiva' }
+        };
+        const { cls, txt } = mapa[status] || { cls: 'bg-secondary', txt: status || '-' };
+        return `<span class="badge ${cls}">${txt}</span>`;
+    }
+
     function confirmarEliminacion(id, nombre) {
+        document.getElementById('tituloModalConfirmacion').innerHTML =
+            '<i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación';
         document.getElementById('mensajeConfirmacionEliminar').textContent =
             `¿Está seguro que desea eliminar la empresa "${nombre}"? Esta acción no se puede deshacer.`;
-        document.getElementById('btnConfirmarEliminar').dataset.eliminarId   = id;
-        document.getElementById('btnConfirmarEliminar').dataset.eliminarTipo = 'empresa';
+        const btn = document.getElementById('btnConfirmarEliminar');
+        btn.dataset.eliminarId   = id;
+        btn.dataset.eliminarTipo = 'empresa';
+        btn.className = 'btn btn-danger';
+        btn.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmacion')).show();
     }
 
@@ -1076,6 +1132,54 @@ const ModuloEmpresas = (() => {
         } else {
             const error = await respuesta?.json().catch(() => ({}));
             mostrarAlerta(error?.message || 'No se pudo eliminar la empresa.', 'danger');
+        }
+    }
+
+    function confirmarReactivacion(id, nombre) {
+        document.getElementById('tituloModalConfirmacion').innerHTML =
+            '<i class="bi bi-arrow-counterclockwise me-2"></i>Confirmar reactivación';
+        document.getElementById('mensajeConfirmacionEliminar').textContent =
+            `¿Reactivar la empresa "${nombre}"? Podrá operar con normalidad.`;
+        const btn = document.getElementById('btnConfirmarEliminar');
+        btn.dataset.eliminarId   = id;
+        btn.dataset.eliminarTipo = 'reactivarEmpresa';
+        btn.className = 'btn btn-primary';
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Aceptar';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmacion')).show();
+    }
+
+    async function reactivar(id) {
+        const respuesta = await ApiCliente.parche(`/api/empresas/${id}/reactivar`, {});
+        if (respuesta?.status === 204 || respuesta?.ok) {
+            await cargar();
+            mostrarAlerta('Empresa reactivada correctamente.');
+        } else {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlerta(error?.message || 'No se pudo reactivar la empresa.', 'danger');
+        }
+    }
+
+    function confirmarInactivacion(id, nombre) {
+        document.getElementById('tituloModalConfirmacion').innerHTML =
+            '<i class="bi bi-pause-circle-fill me-2"></i>Confirmar inactivación';
+        document.getElementById('mensajeConfirmacionEliminar').textContent =
+            `¿Inactivar la empresa "${nombre}"? Solo podrá usar mensajería hasta ser reactivada.`;
+        const btn = document.getElementById('btnConfirmarEliminar');
+        btn.dataset.eliminarId   = id;
+        btn.dataset.eliminarTipo = 'inactivarEmpresa';
+        btn.className = 'btn btn-primary';
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Aceptar';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmacion')).show();
+    }
+
+    async function inactivar(id) {
+        const respuesta = await ApiCliente.parche(`/api/empresas/${id}/inactivar`, {});
+        if (respuesta?.status === 204 || respuesta?.ok) {
+            await cargar();
+            mostrarAlerta('Empresa inactivada correctamente.');
+        } else {
+            const error = await respuesta?.json().catch(() => ({}));
+            mostrarAlerta(error?.message || 'No se pudo inactivar la empresa.', 'danger');
         }
     }
 
@@ -1225,6 +1329,8 @@ const ModuloEmpresas = (() => {
         cargar, irPagina,
         abrirCreacion, abrirEdicion, editarEmpresaPropia, editarDesdeDetalleAdmin, guardar,
         confirmarEliminacion, eliminar,
+        confirmarInactivacion, inactivar,
+        confirmarReactivacion, reactivar,
         verDetalleAdmin,
         cargarServiciosPostRadicacion, guardarServiciosPostRadicacion,
         abrirAgregarEmpleados, guardarEmpleado, editarEmpleado, cancelarEdicionEmpleado, eliminarEmpleado,

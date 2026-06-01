@@ -57,6 +57,8 @@ const ModuloCambioRubro = (() => {
         solicitudes = await resp.json();
         const esGestor = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO'])
             && !Autenticacion.tieneAcceso(['EMPRESA']);
+        const esDirectivo = Autenticacion.tieneAcceso(['DIRECTIVO'])
+            && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
 
         cuerpo.innerHTML = solicitudes.length
             ? solicitudes.map(s => {
@@ -80,7 +82,7 @@ const ModuloCambioRubro = (() => {
                     </td>
                     ${esGestor ? `
                     <td class="text-center columnaResolucion">
-                        ${s.estado === 'PENDIENTE' ? `
+                        ${s.estado === 'PENDIENTE' && !esDirectivo ? `
                         <button class="btn btn-sm btn-outline-primary"
                             title="Resolver solicitud"
                             onclick="ModuloCambioRubro.abrirResolucion(${s.id})">

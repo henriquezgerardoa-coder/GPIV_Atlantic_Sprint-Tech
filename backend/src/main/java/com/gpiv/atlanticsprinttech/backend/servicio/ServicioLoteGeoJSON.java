@@ -5,7 +5,6 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.LotesGeoJSONCollecti
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.DiagnosticoLotesGeoJSON;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Servicio para convertir Lotes a GeoJSON y viceversa.

@@ -1,189 +1,459 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parque Industrial Viedma - ENREPAVI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
-    <link rel="icon" href="img/favicon.ico">
-    <link rel="stylesheet" href="css/estilos.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-</head>
-<body>
-<nav class="navbar">
-    <div class="logo">
-        <img src="img/logo.png" alt="Logo Parque Industrial Viedma" class="logo-img">
-        <span class="logo-texto">ENREPAVI</span>
-    </div>
-    <div class="nav-links">
-        <a href="#nosotros" class="nav-enlace-simple">Nosotros</a>
-        <a class="btn-glass btn-sm" href="/ingreso.html" data-auth-modal="/ingreso.html">Acceso Usuario</a>
-        <a class="btn-solid btn-sm" href="/registro.html" data-auth-modal="/registro.html">Crear Cuenta</a>
-    </div>
-</nav>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#1a5c37" />
+        <meta
+            name="description"
+            content="Ente para la Reconversión del Parque Industrial de Viedma. Infraestructura de vanguardia y ubicación estratégica para el crecimiento empresarial en Río Negro."
+        />
+        <meta
+            property="og:title"
+            content="ENREPAVI - Parque Industrial Viedma"
+        />
+        <meta
+            property="og:description"
+            content="Ente para la Reconversión del Parque Industrial de Viedma. Infraestructura de vanguardia para el crecimiento de tu empresa."
+        />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+            name="twitter:title"
+            content="ENREPAVI - Parque Industrial Viedma"
+        />
+        <title>ENREPAVI - Parque Industrial Viedma | Gestión Empresarial</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="icon" href="img/favicon.ico" />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+            integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD"
+            crossorigin="anonymous"
+        />
+        <link rel="stylesheet" href="css/estilos.css" />
+    </head>
+    <body>
+        <nav class="navbar">
+            <div class="logo">
+                <img
+                    src="img/logo.png"
+                    alt="Logo Parque Industrial Viedma"
+                    class="logo-img"
+                    decoding="async"
+                />
+                <span class="logo-texto">ENREPAVI</span>
+            </div>
+            <div class="nav-links d-none d-sm-flex">
+                <a href="#nosotros" class="nav-enlace-simple">Nosotros</a>
+                <a
+                    class="btn-glass btn-sm"
+                    href="/ingreso.html"
+                    data-auth-modal="/ingreso.html"
+                    >Acceso Usuario</a
+                >
+                <a
+                    class="btn-solid btn-sm"
+                    href="/registro.html"
+                    data-auth-modal="/registro.html"
+                    >Crear Cuenta</a
+                >
+            </div>
+            <button
+                class="btn-hamburger d-sm-none"
+                type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#navMobileMenu"
+                aria-controls="navMobileMenu"
+                aria-label="Abrir menú de navegación"
+            >
+                <i class="bi bi-list" aria-hidden="true"></i>
+            </button>
+        </nav>
 
-<header class="hero">
-    <div class="hero-content">
-        <h4>VIEDMA | RIO NEGRO</h4>
-        <h1>Potencia tu<br><span>Emprendimiento</span></h1>
-        <p>Infraestructura de vanguardia y ubicación estratégica<br>para el crecimiento de tu empresa.</p>
-        <div class="hero-btns">
-            <a class="btn-solid btn-lg" href="/registro.html" data-auth-modal="/registro.html">
-                <i></i>Iniciar Radicación
-            </a>
-            <a class="btn-glass btn-lg" href="/ingreso.html" data-auth-modal="/ingreso.html">
-                Conocer Requisitos
-            </a>
-            <a class="btn-glass btn-lg" href="#consulta-publica">
-                <i class="bi bi-envelope"></i> Contáctanos
-            </a>
+        <div
+            class="offcanvas offcanvas-end"
+            tabindex="-1"
+            id="navMobileMenu"
+            aria-labelledby="navMobileMenuLabel"
+        >
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="navMobileMenuLabel">
+                    ENREPAVI
+                </h5>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="offcanvas"
+                    aria-label="Cerrar menú"
+                ></button>
+            </div>
+            <div class="offcanvas-body d-flex flex-column gap-3">
+                <a
+                    href="#nosotros"
+                    class="text-decoration-none fw-semibold text-dark"
+                    data-bs-dismiss="offcanvas"
+                    >Nosotros</a
+                >
+                <a href="/ingreso.html" class="btn btn-outline-success w-100"
+                    >Acceso Usuario</a
+                >
+                <a href="/registro.html" class="btn btn-success w-100"
+                    >Crear Cuenta</a
+                >
+            </div>
         </div>
-    </div>
-</header>
 
-<div id="authModal" class="auth-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Acceso y registro" aria-busy="false">
-    <div class="auth-modal__dialog" role="document">
-        <button id="authModalClose" class="auth-modal__close" type="button" aria-label="Cerrar ventana">&times;</button>
-        <div id="authModalLoading" class="auth-modal__loading" role="status" aria-live="polite">
-            <span class="auth-modal__spinner" aria-hidden="true"></span>
-            Cargando formulario...
-        </div>
-        <iframe id="authModalFrame" class="auth-modal__frame" src="about:blank" title="Acceso y registro"></iframe>
-    </div>
-</div>
-
-<section id="nosotros" class="nosotros">
-    <div class="container-nosotros">
-        <div class="nosotros-principal">
-            <div class="nosotros-texto">
-                <span class="subtitulo-seccion">NUESTRA IDENTIDAD</span>
-                <h2>¿Qué es ENREPAVI?</h2>
-                <p class="texto-destacado">
-                    Ente para la Reconversión del Parque Industrial de Viedma.
-                </p>
+        <header class="hero">
+            <div class="hero-content">
+                <h4>VIEDMA | RIO NEGRO</h4>
+                <h1>Potencia tu<br /><span>Emprendimiento</span></h1>
                 <p>
-                    Somos el organismo rector encargado de planificar, desarrollar y gestionar de manera estratégica el espacio industrial de nuestra ciudad.
-                    Trabajamos activamente para fomentar la inversión privada, potenciar la radicación de industrias clave y optimizar la infraestructura existente.
+                    Infraestructura de vanguardia y ubicación estratégica<br />para
+                    el crecimiento de tu empresa.
                 </p>
+                <div class="hero-btns">
+                    <a
+                        class="btn-solid btn-lg"
+                        href="/registro.html"
+                        data-auth-modal="/registro.html"
+                    >
+                        <i></i>Iniciar Radicación
+                    </a>
+                    <a
+                        class="btn-glass btn-lg"
+                        href="/ingreso.html"
+                        data-auth-modal="/ingreso.html"
+                    >
+                        Conocer Requisitos
+                    </a>
+                    <a class="btn-glass btn-lg" href="#consulta-publica">
+                        <i class="bi bi-envelope"></i> Contáctanos
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div
+            id="authModal"
+            class="auth-modal"
+            aria-hidden="true"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Acceso y registro"
+            aria-busy="false"
+        >
+            <div class="auth-modal__dialog" role="document">
+                <button
+                    id="authModalClose"
+                    class="auth-modal__close"
+                    type="button"
+                    aria-label="Cerrar ventana"
+                >
+                    &times;
+                </button>
+                <div
+                    id="authModalLoading"
+                    class="auth-modal__loading"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <span class="auth-modal__spinner" aria-hidden="true"></span>
+                    Cargando formulario...
+                </div>
+                <iframe
+                    id="authModalFrame"
+                    class="auth-modal__frame"
+                    src="about:blank"
+                    title="Acceso y registro"
+                ></iframe>
+            </div>
+        </div>
+
+        <section id="nosotros" class="nosotros">
+            <div class="container-nosotros">
+                <div class="nosotros-principal">
+                    <div class="nosotros-texto">
+                        <span class="subtitulo-seccion">NUESTRA IDENTIDAD</span>
+                        <h2>¿Qué es ENREPAVI?</h2>
+                        <p class="texto-destacado">
+                            Ente para la Reconversión del Parque Industrial de
+                            Viedma.
+                        </p>
+                        <p>
+                            Somos el organismo rector encargado de planificar,
+                            desarrollar y gestionar de manera estratégica el
+                            espacio industrial de nuestra ciudad. Trabajamos
+                            activamente para fomentar la inversión privada,
+                            potenciar la radicación de industrias clave y
+                            optimizar la infraestructura existente.
+                        </p>
+                        <p>
+                            Nuestra visión está enfocada en la modernización
+                            constante, transformando el parque hacia un perfil
+                            logístico y tecnológico avanzado, preparado para
+                            liderar los cambios económicos de la región.
+                        </p>
+                    </div>
+
+                    <div class="nosotros-badge-industrial">
+                        <div class="badge-contenido">
+                            <i class="bi bi-building-check"></i>
+                            <h3>Infraestructura para el Desarrollo</h3>
+                            <p>
+                                Un espacio planificado estratégicamente en
+                                Viedma para la expansión de tu empresa.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nosotros-pilares">
+                    <div class="pilar-card">
+                        <div class="pilar-icono">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <h4>Fomento de Inversión</h4>
+                        <p>
+                            Creamos condiciones óptimas y atractivas para la
+                            radicación de capitales locales y nacionales.
+                        </p>
+                    </div>
+
+                    <div class="pilar-card">
+                        <div class="pilar-icono">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <h4>Perfil Logístico</h4>
+                        <p>
+                            Modernizamos los accesos y servicios para convertir
+                            el parque en un nodo logístico regional clave.
+                        </p>
+                    </div>
+
+                    <div class="pilar-card">
+                        <div class="pilar-icono">
+                            <i class="bi bi-lightning-charge"></i>
+                        </div>
+                        <h4>Infraestructura</h4>
+                        <p>
+                            Planificamos y mejoramos los servicios esenciales
+                            para optimizar el rendimiento de tu planta.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="consulta-publica" class="nosotros consulta-seccion">
+            <div class="container-nosotros">
+                <div class="nosotros-principal">
+                    <div class="nosotros-texto">
+                        <span class="subtitulo-seccion">CONTACTO</span>
+                        <h2>¿Tenés consultas?</h2>
+                        <p class="texto-destacado">
+                            ¿Aún no estás registrado como empresa? Escribinos
+                            desde aquí.
+                        </p>
+                        <p>
+                            Nuestro equipo responderá tu consulta a la brevedad.
+                            También podés encontrarnos en nuestras oficinas en
+                            Ruta 1 S/N, Viedma.
+                        </p>
+                    </div>
+                    <div class="nosotros-badge-industrial">
+                        <div class="badge-contenido">
+                            <i class="bi bi-envelope-check"></i>
+                            <h3>Atención directa</h3>
+                            <p>
+                                Respondemos todas las consultas de lunes a
+                                viernes en horario de oficina.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="consulta-card">
+                    <div
+                        id="mensajeConsultaPublica"
+                        class="consulta-mensaje d-none"
+                        role="status"
+                        aria-live="polite"
+                    ></div>
+                    <form id="formConsultaPublica" novalidate>
+                        <div class="consulta-grid">
+                            <div class="consulta-campo">
+                                <label
+                                    for="consultaNombreEmpresa"
+                                    class="consulta-label"
+                                    >Nombre o Empresa
+                                    <span class="consulta-req">*</span></label
+                                >
+                                <input
+                                    type="text"
+                                    id="consultaNombreEmpresa"
+                                    class="consulta-input"
+                                    placeholder="Tu nombre o razón social"
+                                    maxlength="160"
+                                    required
+                                />
+                            </div>
+                            <div class="consulta-campo">
+                                <label
+                                    for="consultaCorreo"
+                                    class="consulta-label"
+                                    >Correo electrónico
+                                    <span class="consulta-req">*</span></label
+                                >
+                                <input
+                                    type="email"
+                                    id="consultaCorreo"
+                                    class="consulta-input"
+                                    placeholder="ejemplo@correo.com"
+                                    maxlength="160"
+                                    required
+                                />
+                            </div>
+                            <div class="consulta-campo">
+                                <label
+                                    for="consultaTelefono"
+                                    class="consulta-label"
+                                    >Teléfono
+                                    <span class="consulta-opcional"
+                                        >(opcional)</span
+                                    ></label
+                                >
+                                <input
+                                    type="text"
+                                    id="consultaTelefono"
+                                    class="consulta-input"
+                                    placeholder="(02920) 000000"
+                                    maxlength="40"
+                                />
+                            </div>
+                            <div class="consulta-campo">
+                                <label
+                                    for="consultaAsunto"
+                                    class="consulta-label"
+                                    >Asunto
+                                    <span class="consulta-req">*</span></label
+                                >
+                                <input
+                                    type="text"
+                                    id="consultaAsunto"
+                                    class="consulta-input"
+                                    placeholder="Tema de tu consulta"
+                                    maxlength="160"
+                                    required
+                                />
+                            </div>
+                            <div class="consulta-campo consulta-campo--full">
+                                <label
+                                    for="consultaMensaje"
+                                    class="consulta-label"
+                                    >¿En qué podemos ayudarte?
+                                    <span class="consulta-req">*</span></label
+                                >
+                                <textarea
+                                    id="consultaMensaje"
+                                    class="consulta-input consulta-textarea"
+                                    placeholder="Describí tu consulta con el mayor detalle posible..."
+                                    rows="5"
+                                    maxlength="4000"
+                                    required
+                                ></textarea>
+                            </div>
+                            <div
+                                class="consulta-campo consulta-campo--full consulta-campo--end"
+                            >
+                                <button
+                                    type="submit"
+                                    id="btnEnviarConsultaPublica"
+                                    class="btn-solid btn-lg"
+                                >
+                                    <i class="bi bi-send"></i> Enviar consulta
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer-contacto">
+            <div class="footer-principal">
+                <div class="footer-info">
+                    <span
+                        ><i class="bi bi-geo-alt-fill"></i> Ruta 1 S/N Ex
+                        Tomatera, Viedma, Río Negro</span
+                    >
+                    <span
+                        ><i class="bi bi-telephone-fill"></i> (02920)
+                        433087</span
+                    >
+                </div>
+
+                <div class="footer-redes">
+                    <a
+                        href="https://www.instagram.com/enrepavi?igsh=MWVoZm5ha3c2NHRkZQ=="
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="Instagram ENREPAVI"
+                    >
+                        <i class="bi bi-instagram"></i>
+                    </a>
+                    <a
+                        href="https://www.facebook.com/share/1avtMJBanM/"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="Facebook ENREPAVI"
+                    >
+                        <i class="bi bi-facebook"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-inferior">
                 <p>
-                    Nuestra visión está enfocada en la modernización constante, transformando el parque hacia un perfil logístico y tecnológico avanzado, preparado para liderar los cambios económicos de la región.
+                    &copy; 2026 ENREPAVI. Todos los derechos reservados.
+                    Plataforma de Gestión del Parque Industrial de Viedma.
                 </p>
-            </div>
-
-            <div class="nosotros-badge-industrial">
-                <div class="badge-contenido">
-                    <i class="bi bi-building-check"></i>
-                    <h3>Infraestructura para el Desarrollo</h3>
-                    <p>Un espacio planificado estratégicamente en Viedma para la expansión de tu empresa.</p>
+                <div class="footer-dev">
+                    <span
+                        >Desarrollado por Atlantic Sprint Tech &mdash;
+                        UNRN</span
+                    >
+                    <img
+                        src="img/Atlantic-removebg-preview.png"
+                        alt="Atlantic Sprint Tech"
+                        loading="lazy"
+                        decoding="async"
+                    />
                 </div>
             </div>
-        </div>
+        </footer>
 
-        <div class="nosotros-pilares">
-            <div class="pilar-card">
-                <div class="pilar-icono"><i class="bi bi-graph-up-arrow"></i></div>
-                <h4>Fomento de Inversión</h4>
-                <p>Creamos condiciones óptimas y atractivas para la radicación de capitales locales y nacionales.</p>
-            </div>
-
-            <div class="pilar-card">
-                <div class="pilar-icono"><i class="bi bi-truck"></i></div>
-                <h4>Perfil Logístico</h4>
-                <p>Modernizamos los accesos y servicios para convertir el parque en un nodo logístico regional clave.</p>
-            </div>
-
-            <div class="pilar-card">
-                <div class="pilar-icono"><i class="bi bi-lightning-charge"></i></div>
-                <h4>Infraestructura</h4>
-                <p>Planificamos y mejoramos los servicios esenciales para optimizar el rendimiento de tu planta.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="consulta-publica" class="nosotros consulta-seccion">
-
-    <div class="container-nosotros">
-        <div class="nosotros-principal">
-            <div class="nosotros-texto">
-                <span class="subtitulo-seccion">CONTACTO</span>
-                <h2>¿Tenés consultas?</h2>
-                <p class="texto-destacado">¿Aún no estás registrado como empresa? Escribinos desde aquí.</p>
-                <p>Nuestro equipo responderá tu consulta a la brevedad. También podés encontrarnos en nuestras oficinas en Ruta 1 S/N, Viedma.</p>
-            </div>
-            <div class="nosotros-badge-industrial">
-                <div class="badge-contenido">
-                    <i class="bi bi-envelope-check"></i>
-                    <h3>Atención directa</h3>
-                    <p>Respondemos todas las consultas de lunes a viernes en horario de oficina.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="consulta-card">
-            <div id="mensajeConsultaPublica" class="consulta-mensaje d-none" role="status" aria-live="polite"></div>
-            <form id="formConsultaPublica" novalidate>
-                <div class="consulta-grid">
-                    <div class="consulta-campo">
-                        <label for="consultaNombreEmpresa" class="consulta-label">Nombre o Empresa <span class="consulta-req">*</span></label>
-                        <input type="text" id="consultaNombreEmpresa" class="consulta-input" placeholder="Tu nombre o razón social" maxlength="160" required>
-                    </div>
-                    <div class="consulta-campo">
-                        <label for="consultaCorreo" class="consulta-label">Correo electrónico <span class="consulta-req">*</span></label>
-                        <input type="email" id="consultaCorreo" class="consulta-input" placeholder="ejemplo@correo.com" maxlength="160" required>
-                    </div>
-                    <div class="consulta-campo">
-                        <label for="consultaTelefono" class="consulta-label">Teléfono <span class="consulta-opcional">(opcional)</span></label>
-                        <input type="text" id="consultaTelefono" class="consulta-input" placeholder="(02920) 000000" maxlength="40">
-                    </div>
-                    <div class="consulta-campo">
-                        <label for="consultaAsunto" class="consulta-label">Asunto <span class="consulta-req">*</span></label>
-                        <input type="text" id="consultaAsunto" class="consulta-input" placeholder="Tema de tu consulta" maxlength="160" required>
-                    </div>
-                    <div class="consulta-campo consulta-campo--full">
-                        <label for="consultaMensaje" class="consulta-label">¿En qué podemos ayudarte? <span class="consulta-req">*</span></label>
-                        <textarea id="consultaMensaje" class="consulta-input consulta-textarea" placeholder="Describí tu consulta con el mayor detalle posible..." rows="5" maxlength="4000" required></textarea>
-                    </div>
-                    <div class="consulta-campo consulta-campo--full consulta-campo--end">
-                        <button type="submit" id="btnEnviarConsultaPublica" class="btn-solid btn-lg">
-                            <i class="bi bi-send"></i> Enviar consulta
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</section>
-
-<footer class="footer-contacto">
-    <div class="footer-principal">
-        <div class="footer-info">
-            <span><i class="bi bi-geo-alt-fill"></i> Ruta 1 S/N Ex Tomatera, Viedma, Río Negro</span>
-            <span><i class="bi bi-telephone-fill"></i> (02920) 433087</span>
-        </div>
-
-        <div class="footer-redes">
-            <a href="https://www.instagram.com/enrepavi?igsh=MWVoZm5ha3c2NHRkZQ==" target="_blank" rel="noopener" aria-label="Instagram ENREPAVI">
-                <i class="bi bi-instagram"></i>
-            </a>
-            <a href="https://www.facebook.com/share/1avtMJBanM/" target="_blank" rel="noopener" aria-label="Facebook ENREPAVI">
-                <i class="bi bi-facebook"></i>
-            </a>
-        </div>
-    </div>
-
-    <div class="footer-inferior">
-        <p>&copy; 2026 ENREPAVI. Todos los derechos reservados. Plataforma de Gestión del Parque Industrial de Viedma.</p>
-        <div class="footer-dev">
-            <span>Desarrollado por Atlantic Sprint Tech &mdash; UNRN</span>
-            <img src="img/Atlantic-removebg-preview.png" alt="Atlantic Sprint Tech">
-        </div>
-    </div>
-</footer>
-
-<script src="js/index-modal.js"></script>
-<script src="js/contacto-publico.js"></script>
-</body>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"
+            defer
+        ></script>
+        <script src="js/index-modal.js" defer></script>
+        <script src="js/contacto-publico.js" defer></script>
+    </body>
 </html>
