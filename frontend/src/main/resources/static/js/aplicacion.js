@@ -202,8 +202,8 @@ function navegarA(seccion) {
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
     const esTecnicoExclusivo = Autenticacion.tieneAcceso(['TECNICO'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-    const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor', 'censo']);
-    const seccionesRestringidasTecnico = new Set(['empresas', 'lotes', 'radicaciones', 'usuarios', 'audit-log', 'informes', 'censo', 'infraestructura', 'dashboard', 'monitor', 'cambio-rubro', 'panel']);
+    const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor', 'censo', 'mapa']);
+    const seccionesRestringidasTecnico = new Set(['empresas', 'lotes', 'radicaciones', 'usuarios', 'audit-log', 'informes', 'censo', 'infraestructura', 'dashboard', 'monitor', 'cambio-rubro', 'panel', 'mapa']);
     if (esEmpresaExclusivo && seccionesRestringidasEmpresa.has(seccion)) {
         mostrarAlerta('No tienes acceso a esta sección.', 'danger');
         seccion = 'empresas';
@@ -241,7 +241,8 @@ function navegarA(seccion) {
         case 'proyectos':     ModuloProyectos.cargar();      break;
         case 'infraestructura': ModuloInfraestructura.cargar(); break;
         case 'dashboard':       ModuloDashboard.cargar();       break;
-        case 'monitor':       ModuloMonitor.cargar();        break;
+        case 'monitor':         ModuloMonitor.cargar();         break;
+        case 'mapa':            ModuloMapa.cargar();            break;
     }
 }
 
@@ -356,6 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ocultarAccesosEmpresaRestringidos();
         document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
         document.getElementById('btnNuevoLote')?.classList.add('d-none');
+        document.getElementById('itemNavMapa')?.classList.add('d-none');
+        document.getElementById('itemNavMapaMovil')?.classList.add('d-none');
     }
 
     // SECRETARIO: gestiona radicaciones, lotes, empresas, usuarios y censo
@@ -384,7 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
          'itemNavCambioRubro', 'itemNavCambioRubroMovil',
          'itemNavMensajeria', 'itemNavMensajeriaMovil',
          'itemNavUsuarios', 'itemNavUsuariosMovil',
-         'itemNavProyectos', 'itemNavProyectosMovil']
+         'itemNavProyectos', 'itemNavProyectosMovil',
+         'itemNavMapa', 'itemNavMapaMovil']
             .forEach(id => document.getElementById(id)?.classList.add('d-none'));
         document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
         document.getElementById('nav-empresas')?.closest('.nav-item')?.classList.add('d-none');
@@ -403,7 +407,8 @@ document.addEventListener('DOMContentLoaded', () => {
          'itemNavDashboard', 'itemNavDashboardMovil',
          'itemNavMonitor', 'itemNavMonitorMovil',
          'itemNavCambioRubro', 'itemNavCambioRubroMovil',
-         'itemNavUsuarios', 'itemNavUsuariosMovil']
+         'itemNavUsuarios', 'itemNavUsuariosMovil',
+         'itemNavMapa', 'itemNavMapaMovil']
             .forEach(id => document.getElementById(id)?.classList.add('d-none'));
         document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
         document.getElementById('nav-empresas')?.closest('.nav-item')?.classList.add('d-none');

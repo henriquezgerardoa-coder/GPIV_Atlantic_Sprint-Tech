@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
@@ -82,6 +83,11 @@
         <li class="nav-item">
             <a id="nav-lotes" class="nav-link enlace-nav" href="#" onclick="navegarA('lotes'); return false;">
                 <i class="bi bi-map"></i> Lotes
+            </a>
+        </li>
+        <li class="nav-item" id="itemNavMapa">
+            <a id="nav-mapa" class="nav-link enlace-nav" href="#" onclick="navegarA('mapa'); return false;">
+                <i class="bi bi-geo-alt-fill"></i> Mapa del parque
             </a>
         </li>
         <li class="nav-item">
@@ -165,6 +171,11 @@
             <li class="nav-item">
                 <a class="nav-link enlace-nav" href="#" onclick="navegarA('lotes'); return false;">
                     <i class="bi bi-map"></i> Lotes
+                </a>
+            </li>
+            <li class="nav-item" id="itemNavMapaMovil">
+                <a class="nav-link enlace-nav" href="#" onclick="navegarA('mapa'); return false;">
+                    <i class="bi bi-geo-alt-fill"></i> Mapa del parque
                 </a>
             </li>
             <li class="nav-item">
@@ -1191,6 +1202,27 @@
                 <i class="bi bi-chevron-right"></i>
             </button>
         </nav>
+    </section>
+
+    <!-- ── SECCIÓN: MAPA DEL PARQUE ────────────── -->
+    <section id="seccion-mapa" class="seccion-contenido d-none">
+        <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Mapa del parque industrial</h4>
+                <p class="text-muted small mb-0">Vista geoespacial de los lotes — haga clic sobre un polígono para ver el detalle</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <span class="badge border text-success-emphasis bg-success-subtle"><i class="bi bi-square-fill me-1"></i>Adjudicado</span>
+                <span class="badge border text-warning-emphasis bg-warning-subtle"><i class="bi bi-square-fill me-1"></i>Preadjudicado</span>
+                <span class="badge border text-danger-emphasis bg-danger-subtle"><i class="bi bi-square-fill me-1"></i>Desadjudicado</span>
+                <span class="badge border text-secondary bg-light"><i class="bi bi-square-fill me-1"></i>Sin asignar</span>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0" style="overflow:hidden; border-radius: var(--bs-card-border-radius);">
+                <div id="contenedorMapa" style="height:620px; width:100%;"></div>
+            </div>
+        </div>
     </section>
 
     <!-- ── SECCIÓN: CENSO ───────────────────────── -->
@@ -3481,6 +3513,7 @@
 ══════════════════════════════════════════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/apiCliente.js"></script>
 <script src="js/autenticacion.js"></script>
 <script src="js/modulos/empresas.js"></script>
@@ -3497,6 +3530,7 @@
 <script src="js/modulos/monitor.js"></script>
 <script src="js/modulos/dashboard.js"></script>
 <script src="js/modulos/infraestructura.js"></script>
+<script src="js/modulos/mapa.js"></script>
 <script src="js/aplicacion.js"></script>
 </body>
 </html>
