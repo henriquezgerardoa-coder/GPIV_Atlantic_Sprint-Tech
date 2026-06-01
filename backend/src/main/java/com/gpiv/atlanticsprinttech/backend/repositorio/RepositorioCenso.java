@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RepositorioCenso extends JpaRepository<Censo, Long> {
 
-    List<Censo> findByEmpresaIdOrderByAnioPeriodoDesc(Long empresaId);
+    List<Censo> findByEmpresaIdOrderByAnioPeriodoDescSemestreDesc(Long empresaId);
 
-    Optional<Censo> findByEmpresaIdAndAnioPeriodo(Long empresaId, int anioPeriodo);
+    Optional<Censo> findByEmpresaIdAndAnioPeriodoAndSemestre(Long empresaId, int anioPeriodo, int semestre);
 }

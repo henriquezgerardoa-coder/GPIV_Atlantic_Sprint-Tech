@@ -5,6 +5,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDashboardGe
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeRadicacion;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,6 +51,15 @@ public class ControladorEstadisticas {
     @GetMapping("/informes/lotes")
     public List<RespuestaInformeLote> informeLotes() {
         return servicioEstadisticas.obtenerInformeLotes();
+    }
+
+    /**
+     * Informe por radicaciones con evaluación por etapas.
+     * GET /api/estadisticas/informes/radicaciones
+     */
+    @GetMapping("/informes/radicaciones")
+    public List<RespuestaInformeRadicacion> informeRadicaciones() {
+        return servicioEstadisticas.obtenerInformeRadicaciones();
     }
 
     /**

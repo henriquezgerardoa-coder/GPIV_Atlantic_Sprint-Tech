@@ -226,10 +226,14 @@ public class RadicacionSolicitud {
 	public void sincronizarLote(Lote lote) {
 		if (lote == null) return;
 		if (estado == EstadoRadicacion.APROBADA || estado == EstadoRadicacion.RADICADA) {
-			lote.actualizarAsignacion(EstadoAsignacionLote.ADJUDICADO, lote.getNumeroExpedienteReferencia());
+			if (lote.getEtapa().puedeTransicionarA(EtapaCicloLote.ADJUDICADO_PRECARIO)) {
+				lote.transicionar(EtapaCicloLote.ADJUDICADO_PRECARIO);
+			}
 		} else if (estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA
 				|| estado == EstadoRadicacion.DESADJUDICACION) {
-			lote.actualizarAsignacion(EstadoAsignacionLote.DESADJUDICADO, lote.getNumeroExpedienteReferencia());
+			if (lote.getEtapa().puedeTransicionarA(EtapaCicloLote.REVERTIDO)) {
+				lote.transicionar(EtapaCicloLote.REVERTIDO);
+			}
 		}
 	}
 

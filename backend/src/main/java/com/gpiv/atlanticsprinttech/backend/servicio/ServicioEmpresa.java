@@ -6,9 +6,11 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaList
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudServiciosPostRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import java.util.List;
+import java.util.Set;
 
 public interface ServicioEmpresa {
 	List<Empresa> listar(String identificadorIngreso);
+	Set<Long> empresasHabilitadasParaServiciosPostRadicacion(List<Long> empresaIds);
 	List<Empresa> listarDisponibles();
 	Empresa obtenerPorId(Long id, String identificadorIngreso);
 	Empresa crear(Empresa empresa, String identificadorIngreso);

@@ -7,6 +7,8 @@ public interface ServicioLote {
 
     List<Lote> listar(String identificadorIngreso);
 
+    List<Lote> listarDisponibles();
+
     Lote obtenerPorId(Long id, String identificadorIngreso);
 
     Lote crear(

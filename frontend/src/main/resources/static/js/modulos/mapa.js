@@ -3,9 +3,12 @@ const ModuloMapa = (() => {
     let _capaGeoJSON = null;
     let _lotePorEmpresa = {};
     let _lotePorCodigo = {};
+    let _soloDisponibles = false;
 
     async function cargar() {
-        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
+        _soloDisponibles = Autenticacion.tieneAcceso(['EMPRESA'])
+            && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
+        const puedeEditar = !_soloDisponibles && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
 
         if (_mapa) {
             _mapa.invalidateSize();
@@ -25,9 +28,10 @@ const ModuloMapa = (() => {
 
         _activarRotacionClickDerecho(_mapa);
 
+        const endpointLotes = _soloDisponibles ? '/api/lotes/disponibles' : '/api/lotes?tamanio=500';
         const [respGeo, respLotes] = await Promise.all([
             fetch('/data/parque-industrial.geojson'),
-            ApiCliente.obtener('/api/lotes?tamanio=500')
+            ApiCliente.obtener(endpointLotes)
         ]);
 
         if (!respGeo.ok) {
@@ -65,17 +69,56 @@ const ModuloMapa = (() => {
             ?? _lotePorCodigo[nombre.toUpperCase()];
     }
 
+    function _badgeEtapaMapa(etapa) {
+        const cfg = {
+            DISPONIBLE:             ['bg-secondary-subtle text-secondary', 'Disponible'],
+            PROYECTO_EN_EVALUACION: ['bg-warning-subtle text-warning',    'Proyecto en evaluación'],
+            ADJUDICADO_PRECARIO:    ['bg-warning text-dark',              'Adjudicado precario'],
+            EN_CONSTRUCCION:        ['',                                   'En construcción'],
+            OPERATIVO:              ['bg-success-subtle text-success',     'Operativo'],
+            ESCRITURADO:            ['bg-primary-subtle text-primary',     'Escriturado'],
+            REVERTIDO:              ['bg-danger-subtle text-danger',       'Desadjudicado'],
+        };
+        const [cls, label] = cfg[etapa] ?? ['bg-secondary-subtle text-muted', etapa ?? '—'];
+        const style = etapa === 'EN_CONSTRUCCION'
+            ? 'background-color:#fd7e14;color:#fff;'
+            : '';
+        return `<span class="badge ${cls}" style="${style}">${label}</span>`;
+    }
+
     function _estiloFeature(feature) {
         const nombre = _primeraClave(feature.properties);
         if (!nombre) {
             return { color: '#6c757d', weight: 1.5, fillColor: '#ced4da', fillOpacity: 0.45 };
         }
 
+        // Lote Fiscal (reserva del Estado): relleno gris-plata institucional con borde discontinuo
         if (feature.properties.lote_fiscal) {
-            return { color: '#5a5a5a', weight: 1.5, fillColor: '#adb5bd', fillOpacity: 0.60 };
+            return {
+                color: '#5a5a5a', weight: 2.5,
+                fillColor: '#b8bfc7', fillOpacity: 0.70,
+                dashArray: '7 4',
+            };
         }
 
         const lote = _resolverLote(nombre);
+
+        // Vista empresa: solo lotes disponibles visibles (verde), el resto invisible
+        if (_soloDisponibles) {
+            if (!lote || lote.ocupado) return { opacity: 0, fillOpacity: 0 };
+            return { color: '#146c43', weight: 2, fillColor: '#25a567', fillOpacity: 0.70 };
+        }
+
+        // Lote ENREPAVI: usa color de etapa pero con borde azul-marino distintivo
+        if (feature.properties.lote_enrepavi) {
+            const estiloEtapa = _estiloEtapa(lote);
+            return {
+                ...estiloEtapa,
+                color: '#00205b', weight: 3,
+                dashArray: null,
+            };
+        }
+
         if (!lote || !lote.ocupado) {
             return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
         }
@@ -84,21 +127,40 @@ const ModuloMapa = (() => {
             return { color: '#343a40', weight: 1.5, fillColor: lote.colorPersonalizado, fillOpacity: 0.65 };
         }
 
-        switch (lote.estadoAsignacion) {
-            case 'ADJUDICADO':
-                return { color: '#146c43', weight: 1.5, fillColor: '#198754', fillOpacity: 0.55 };
-            case 'PREADJUDICADO':
-                return { color: '#997404', weight: 1.5, fillColor: '#ffc107', fillOpacity: 0.55 };
-            case 'DESADJUDICADO':
+        return _estiloEtapa(lote);
+    }
+
+    function _estiloEtapa(lote) {
+        if (!lote || !lote.ocupado) {
+            return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
+        }
+        switch (lote.etapa) {
+            case 'DISPONIBLE':
+                return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
+            case 'PROYECTO_EN_EVALUACION':
+                return { color: '#997404', weight: 1.5, fillColor: '#fff3cd', fillOpacity: 0.75 };
+            case 'ADJUDICADO_PRECARIO':
+                return { color: '#997404', weight: 2,   fillColor: '#ffc107', fillOpacity: 0.65 };
+            case 'EN_CONSTRUCCION':
+                return { color: '#a44a00', weight: 2,   fillColor: '#fd7e14', fillOpacity: 0.65 };
+            case 'OPERATIVO':
+                return { color: '#146c43', weight: 1.5, fillColor: '#198754', fillOpacity: 0.60 };
+            case 'ESCRITURADO':
+                return { color: '#084298', weight: 1.5, fillColor: '#0d6efd', fillOpacity: 0.60 };
+            case 'REVERTIDO':
                 return { color: '#b02a37', weight: 1.5, fillColor: '#dc3545', fillOpacity: 0.55 };
             default:
-                return { color: '#084298', weight: 1.5, fillColor: '#0d6efd', fillOpacity: 0.50 };
+                return { color: '#6c757d', weight: 1.5, fillColor: '#dee2e6', fillOpacity: 0.55 };
         }
     }
 
     function _configurarInteracciones(feature, layer, puedeEditar) {
         const nombre = _primeraClave(feature.properties);
         const props = feature.properties || {};
+        const lote = _resolverLote(nombre);
+
+        // Vista empresa: sin interacción en lotes no disponibles
+        if (_soloDisponibles && (!lote || lote.ocupado)) return;
 
         layer.on('mouseover', () => {
             layer.setStyle({ weight: 3, fillOpacity: 0.80 });
@@ -111,30 +173,35 @@ const ModuloMapa = (() => {
             return;
         }
 
-        const lote = _resolverLote(nombre);
-
         const zonaTexto = z => z === 'PARQUE_VIEJO' ? 'Parque Viejo' : z === 'PARQUE_NUEVO' ? 'Parque Nuevo' : '—';
-        const estadoLabel = { ADJUDICADO: 'Adjudicado', PREADJUDICADO: 'Preadjudicado', DESADJUDICADO: 'Desadjudicado' };
 
         const codigoHeader = lote?.codigo ?? nombre;
         let html = `<strong class="d-block mb-1">${codigoHeader}</strong>`;
 
+        // Badges de tipo especial (no hacen early-return — siguen participando del ciclo de vida)
         if (props.lote_fiscal) {
-            const sup = lote?.superficieMetrosCuadrados ?? props.superficie_m2;
-            html += `<small class="text-muted d-block"><i class="bi bi-shield-lock me-1"></i>Lote Fiscal</small>`;
-            if (sup) html += `<small class="text-muted d-block">Superficie: ${sup.toLocaleString('es-AR')} m²</small>`;
-            layer.bindPopup(html, { maxWidth: 240 });
-            return;
+            html += `<span class="badge me-1" style="background:#5a5a5a;color:#fff">
+                <i class="bi bi-shield-lock me-1"></i>Lote Fiscal</span>`;
+        }
+        if (props.lote_enrepavi) {
+            html += `<span class="badge me-1" style="background:#00205b;color:#fff">
+                <i class="bi bi-buildings me-1"></i>Propiedad ENREPAVI</span>`;
         }
 
         if (lote) {
             const sup = (lote.superficieMetrosCuadrados ?? props.superficie_m2 ?? 0).toLocaleString('es-AR');
-            html += `<small class="text-muted d-block">Superficie: ${sup} m²</small>`;
+            html += `<small class="text-muted d-block mt-1">Superficie: ${sup} m²</small>`;
             html += `<small class="text-muted d-block">Zona: ${zonaTexto(lote.zona)}</small>`;
 
+            const etapaEtiqueta = lote.etapaEtiqueta ?? lote.etapa ?? '—';
+            const badgeEtapa = _badgeEtapaMapa(lote.etapa);
+            html += `<small class="d-block mt-1">Etapa: ${badgeEtapa}</small>`;
+
+            if (lote.etapaVencida) {
+                html += `<small class="text-danger d-block fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>Plazo vencido (${lote.diasEnEtapaActual} días)</small>`;
+            }
+
             if (lote.ocupado && lote.empresaId) {
-                const estadoTexto = estadoLabel[lote.estadoAsignacion] ?? (lote.estadoAsignacion || '—');
-                html += `<small class="text-muted d-block">Estado: ${estadoTexto}</small>`;
                 html += `<hr class="my-1">`;
                 if (lote.nombreEmpresa) html += `<small class="d-block"><strong>${lote.nombreEmpresa}</strong></small>`;
                 if (lote.cuitEmpresa)   html += `<small class="text-muted d-block">CUIT: ${lote.cuitEmpresa}</small>`;
@@ -146,11 +213,18 @@ const ModuloMapa = (() => {
                                  onclick="ModuloEmpresas.verDetalleAdmin(${lote.empresaId})">
                     <i class="bi bi-building me-1"></i>Ver más
                 </button>`;
-            } else {
-                html += `<small class="text-muted d-block">Estado: Disponible</small>`;
             }
 
+            html += `<button class="btn btn-sm btn-outline-secondary mt-1 w-100"
+                             onclick="ModuloCicloLote.abrirTimeline(${lote.id})">
+                <i class="bi bi-clock-history me-1"></i>Línea de tiempo
+            </button>`;
+
             if (puedeEditar) {
+                html += `<button class="btn btn-sm btn-outline-success mt-1 w-100"
+                                 onclick="ModuloCicloLote.abrirTransicion(${lote.id}, '${lote.etapa ?? ''}')">
+                    <i class="bi bi-arrow-right-circle me-1"></i>Avanzar etapa
+                </button>`;
                 const colorActual = lote.colorPersonalizado ?? '#6c757d';
                 html += `<hr class="my-2">
                 <div class="d-flex align-items-center gap-2">
@@ -164,13 +238,13 @@ const ModuloMapa = (() => {
                 </div>`;
             }
         } else if (props.superficie_m2) {
-            html += `<small class="text-muted d-block">Superficie: ${props.superficie_m2.toLocaleString('es-AR')} m²</small>`;
-            html += `<small class="text-muted d-block">Estado: Disponible</small>`;
+            html += `<small class="text-muted d-block mt-1">Superficie: ${props.superficie_m2.toLocaleString('es-AR')} m²</small>`;
+            html += `<small class="text-muted d-block">Etapa: Disponible</small>`;
         } else {
-            html += `<small class="text-muted">Sin datos en el sistema</small>`;
+            html += `<small class="text-muted d-block mt-1">Sin datos en el sistema</small>`;
         }
 
-        layer.bindPopup(html, { maxWidth: 240 });
+        layer.bindPopup(html, { maxWidth: 280 });
     }
 
     async function guardarColor(loteId) {
@@ -198,13 +272,15 @@ const ModuloMapa = (() => {
     function _activarRotacionClickDerecho(mapa) {
         let dragStart = null;
         let bearingInicial = 0;
+        let pitchInicial = 0;
         const contenedor = mapa.getContainer();
 
         contenedor.addEventListener('mousedown', e => {
             if (e.button !== 2) return;
             e.preventDefault();
-            dragStart = { x: e.clientX };
+            dragStart = { x: e.clientX, y: e.clientY };
             bearingInicial = mapa.getBearing ? mapa.getBearing() : 0;
+            pitchInicial   = mapa.getPitch  ? mapa.getPitch()   : 0;
             contenedor.style.cursor = 'grabbing';
         });
 
@@ -214,8 +290,13 @@ const ModuloMapa = (() => {
 
         document.addEventListener('mousemove', e => {
             if (!dragStart) return;
-            const delta = e.clientX - dragStart.x;
-            mapa.setBearing(bearingInicial + delta * 0.5);
+            const dx = e.clientX - dragStart.x;
+            const dy = e.clientY - dragStart.y;
+            if (mapa.setBearing) mapa.setBearing(bearingInicial + dx * 1.0);
+            if (mapa.setPitch) {
+                const pitch = Math.min(60, Math.max(0, pitchInicial - dy * 0.6));
+                mapa.setPitch(pitch);
+            }
         });
 
         document.addEventListener('mouseup', e => {

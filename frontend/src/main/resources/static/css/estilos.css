@@ -1394,3 +1394,150 @@ body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item {
 body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
     color: #1a5c37 !important;
 }
+/* ── Ciclo de vida del lote: línea de tiempo ────────────────────────────── */
+.timeline-lote {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.5rem 0.25rem 0.5rem;
+    flex-wrap: nowrap;
+    gap: 0;
+    overflow-x: auto;
+}
+.timeline-lote .paso {
+    flex: 1 1 0;
+    text-align: center;
+    min-width: 80px;
+    position: relative;
+}
+.timeline-lote .paso .icono { display: block; }
+.timeline-lote .paso .nombre { font-size: 0.72rem; margin-top: 0.25rem; line-height: 1.25; }
+.timeline-lote .paso.futuro { opacity: 0.42; }
+.timeline-lote .conector {
+    flex: 0 0 1rem;
+    height: 2px;
+    background: #ced4da;
+    align-self: center;
+    margin-bottom: 1.8rem;
+}
+.timeline-lote .conector.completado { background: #198754; }
+
+@keyframes parpadeoAzul {
+    0%, 100% { color: #0d6efd; transform: scale(1); }
+    50%       { color: #6ea8fe; transform: scale(1.18); }
+}
+.parpadeo-azul { animation: parpadeoAzul 1.4s ease-in-out infinite; }
+
+/* =========================================================
+   IMPRESIÓN DE INFORMES
+   ========================================================= */
+
+@page {
+    margin: 3cm 1cm 3cm 3cm;
+}
+
+.encabezado-impresion {
+    display: none;
+    align-items: center;
+    gap: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #1a5c37;
+    margin-bottom: 1.5rem;
+}
+
+.encabezado-impresion img {
+    height: 54px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.encabezado-impresion-org {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #1a5c37;
+}
+
+.encabezado-impresion-sep {
+    width: 1px;
+    align-self: stretch;
+    background: #dee2e6;
+    flex-shrink: 0;
+}
+
+.encabezado-impresion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.encabezado-impresion-titulo {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #212529;
+}
+
+.encabezado-impresion-dato {
+    font-size: 0.8rem;
+    color: #555;
+}
+
+@media print {
+    /* Eliminar del flujo todos los hijos directos del body excepto el modal de impresión */
+    body > *:not(.modal-impresion) { display: none !important; }
+    .modal-backdrop { display: none !important; }
+
+    /* Mostrar el modal de impresión en flujo natural para que el documento tenga solo su altura */
+    .modal.modal-impresion {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .modal.modal-impresion .modal-dialog,
+    .modal.modal-impresion .modal-dialog-scrollable {
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .modal.modal-impresion .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .modal.modal-impresion .modal-body {
+        overflow: visible !important;
+        overflow-y: visible !important;
+        height: auto !important;
+        max-height: none !important;
+        page-break-inside: auto;
+    }
+
+    /* Ocultar la barra del modal (botones de cerrar/imprimir) */
+    .modal.modal-impresion .modal-header { display: none !important; }
+
+    /* Mostrar el encabezado institucional */
+    .encabezado-impresion { display: flex !important; }
+
+    /* Evitar cortes bruscos en filas de tablas */
+    table { page-break-inside: auto; }
+    tr    { page-break-inside: avoid; page-break-after: auto; }
+}
+

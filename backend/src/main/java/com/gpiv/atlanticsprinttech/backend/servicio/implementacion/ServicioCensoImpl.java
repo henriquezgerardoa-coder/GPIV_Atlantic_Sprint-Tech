@@ -6,12 +6,15 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioPersonalRegist
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioVehiculo;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioCenso;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaResumenDeclaracion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Censo;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.PersonalRegistrado;
+import com.gpiv.atlanticsprinttech.entities.dominio.RolUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.Vehiculo;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.Year;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -24,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ServicioCensoImpl implements ServicioCenso {
 
     private static final int ANIO_MINIMO = 2000;
-    private static final String PATRON_CUIT = "\\d{2}-\\d{8}-\\d";
+    private static final String PATRON_CUIL_DIGITOS = "^[0-9]{11}$";
     private static final String PATRON_PATENTE_ARGENTINA = "[A-Z]{3}\\d{3}";
     private static final String PATRON_PATENTE_MERCOSUR = "[A-Z]{2}\\d{3}[A-Z]{2}";
 
@@ -51,7 +54,7 @@ public class ServicioCensoImpl implements ServicioCenso {
     @Override
     public List<Censo> listarCensos(String identificadorIngreso, Long empresaId) {
         verificarAcceso(identificadorIngreso, empresaId);
-        return repositorioCenso.findByEmpresaIdOrderByAnioPeriodoDesc(empresaId);
+        return repositorioCenso.findByEmpresaIdOrderByAnioPeriodoDescSemestreDesc(empresaId);
     }
 
     @Override
@@ -72,10 +75,10 @@ public class ServicioCensoImpl implements ServicioCenso {
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
 
-        repositorioCenso.findByEmpresaIdAndAnioPeriodo(empresaId, anioPeriodo)
+        repositorioCenso.findByEmpresaIdAndAnioPeriodoAndSemestre(empresaId, anioPeriodo, 0)
             .ifPresent(repositorioCenso::delete);
 
-        Censo nuevo = Censo.crear(empresa, anioPeriodo, cantidadPersonalRegistrado, cantidadPersonalNoRegistrado,
+        Censo nuevo = Censo.crear(empresa, anioPeriodo, 0, cantidadPersonalRegistrado, cantidadPersonalNoRegistrado,
             observacion == null || observacion.isBlank() ? null : observacion.trim());
         return repositorioCenso.save(nuevo);
     }
@@ -90,19 +93,22 @@ public class ServicioCensoImpl implements ServicioCenso {
     public PersonalRegistrado agregarPersonal(
         String identificadorIngreso,
         Long empresaId,
-        String cuit,
+        String cuil,
         String nombreCompleto,
         LocalDate fechaIngreso
     ) {
         verificarAcceso(identificadorIngreso, empresaId);
-        String cuitNormalizado = cuit.trim();
-        if (!cuitNormalizado.matches(PATRON_CUIT)) {
+        String soloDigitos = cuil.replaceAll("[^0-9]", "");
+        if (!soloDigitos.matches(PATRON_CUIL_DIGITOS)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "El CUIT debe tener el formato XX-XXXXXXXX-X");
+                "El CUIL debe tener exactamente 11 dígitos");
         }
-        if (repositorioPersonal.existsByEmpresaIdAndCuit(empresaId, cuitNormalizado)) {
+        String cuilFormateado = soloDigitos.substring(0, 2) + "-"
+            + soloDigitos.substring(2, 10) + "-"
+            + soloDigitos.substring(10);
+        if (repositorioPersonal.existsByEmpresaIdAndCuit(empresaId, cuilFormateado)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "Ya existe un empleado con ese CUIT en esta empresa");
+                "Ya existe un empleado con ese CUIL en esta empresa");
         }
         if (fechaIngreso.isAfter(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -110,7 +116,7 @@ public class ServicioCensoImpl implements ServicioCenso {
         }
         Empresa empresa = repositorioEmpresa.findById(empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
-        PersonalRegistrado personal = PersonalRegistrado.crear(empresa, cuitNormalizado,
+        PersonalRegistrado personal = PersonalRegistrado.crear(empresa, cuilFormateado,
             nombreCompleto.trim(), fechaIngreso);
         return repositorioPersonal.save(personal);
     }
@@ -121,6 +127,55 @@ public class ServicioCensoImpl implements ServicioCenso {
         PersonalRegistrado personal = repositorioPersonal.findByIdAndEmpresaId(personalId, empresaId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empleado no encontrado"));
         repositorioPersonal.delete(personal);
+    }
+
+    @Override
+    public RespuestaResumenDeclaracion obtenerResumenDeclaracion(String identificadorIngreso, Long empresaId) {
+        verificarAcceso(identificadorIngreso, empresaId);
+        long declarados = repositorioPersonal.countByEmpresaIdAndDeclarado(empresaId, true);
+        long pendientes = repositorioPersonal.countByEmpresaIdAndDeclarado(empresaId, false);
+        String ultimaDeclaracion = repositorioPersonal
+            .findTopByEmpresaIdAndDeclaradoTrueOrderByFechaDeclaracionDesc(empresaId)
+            .map(p -> p.getFechaDeclaracion().toString())
+            .orElse(null);
+        return new RespuestaResumenDeclaracion(declarados, pendientes, ultimaDeclaracion);
+    }
+
+    @Override
+    public Censo generarDeclaracionJurada(String identificadorIngreso, Long empresaId) {
+        Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+        if (!usuario.tieneRol(RolUsuario.EMPRESA)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Solo el rol EMPRESA puede generar declaraciones juradas");
+        }
+        servicioContextoUsuario.exigirAccesoAEmpresa(usuario, empresaId);
+
+        List<PersonalRegistrado> pendientes =
+            repositorioPersonal.findByEmpresaIdAndDeclaradoFalseOrderByNombreCompletoAsc(empresaId);
+        if (pendientes.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "No hay empleados pendientes de declarar");
+        }
+
+        LocalDate hoy = LocalDate.now();
+        int anio = hoy.getYear();
+        int semestre = hoy.getMonthValue() <= 6 ? 1 : 2;
+
+        pendientes.forEach(PersonalRegistrado::declarar);
+        repositorioPersonal.saveAll(pendientes);
+
+        Empresa empresa = repositorioEmpresa.findById(empresaId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
+
+        repositorioCenso.findByEmpresaIdAndAnioPeriodoAndSemestre(empresaId, anio, semestre)
+            .ifPresent(repositorioCenso::delete);
+
+        long totalDeclarados = repositorioPersonal.countByEmpresaIdAndDeclarado(empresaId, true);
+        String obs = "Declaración jurada S" + semestre + " " + anio
+            + " — " + pendientes.size() + " empleados incorporados"
+            + " (total declarados: " + totalDeclarados + ")";
+        Censo censo = Censo.crear(empresa, anio, semestre, (int) totalDeclarados, 0, obs);
+        return repositorioCenso.save(censo);
     }
 
     @Override

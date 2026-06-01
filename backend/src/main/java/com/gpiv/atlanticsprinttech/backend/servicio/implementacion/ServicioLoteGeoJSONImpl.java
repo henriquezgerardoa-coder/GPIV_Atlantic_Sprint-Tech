@@ -52,7 +52,7 @@ public class ServicioLoteGeoJSONImpl implements ServicioLoteGeoJSON {
             lote.getCodigo(),
             lote.getSuperficieMetrosCuadrados(),
             lote.isOcupado(),
-            lote.getNombreEstadoAsignacion(),
+            lote.getNombreEtapa(),
             lote.getZona(),
             lote.getEmpresaId(),
             lote.getNombreEmpresa(),

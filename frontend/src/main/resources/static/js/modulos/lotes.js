@@ -25,7 +25,6 @@ const ModuloLotes = (() => {
         lotes = lotesData.contenido ?? lotesData;
         _empresasCargadas = false;
         _paginaActual = 0;
-        poblarFiltroSuperficie();
         resetearFiltros();
         renderizarTabla();
     }
@@ -43,14 +42,6 @@ const ModuloLotes = (() => {
         if (!selector) return;
         selector.innerHTML = '<option value="" selected>Sin asignar</option>' +
             empresas.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
-    }
-
-    function poblarFiltroSuperficie() {
-        const selector = document.getElementById('filtroSuperficieLote');
-        if (!selector) return;
-        const valores = [...new Set(lotes.map(l => l.superficieMetrosCuadrados).filter(v => v != null))].sort((a, b) => a - b);
-        selector.innerHTML = '<option value="">Todas</option>' +
-            valores.map(v => `<option value="${v}">${v.toLocaleString('es-AR')} m²</option>`).join('');
     }
 
     function resetearFiltros() {
@@ -75,7 +66,13 @@ const ModuloLotes = (() => {
 
         let filtrados = lotes.filter(l => {
             if (zona && l.zona !== zona) return false;
-            if (sup && l.superficieMetrosCuadrados !== parseFloat(sup)) return false;
+            if (sup) {
+                const m = l.superficieMetrosCuadrados;
+                if (m == null) return false;
+                if (sup === 'MENOR_2000'      && !(m < 2000))              return false;
+                if (sup === 'ENTRE_2000_5000' && !(m >= 2000 && m <= 5000)) return false;
+                if (sup === 'MAYOR_5000'      && !(m > 5000))              return false;
+            }
             if (ocupacion === 'libre'   &&  l.ocupado) return false;
             if (ocupacion === 'ocupado' && !l.ocupado) return false;
             return true;

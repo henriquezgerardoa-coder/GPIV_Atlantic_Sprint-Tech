@@ -49,9 +49,10 @@ public class ConfiguracionSeguridad {
                 .requestMatchers(HttpMethod.GET,   "/api/cambios-rubro").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO", "EMPRESA")
                 .requestMatchers(HttpMethod.POST,  "/api/cambios-rubro").hasRole("EMPRESA")
                 .requestMatchers(HttpMethod.PATCH, "/api/cambios-rubro/*/resolver").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO")
-                .requestMatchers("/api/empresas/*/censo/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO")
+                .requestMatchers("/api/empresas/*/censo/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO", "EMPRESA")
                 .requestMatchers(HttpMethod.GET, "/api/empresas/disponibles").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/empresas/*/empleados/cantidad").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
+                .requestMatchers(HttpMethod.GET, "/api/empresas/*/empleados/resumen-declaracion").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO", "EMPRESA")
                 .requestMatchers("/api/empresas/*/empleados/**").hasRole("EMPRESA")
                 .requestMatchers(HttpMethod.GET, "/api/empresas/admin/vista/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO")
                 .requestMatchers(HttpMethod.GET, "/api/empresas", "/api/empresas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "EMPRESA", "SECRETARIO")
@@ -69,7 +70,7 @@ public class ConfiguracionSeguridad {
                 .requestMatchers("/api/empresas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO", "EMPRESA")
                 // R-14: informes/estadisticas solo para ADMINISTRADOR y DIRECTIVO (lectura legislativa).
                 // El rol EMPRESA no accede a estadisticas globales.
-                .requestMatchers("/api/estadisticas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO")
+                .requestMatchers("/api/estadisticas/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO")
                 .requestMatchers(HttpMethod.GET, "/api/proyectos", "/api/proyectos/**").hasAnyRole("ADMINISTRADOR", "DIRECTIVO", "SECRETARIO", "TECNICO")
                 .requestMatchers(HttpMethod.POST, "/api/proyectos").hasAnyRole("ADMINISTRADOR", "SECRETARIO")
                 .requestMatchers(HttpMethod.POST, "/api/proyectos/*/hitos").hasAnyRole("ADMINISTRADOR", "SECRETARIO", "TECNICO")

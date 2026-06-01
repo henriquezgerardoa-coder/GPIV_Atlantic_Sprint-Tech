@@ -1,8 +1,10 @@
 package com.gpiv.atlanticsprinttech.backend.controlador;
 
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioEmpleado;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaCenso;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpleado;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpleadosCantidad;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaResumenDeclaracion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudEmpleado;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empleado;
 import jakarta.validation.Valid;
@@ -111,12 +113,29 @@ public class ControladorEmpleado {
 		return ResponseEntity.noContent().build();
 	}
 
+	@GetMapping("/resumen-declaracion")
+	public RespuestaResumenDeclaracion obtenerResumen(
+		@PathVariable Long empresaId,
+		Authentication autenticacion
+	) {
+		return servicioEmpleado.obtenerResumenDeclaracion(empresaId, autenticacion.getName());
+	}
+
+	@PostMapping("/declarar")
+	public RespuestaCenso declararPendientes(
+		@PathVariable Long empresaId,
+		Authentication autenticacion
+	) {
+		return servicioEmpleado.declararPendientes(empresaId, autenticacion.getName());
+	}
+
 	private RespuestaEmpleado toRespuesta(Empleado empleado) {
 		return new RespuestaEmpleado(
 			empleado.getId(),
 			empleado.getCuit(),
 			empleado.getNombre(),
-			empleado.getFechaRegistro()
+			empleado.getFechaRegistro(),
+			empleado.isDeclarado()
 		);
 	}
 }

@@ -248,6 +248,9 @@
             <p class="text-muted small mb-0">Vista general del estado del parque industrial</p>
         </div>
 
+        <!-- Alertas de vencimiento de etapas del ciclo de vida -->
+        <div id="alertasCicloLote"></div>
+
         <div class="position-relative mb-4 rounded overflow-hidden shadow-sm">
             <img src="img/Parque.webp" alt="Parque Industrial" style="width:100%;max-height:450px;object-fit:cover;display:block;">
             <div class="position-absolute top-0 start-0 p-3">
@@ -700,29 +703,53 @@
             </div>
         </div>
 
-        <!-- Fila estados de lotes -->
+        <!-- Fila ciclo de vida de lotes -->
         <div class="row g-3 mb-3">
-            <div class="col-sm-6 col-xl-4">
-                <div class="card border-start border-4 border-warning h-100">
+            <div class="col-sm-6 col-xl">
+                <div class="card border-start border-4 h-100" style="border-color:#ffc107!important">
                     <div class="card-body">
-                        <div class="fs-3 fw-bold text-warning" id="statInfoPreadjudicados">–</div>
-                        <div class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Lotes preadjudicados</div>
+                        <div class="fs-3 fw-bold" style="color:#ffc107" id="statInfoProyectoEval">–</div>
+                        <div class="text-muted small"><i class="bi bi-search me-1"></i>Proyecto en evaluación</div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-4">
+            <div class="col-sm-6 col-xl">
+                <div class="card border-start border-4 h-100" style="border-color:#fd7e14!important">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold" style="color:#fd7e14" id="statInfoAdjudicadoPrecario">–</div>
+                        <div class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Adjudicado precario</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl">
+                <div class="card border-start border-4 border-danger h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-danger" id="statInfoEnConstruccion">–</div>
+                        <div class="text-muted small"><i class="bi bi-hammer me-1"></i>En construcción</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl">
                 <div class="card border-start border-4 border-success h-100">
                     <div class="card-body">
-                        <div class="fs-3 fw-bold text-success" id="statInfoAdjudicados">–</div>
-                        <div class="text-muted small"><i class="bi bi-check-circle me-1"></i>Lotes adjudicados</div>
+                        <div class="fs-3 fw-bold text-success" id="statInfoOperativos">–</div>
+                        <div class="text-muted small"><i class="bi bi-check-circle me-1"></i>Operativos</div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-4">
+            <div class="col-sm-6 col-xl">
+                <div class="card border-start border-4 border-primary h-100">
+                    <div class="card-body">
+                        <div class="fs-3 fw-bold text-primary" id="statInfoEscriturados">–</div>
+                        <div class="text-muted small"><i class="bi bi-file-earmark-check me-1"></i>Escriturados</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl">
                 <div class="card border-start border-4 border-danger h-100">
                     <div class="card-body">
                         <div class="fs-3 fw-bold text-danger" id="statInfoDesadjudicados">–</div>
-                        <div class="text-muted small"><i class="bi bi-x-circle me-1"></i>Lotes desadjudicados</div>
+                        <div class="text-muted small"><i class="bi bi-x-circle me-1"></i>Desadjudicados</div>
                     </div>
                 </div>
             </div>
@@ -738,6 +765,9 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-inf-lotes" data-bs-toggle="tab" data-bs-target="#panel-inf-lotes" type="button" role="tab">Por Lotes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-inf-radicaciones" data-bs-toggle="tab" data-bs-target="#panel-inf-radicaciones" type="button" role="tab">Por Radicaciones</button>
             </li>
         </ul>
 
@@ -793,11 +823,11 @@
                     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 text-muted"><i class="bi bi-building me-2"></i>Informe por empresa</h6>
                         <button class="btn btn-outline-primary btn-sm" onclick="ModuloEstadisticas.abrirInformeEmpresas()">
-                            <i class="bi bi-eye me-1"></i>Ver informe completo
+                            <i class="bi bi-file-earmark-text me-1"></i>Ver informe completo
                         </button>
                     </div>
-                    <div class="card-body">
-                        <p class="text-muted small mb-0">Lista todas las empresas con sus lotes asignados, estado de expediente y datos de contacto.</p>
+                    <div class="card-body p-0" id="listaTabEmpresas">
+                        <div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span><span class="text-muted ms-2 small">Cargando...</span></div>
                     </div>
                 </div>
             </div>
@@ -808,11 +838,26 @@
                     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 text-muted"><i class="bi bi-map me-2"></i>Informe por lote</h6>
                         <button class="btn btn-outline-primary btn-sm" onclick="ModuloEstadisticas.abrirInformeLotes()">
-                            <i class="bi bi-eye me-1"></i>Ver informe completo
+                            <i class="bi bi-file-earmark-text me-1"></i>Ver informe completo
                         </button>
                     </div>
-                    <div class="card-body">
-                        <p class="text-muted small mb-0">Estado de cada lote: libre, pre-asignado con fecha límite, o asignado con empresa y radicación.</p>
+                    <div class="card-body p-0" id="listaTabLotes">
+                        <div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span><span class="text-muted ms-2 small">Cargando...</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Por Radicaciones -->
+            <div class="tab-pane fade" id="panel-inf-radicaciones" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-muted"><i class="bi bi-file-earmark-ruled me-2"></i>Informe por radicación</h6>
+                        <button class="btn btn-outline-primary btn-sm" onclick="ModuloEstadisticas.abrirInformeRadicaciones()">
+                            <i class="bi bi-file-earmark-text me-1"></i>Ver informe completo
+                        </button>
+                    </div>
+                    <div class="card-body p-0" id="listaTabRadicaciones">
+                        <div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary"></span><span class="text-muted ms-2 small">Cargando...</span></div>
                     </div>
                 </div>
             </div>
@@ -861,6 +906,83 @@
                         <p class="text-muted mt-2">Cargando informe...</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Informe Radicaciones (completo) -->
+    <div class="modal fade modal-xl" id="modalInformeRadicaciones" tabindex="-1" aria-labelledby="modalInformeRadicacionesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalInformeRadicacionesLabel"><i class="bi bi-file-earmark-ruled me-2"></i>Informe por Radicación</h5>
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="ModuloEstadisticas.imprimirInformeRadicaciones()">
+                            <i class="bi bi-printer me-1"></i>Imprimir / PDF
+                        </button>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+                <div class="modal-body" id="cuerpoModalInformeRadicaciones">
+                    <div class="text-center py-4">
+                        <span class="spinner-border text-primary"></span>
+                        <p class="text-muted mt-2">Cargando informe...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Informe Individual Empresa -->
+    <div class="modal fade" id="modalInformeEmpresaIndividual" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-building me-2"></i>Detalle de Empresa</h5>
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="ModuloEstadisticas.imprimirInformeEmpresaIndividual()">
+                            <i class="bi bi-printer me-1"></i>Imprimir / PDF
+                        </button>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+                <div class="modal-body" id="cuerpoModalEmpresaIndividual"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Informe Individual Lote -->
+    <div class="modal fade" id="modalInformeLoteIndividual" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-map me-2"></i>Detalle de Lote</h5>
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="ModuloEstadisticas.imprimirInformeLoteIndividual()">
+                            <i class="bi bi-printer me-1"></i>Imprimir / PDF
+                        </button>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+                <div class="modal-body" id="cuerpoModalLoteIndividual"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Informe Individual Radicación -->
+    <div class="modal fade" id="modalInformeRadicacionIndividual" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-file-earmark-ruled me-2"></i>Detalle de Radicación</h5>
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="ModuloEstadisticas.imprimirInformeRadicacionIndividual()">
+                            <i class="bi bi-printer me-1"></i>Imprimir / PDF
+                        </button>
+                        <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+                <div class="modal-body" id="cuerpoModalRadicacionIndividual"></div>
             </div>
         </div>
     </div>
@@ -1166,6 +1288,9 @@
                         <select id="filtroSuperficieLote" class="form-select form-select-sm w-auto"
                                 onchange="ModuloLotes.filtrar()">
                             <option value="">Todas</option>
+                            <option value="MENOR_2000">Menor a 2.000 m²</option>
+                            <option value="ENTRE_2000_5000">Entre 2.000 y 5.000 m²</option>
+                            <option value="MAYOR_5000">Mayor a 5.000 m²</option>
                         </select>
                     </div>
                     <div class="d-flex align-items-center gap-1">
@@ -1228,10 +1353,15 @@
                 <p class="text-muted small mb-0">Vista geoespacial de los lotes — haga clic sobre un polígono para ver el detalle</p>
             </div>
             <div class="d-flex gap-2 align-items-center flex-wrap">
-                <span class="badge border text-success-emphasis bg-success-subtle"><i class="bi bi-square-fill me-1"></i>Adjudicado</span>
-                <span class="badge border text-warning-emphasis bg-warning-subtle"><i class="bi bi-square-fill me-1"></i>Preadjudicado</span>
+                <span class="badge border text-secondary bg-light"><i class="bi bi-square-fill me-1"></i>Disponible</span>
+                <span class="badge border" style="background:#fff3cd;color:#856404;border-color:#f0d87c!important"><i class="bi bi-square-fill me-1"></i>Proyecto en evaluación</span>
+                <span class="badge border" style="background:#ffc107;color:#1f2937;border-color:#d4a017!important"><i class="bi bi-square-fill me-1"></i>Adjudicado precario</span>
+                <span class="badge border" style="background:#fd7e14;color:#fff;border-color:#c85f00!important"><i class="bi bi-square-fill me-1"></i>En construcción</span>
+                <span class="badge border text-success-emphasis bg-success-subtle"><i class="bi bi-square-fill me-1"></i>Operativo</span>
+                <span class="badge border text-primary-emphasis bg-primary-subtle"><i class="bi bi-square-fill me-1"></i>Escriturado</span>
                 <span class="badge border text-danger-emphasis bg-danger-subtle"><i class="bi bi-square-fill me-1"></i>Desadjudicado</span>
-                <span class="badge border text-secondary bg-light"><i class="bi bi-square-fill me-1"></i>Sin asignar</span>
+                <span class="badge border" style="background:#b8bfc7;color:#333;border-style:dashed!important;border-color:#5a5a5a!important"><i class="bi bi-shield-lock me-1"></i>Lote Fiscal</span>
+                <span class="badge border" style="background:#dee2e6;color:#00205b;border-color:#00205b!important;border-width:2px!important"><i class="bi bi-buildings me-1"></i>Propiedad ENREPAVI</span>
             </div>
         </div>
         <div class="card border-0 shadow-sm">
@@ -1246,13 +1376,13 @@
         <div class="encabezado-seccion d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
                 <h4 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Censo de personal y flota</h4>
-                <p class="text-muted small mb-0">Registro para exenciones de Ingresos Brutos — Declaración anual</p>
+                <p class="text-muted small mb-0">Registro para exenciones de Ingresos Brutos — Declaración jurada semestral</p>
             </div>
         </div>
 
         <div id="mensajeCenso" class="alert d-none"></div>
 
-        <!-- Selector de empresa (solo ADMIN/DIRECTIVO) -->
+        <!-- Selector de empresa (solo ADMIN/DIRECTIVO/SECRETARIO) -->
         <div class="card border-0 bg-light mb-3 d-none" id="bloqueSelectorEmpresaCenso">
             <div class="card-body">
                 <div class="row g-2 align-items-end">
@@ -1268,14 +1398,24 @@
         </div>
 
         <div id="contenidoCenso" class="d-none">
-            <!-- Resumen general -->
-            <div class="row g-3 mb-3" id="resumenCenso">
+
+            <!-- Resumen para ADMINISTRADOR / DIRECTIVO / SECRETARIO -->
+            <div class="row g-3 mb-3 d-none" id="bloqueStatGestor">
                 <div class="col-6 col-md-3">
                     <div class="card border-0 shadow-sm text-center h-100">
                         <div class="card-body py-3">
-                            <i class="bi bi-people-fill text-primary fs-3 mb-1 d-block"></i>
-                            <div class="fs-4 fw-bold" id="statCensoPersonal">—</div>
-                            <small class="text-muted">Personal para registrar</small>
+                            <i class="bi bi-person-check-fill text-success fs-3 mb-1 d-block"></i>
+                            <div class="fs-4 fw-bold" id="statCensoDeclarados">—</div>
+                            <small class="text-muted">Empleados declarados</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center h-100">
+                        <div class="card-body py-3">
+                            <i class="bi bi-person-exclamation text-warning fs-3 mb-1 d-block"></i>
+                            <div class="fs-4 fw-bold" id="statCensoPendientes">—</div>
+                            <small class="text-muted">Pendientes de declarar</small>
                         </div>
                     </div>
                 </div>
@@ -1284,6 +1424,46 @@
                         <div class="card-body py-3">
                             <i class="bi bi-truck text-secondary fs-3 mb-1 d-block"></i>
                             <div class="fs-4 fw-bold" id="statCensoVehiculos">—</div>
+                            <small class="text-muted">Vehículos en flota</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center h-100">
+                        <div class="card-body py-3">
+                            <i class="bi bi-calendar2-check text-primary fs-3 mb-1 d-block"></i>
+                            <div class="small fw-semibold mt-1" id="statCensoUltimaDeclaracion">—</div>
+                            <small class="text-muted">Última declaración</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen para EMPRESA -->
+            <div class="row g-3 mb-3 d-none" id="bloqueStatEmpresa">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center h-100">
+                        <div class="card-body py-3">
+                            <i class="bi bi-people-fill text-primary fs-3 mb-1 d-block"></i>
+                            <div class="fs-4 fw-bold" id="statCensoPersonalTotal">—</div>
+                            <small class="text-muted">Total empleados</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center h-100">
+                        <div class="card-body py-3">
+                            <i class="bi bi-person-exclamation text-warning fs-3 mb-1 d-block"></i>
+                            <div class="fs-4 fw-bold" id="statCensoPendientesEmpresa">—</div>
+                            <small class="text-muted">Pendientes de declarar</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center h-100">
+                        <div class="card-body py-3">
+                            <i class="bi bi-truck text-secondary fs-3 mb-1 d-block"></i>
+                            <div class="fs-4 fw-bold" id="statCensoVehiculosEmpresa">—</div>
                             <small class="text-muted">Vehículos en flota</small>
                         </div>
                     </div>
@@ -1299,7 +1479,7 @@
                 </li>
                 <li class="nav-item d-none" id="tabPersonalCenso">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#panelCensoPersonal">
-                        <i class="bi bi-person-lines-fill me-1"></i>Personal registrado
+                        <i class="bi bi-person-lines-fill me-1"></i>Nómina de empleados
                     </button>
                 </li>
                 <li class="nav-item">
@@ -1311,13 +1491,13 @@
 
             <div class="tab-content">
 
-                <!-- Tab: Declaraciones anuales -->
+                <!-- Tab: Declaraciones -->
                 <div class="tab-pane fade show active" id="panelCensoDeclaraciones">
                     <div class="row g-3">
-                        <div class="col-lg-5" id="bloqueFormDeclaracion">
+                        <div class="col-lg-5 d-none" id="bloqueFormDeclaracion">
                             <div class="card border-0 bg-light h-100">
                                 <div class="card-body">
-                                    <h6 class="text-muted mb-3">Nueva declaración</h6>
+                                    <h6 class="text-muted mb-3">Declaración manual (anual)</h6>
                                     <div id="alertaDeclaracionCenso" class="alert alert-danger d-none mb-2"></div>
                                     <form id="formDeclaracionCenso" novalidate>
                                         <div class="mb-2">
@@ -1326,7 +1506,7 @@
                                                    min="2000" required>
                                         </div>
                                         <div class="mb-2">
-                                            <label class="form-label small">Personal registrado (en relación de dependencia)</label>
+                                            <label class="form-label small">Personal registrado</label>
                                             <input id="campoCantRegistrado" type="number" min="0" value="0"
                                                    class="form-control form-control-sm">
                                         </div>
@@ -1340,30 +1520,28 @@
                                             <textarea id="campoObservacionCenso" class="form-control form-control-sm"
                                                       rows="2" maxlength="500"></textarea>
                                         </div>
-                                        <button type="button" class="btn btn-primary btn-sm w-100"
+                                        <button type="button" class="btn btn-secondary btn-sm w-100"
                                                 onclick="ModuloCenso.declararCenso()">
-                                            <i class="bi bi-save me-1"></i>Guardar declaración
+                                            <i class="bi bi-save me-1"></i>Guardar declaración manual
                                         </button>
                                     </form>
-                                    <p class="text-muted small mt-2 mb-0">Si ya existe una declaración para el año indicado, será reemplazada.</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-7">
+                        <div class="col-lg-12">
                             <h6 class="text-muted mb-2">Historial de declaraciones</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover">
                                     <thead class="table-light">
                                         <tr>
                                             <th class="ps-3">Período</th>
-                                            <th>Fecha declaración</th>
-                                            <th>Registrados</th>
-                                            <th>Total</th>
+                                            <th>Fecha</th>
+                                            <th>Empleados declarados</th>
                                             <th>Observación</th>
                                         </tr>
                                     </thead>
                                     <tbody id="cuerpoTablaCenso">
-                                        <tr><td colspan="6" class="text-muted text-center py-3">Sin declaraciones</td></tr>
+                                        <tr><td colspan="4" class="text-muted text-center py-3">Sin declaraciones</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1371,49 +1549,57 @@
                     </div>
                 </div>
 
-                <!-- Tab: Personal registrado -->
+                <!-- Tab: Nómina de empleados (solo EMPRESA) -->
                 <div class="tab-pane fade" id="panelCensoPersonal">
                     <div class="row g-3">
-                        <div class="col-lg-5" id="bloqueFormPersonal">
+                        <div class="col-lg-4" id="bloqueFormPersonal">
                             <div class="card border-0 bg-light h-100">
                                 <div class="card-body">
-                                    <h6 class="text-muted mb-3">Agregar empleado registrado</h6>
+                                    <h6 class="text-muted mb-3">Agregar empleado</h6>
                                     <div id="alertaPersonalCenso" class="alert alert-danger d-none mb-2"></div>
                                     <form id="formPersonalCenso" novalidate>
                                         <div class="mb-2">
-                                            <label class="form-label small">CUIT <span class="text-danger">*</span></label>
-                                            <input id="campoCuitPersonal" class="form-control form-control-sm"
-                                                   placeholder="XX-XXXXXXXX-X" maxlength="20">
+                                            <label class="form-label small">CUIL <span class="text-danger">*</span></label>
+                                            <input id="campoCuilPersonal" class="form-control form-control-sm"
+                                                   placeholder="20123456789" maxlength="11"
+                                                   inputmode="numeric"
+                                                   oninput="ModuloCenso.soloDigitosCuil(this)">
+                                            <div class="form-text">11 dígitos sin guiones</div>
                                         </div>
                                         <div class="mb-2">
                                             <label class="form-label small">Nombre completo <span class="text-danger">*</span></label>
                                             <input id="campoNombrePersonal" class="form-control form-control-sm"
                                                    maxlength="120" placeholder="Apellido, Nombre">
                                         </div>
-                                        <div class="mb-3">
-                                            <label class="form-label small">Fecha de ingreso <span class="text-danger">*</span></label>
-                                            <input id="campoFechaIngresoPersonal" type="date"
-                                                   class="form-control form-control-sm">
-                                        </div>
                                         <button type="button" class="btn btn-primary btn-sm w-100"
                                                 onclick="ModuloCenso.agregarPersonal()">
                                             <i class="bi bi-person-plus me-1"></i>Agregar empleado
                                         </button>
                                     </form>
+
+                                    <hr class="my-3">
+                                    <button id="btnGenerarDeclaracion" type="button"
+                                            class="btn btn-success btn-sm w-100" disabled
+                                            onclick="ModuloCenso.generarDeclaracion()">
+                                        <i class="bi bi-file-earmark-check me-1"></i>Generar Declaración Jurada
+                                    </button>
+                                    <p class="text-muted small mt-2 mb-0">
+                                        Marca como declarados todos los empleados pendientes y genera un registro semestral.
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                        <!-- Lista de personal (gestor: solo lectura, empresa: con acciones) -->
-                        <div class="col-lg-7" id="bloqueListaPersonal">
-                            <h6 class="text-muted mb-2">Nómina de personal registrado</h6>
+                        <!-- Lista de empleados con estado -->
+                        <div class="col-lg-8" id="bloqueListaPersonal">
+                            <h6 class="text-muted mb-2">Nómina registrada</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover">
-                                    <thead class="table-light" id="cabeceraTablaPersonal">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th class="ps-3">CUIT</th>
+                                            <th class="ps-3">CUIL</th>
                                             <th>Nombre completo</th>
-                                            <th>Fecha ingreso</th>
-                                            <th class="text-center">Acción</th>
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-center" id="cabeceraAccionPersonal">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="cuerpoTablaPersonal">
@@ -1814,6 +2000,57 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Línea de tiempo del ciclo de vida del lote -->
+    <div class="modal fade" id="modalTimelineLote" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="tituloTimelineLote">Línea de tiempo del lote</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+                    <div id="cuerpoTimelineLote"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Avanzar etapa del ciclo de vida -->
+    <div class="modal fade" id="modalTransicionEtapa" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-arrow-right-circle me-2"></i>Avanzar etapa del lote</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Etapa actual: <strong id="textoEtapaActual">—</strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nueva etapa <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectNuevaEtapa"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Motivo / observación</label>
+                        <textarea class="form-control" id="motivoTransicion" rows="3"
+                            placeholder="Describe brevemente el motivo de la transición..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" id="btnConfirmarTransicion"
+                            onclick="ModuloCicloLote.confirmarTransicion()">
+                        <i class="bi bi-check2 me-1"></i>Confirmar
+                    </button>
                 </div>
             </div>
         </div>
@@ -2417,32 +2654,32 @@
                                         <div class="accordion-body pt-2">
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Empleos directos generados</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c1v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e1c1v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c1v1">1 · Ninguno</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c1v2">2 · Escasos</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c1v3">3 · Moderados</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c1v4">4 · Significativos</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C1" id="e1c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e1c1v5">5 · Masivos</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Uso de materia prima local</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c2v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e1c2v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c2v1">1 · Nulo</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c2v2">2 · Mínimo</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c2v3">3 · Parcial</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c2v4">4 · Mayoritario</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C2" id="e1c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e1c2v5">5 · Total</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label small fw-semibold">Impacto ambiental / manejo de residuos</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e1c3v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e1c3v5">5</label>
+                                                <label class="form-label small fw-semibold">Gestión ambiental y manejo de residuos</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c3v1">1 · Sin gestión</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c3v2">2 · Básica</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c3v3">3 · Moderada</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e1c3v4">4 · Buena</label>
+                                                    <input type="radio" class="btn-check" name="evalE1C3" id="e1c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e1c3v5">5 · Excelente</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
@@ -2473,32 +2710,32 @@
                                         <div class="accordion-body pt-2">
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Rentabilidad estimada del proyecto</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c1v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e2c1v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c1v1">1 · Inviable</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c1v2">2 · Baja</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c1v3">3 · Moderada</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c1v4">4 · Alta</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C1" id="e2c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e2c1v5">5 · Muy alta</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Solidez financiera declarada</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c2v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e2c2v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c2v1">1 · Muy débil</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c2v2">2 · Débil</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c2v3">3 · Moderada</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c2v4">4 · Sólida</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C2" id="e2c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e2c2v5">5 · Muy sólida</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Inversión inicial declarada</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e2c3v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e2c3v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c3v1">1 · Mínima</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c3v2">2 · Baja</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c3v3">3 · Moderada</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e2c3v4">4 · Alta</label>
+                                                    <input type="radio" class="btn-check" name="evalE2C3" id="e2c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e2c3v5">5 · Muy alta</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
@@ -2529,32 +2766,32 @@
                                         <div class="accordion-body pt-2">
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Viabilidad técnica del proyecto</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c1v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e3c1v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c1v1">1 · Inviable</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c1v2">2 · Cuestionable</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c1v3">3 · Posible</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c1v4">4 · Viable</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C1" id="e3c1v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e3c1v5">5 · Plenamente viable</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Coherencia del cronograma de obra</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c2v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e3c2v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c2v1">1 · Sin cronograma</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c2v2">2 · Muy deficiente</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c2v3">3 · Regular</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c2v4">4 · Coherente</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C2" id="e3c2v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e3c2v5">5 · Muy detallado</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label small fw-semibold">Calidad y completitud de la documentación</label>
-                                                <div class="btn-group btn-group-sm d-block" role="group">
-                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v1">1</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v2">2</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v3">3</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary" for="e3c3v4">4</label>
-                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary" for="e3c3v5">5</label>
+                                                <div class="d-flex flex-wrap gap-1" role="group">
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v1" value="1" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c3v1">1 · Muy incompleta</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v2" value="2" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c3v2">2 · Con fallas</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v3" value="3" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c3v3">3 · Aceptable</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v4" value="4" autocomplete="off"><label class="btn btn-outline-secondary btn-sm" for="e3c3v4">4 · Completa</label>
+                                                    <input type="radio" class="btn-check" name="evalE3C3" id="e3c3v5" value="5" autocomplete="off"><label class="btn btn-outline-primary btn-sm" for="e3c3v5">5 · Excelente</label>
                                                 </div>
                                             </div>
                                             <div class="mb-3">
@@ -3157,76 +3394,44 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted mb-3">
-                    Para continuar, asociá tu cuenta a una empresa. Podés registrar una nueva o vincular una ya existente.
+                    Para continuar, completá los datos de tu empresa.
                 </p>
                 <div id="alertaConfiguracionInicial" class="alert alert-danger alerta-modal d-none mb-3"></div>
 
-                <!-- Tabs -->
-                <ul class="nav nav-tabs mb-3" id="tabsConfigInicial" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" data-bs-toggle="tab"
-                                data-bs-target="#panel-nueva-empresa-ci" type="button" role="tab">
-                            <i class="bi bi-plus-circle me-1"></i>Nueva empresa
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab"
-                                data-bs-target="#panel-empresa-existente-ci" type="button" role="tab">
-                            <i class="bi bi-search me-1"></i>Empresa existente
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content">
-                    <!-- Tab: Nueva empresa -->
-                    <div class="tab-pane fade show active" id="panel-nueva-empresa-ci" role="tabpanel">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Nombre comercial <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" id="ciNombre" placeholder="Ej: Metalúrgica del Sur">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Razón social <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" id="ciRazonSocial" placeholder="Ej: Metalúrgica del Sur S.R.L.">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">CUIT <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" id="ciCuit" placeholder="Ej: 30-12345678-9">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label small fw-semibold">Actividad económica <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" id="ciActividad" placeholder="Ej: Fabricación de productos metálicos">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label small fw-semibold">Dirección <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" id="ciDireccion" placeholder="Calle, número, ciudad">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
-                                <input type="email" class="form-control form-control-sm" id="ciCorreo" placeholder="empresa@dominio.com">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Teléfono</label>
-                                <input type="text" class="form-control form-control-sm" id="ciTelefono" placeholder="Opcional">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Rubro</label>
-                                <select class="form-select form-select-sm" id="ciRubro">
-                                    <option value="">Seleccionar rubro (opcional)...</option>
-                                </select>
-                            </div>
-                        </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Nombre comercial <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" id="ciNombre" placeholder="Ej: Metalúrgica del Sur">
                     </div>
-
-                    <!-- Tab: Empresa existente -->
-                    <div class="tab-pane fade" id="panel-empresa-existente-ci" role="tabpanel">
-                        <div class="mb-3">
-                            <input type="text" class="form-control form-control-sm" id="campoBusquedaEmpresaCI"
-                                   placeholder="Filtrar por nombre, razón social o CUIT..."
-                                   oninput="ConfiguracionInicial.filtrarEmpresas()">
-                        </div>
-                        <div id="resultadosBusquedaEmpresaCI" class="mt-2"
-                             style="max-height: 280px; overflow-y: auto;"></div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Razón social <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" id="ciRazonSocial" placeholder="Ej: Metalúrgica del Sur S.R.L.">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">CUIT <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" id="ciCuit" placeholder="Ej: 30-12345678-9">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-semibold">Actividad económica <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" id="ciActividad" placeholder="Ej: Fabricación de productos metálicos">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-semibold">Dirección <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" id="ciDireccion" placeholder="Calle, número, ciudad">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Correo electrónico <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control form-control-sm" id="ciCorreo" placeholder="empresa@dominio.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Teléfono</label>
+                        <input type="text" class="form-control form-control-sm" id="ciTelefono" placeholder="Opcional">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Rubro</label>
+                        <select class="form-select form-select-sm" id="ciRubro">
+                            <option value="">Seleccionar rubro (opcional)...</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -3425,64 +3630,68 @@
                             <label class="form-label small fw-semibold">Impacto operativo <span class="text-danger">*</span></label>
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto1" value="1" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto1">1</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto1" title="1 — Sin impacto positivo">1</label>
                                 <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto2" value="2" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto2">2</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto2" title="2 — Impacto bajo">2</label>
                                 <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto3" value="3" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto3">3</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto3" title="3 — Impacto moderado">3</label>
                                 <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto4" value="4" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto4">4</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto4" title="4 — Impacto alto">4</label>
                                 <input type="radio" class="btn-check" name="resolCRImpacto" id="resolImpacto5" value="5" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto5">5</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolImpacto5" title="5 — Impacto positivo crítico">5</label>
                             </div>
+                            <small class="text-muted d-block mt-1">1 = sin impacto · 5 = impacto positivo crítico</small>
                         </div>
                         <!-- Compatibilidad del parque -->
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Compatibilidad del parque <span class="text-danger">*</span></label>
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp1" value="1" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolComp1">1</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp1" title="1 — Incompatible con el parque">1</label>
                                 <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp2" value="2" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolComp2">2</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp2" title="2 — Compatibilidad baja">2</label>
                                 <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp3" value="3" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolComp3">3</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp3" title="3 — Compatibilidad moderada">3</label>
                                 <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp4" value="4" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolComp4">4</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp4" title="4 — Compatibilidad alta">4</label>
                                 <input type="radio" class="btn-check" name="resolCRCompatibilidad" id="resolComp5" value="5" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolComp5">5</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolComp5" title="5 — Muy compatible con el parque">5</label>
                             </div>
+                            <small class="text-muted d-block mt-1">1 = incompatible · 5 = muy compatible</small>
                         </div>
                         <!-- Viabilidad técnica -->
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Viabilidad técnica <span class="text-danger">*</span></label>
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab1" value="1" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolViab1">1</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab1" title="1 — Técnicamente inviable">1</label>
                                 <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab2" value="2" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolViab2">2</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab2" title="2 — Viabilidad baja">2</label>
                                 <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab3" value="3" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolViab3">3</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab3" title="3 — Viabilidad moderada">3</label>
                                 <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab4" value="4" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolViab4">4</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab4" title="4 — Viable con ajustes menores">4</label>
                                 <input type="radio" class="btn-check" name="resolCRViabilidad" id="resolViab5" value="5" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolViab5">5</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolViab5" title="5 — Totalmente viable">5</label>
                             </div>
+                            <small class="text-muted d-block mt-1">1 = inviable · 5 = totalmente viable</small>
                         </div>
                         <!-- Cumplimiento normativo -->
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Cumplimiento normativo <span class="text-danger">*</span></label>
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl1" value="1" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl1">1</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl1" title="1 — Incumple la normativa">1</label>
                                 <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl2" value="2" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl2">2</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl2" title="2 — Cumplimiento bajo">2</label>
                                 <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl3" value="3" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl3">3</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl3" title="3 — Cumplimiento parcial">3</label>
                                 <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl4" value="4" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl4">4</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl4" title="4 — Cumplimiento alto">4</label>
                                 <input type="radio" class="btn-check" name="resolCRCumplimiento" id="resolCumpl5" value="5" autocomplete="off">
-                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl5">5</label>
+                                <label class="btn btn-outline-primary btn-sm" for="resolCumpl5" title="5 — Cumple totalmente">5</label>
                             </div>
+                            <small class="text-muted d-block mt-1">1 = incumple · 5 = cumple totalmente</small>
                         </div>
                         <!-- Observaciones de rúbrica -->
                         <div class="col-12">
@@ -3548,6 +3757,7 @@
 <script src="js/modulos/dashboard.js"></script>
 <script src="js/modulos/infraestructura.js"></script>
 <script src="js/modulos/mapa.js"></script>
+<script src="js/modulos/ciclo-lote.js"></script>
 <script src="js/aplicacion.js"></script>
 </body>
 </html>

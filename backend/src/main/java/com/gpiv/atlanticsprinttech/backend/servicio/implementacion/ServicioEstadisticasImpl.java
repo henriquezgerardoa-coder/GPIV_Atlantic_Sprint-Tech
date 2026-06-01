@@ -1,6 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEvaluacionRadicacion;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
@@ -12,10 +13,12 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDashboardGe
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEstadisticas;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeLote;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaInformeRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
-import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
+import com.gpiv.atlanticsprinttech.entities.dominio.EtapaCicloLote;
+import com.gpiv.atlanticsprinttech.entities.dominio.EvaluacionRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import java.util.Comparator;
@@ -35,6 +38,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
     private final RepositorioEmpresa repositorioEmpresa;
     private final RepositorioLote repositorioLote;
     private final RepositorioRadicacionSolicitud repositorioRadicacionSolicitud;
+    private final RepositorioEvaluacionRadicacion repositorioEvaluacion;
     private final RepositorioProyectoProductivo repositorioProyecto;
     private final ServicioAuditLog servicioAuditLog;
     private final ServicioContextoUsuario servicioContextoUsuario;
@@ -43,6 +47,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         RepositorioEmpresa repositorioEmpresa,
         RepositorioLote repositorioLote,
         RepositorioRadicacionSolicitud repositorioRadicacionSolicitud,
+        RepositorioEvaluacionRadicacion repositorioEvaluacion,
         RepositorioProyectoProductivo repositorioProyecto,
         ServicioAuditLog servicioAuditLog,
         ServicioContextoUsuario servicioContextoUsuario
@@ -50,6 +55,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         this.repositorioEmpresa = repositorioEmpresa;
         this.repositorioLote = repositorioLote;
         this.repositorioRadicacionSolicitud = repositorioRadicacionSolicitud;
+        this.repositorioEvaluacion = repositorioEvaluacion;
         this.repositorioProyecto = repositorioProyecto;
         this.servicioAuditLog = servicioAuditLog;
         this.servicioContextoUsuario = servicioContextoUsuario;
@@ -60,9 +66,12 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         long totalEmpresas       = repositorioEmpresa.count();
         long totalLotes          = repositorioLote.count();
         long lotesOcupados       = repositorioLote.countByOcupado(true);
-        long lotesPreadjudicados = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.PREADJUDICADO);
-        long lotesAdjudicados    = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.ADJUDICADO);
-        long lotesDesadjudicados = repositorioLote.countByEstadoAsignacion(EstadoAsignacionLote.DESADJUDICADO);
+        long lotesProyectoEnEvaluacion = repositorioLote.countByEtapa(EtapaCicloLote.PROYECTO_EN_EVALUACION);
+        long lotesAdjudicadoPrecario   = repositorioLote.countByEtapa(EtapaCicloLote.ADJUDICADO_PRECARIO);
+        long lotesEnConstruccion       = repositorioLote.countByEtapa(EtapaCicloLote.EN_CONSTRUCCION);
+        long lotesOperativos           = repositorioLote.countByEtapa(EtapaCicloLote.OPERATIVO);
+        long lotesEscriturados         = repositorioLote.countByEtapa(EtapaCicloLote.ESCRITURADO);
+        long lotesRevertidos           = repositorioLote.countByEtapa(EtapaCicloLote.REVERTIDO);
 
         Map<String, Long> radicacionesPorEstado = repositorioRadicacionSolicitud.contarPorEstado().stream()
             .collect(Collectors.toMap(
@@ -90,9 +99,12 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             enRevision,
             aprobadas,
             rechazadas,
-            lotesPreadjudicados,
-            lotesAdjudicados,
-            lotesDesadjudicados
+            lotesProyectoEnEvaluacion,
+            lotesAdjudicadoPrecario,
+            lotesEnConstruccion,
+            lotesOperativos,
+            lotesEscriturados,
+            lotesRevertidos
         );
     }
 
@@ -135,13 +147,68 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
                 l.getCodigo(),
                 l.getSuperficieMetrosCuadrados(),
                 l.isOcupado(),
-                Optional.ofNullable(l.getEstadoAsignacion()).map(Enum::name).orElse(null),
+                l.getEstadoAsignacionLegacy(),
                 l.getZona(),
                 emp != null ? emp.getNombre() : null,
                 emp != null ? emp.getCuit() : null,
                 l.getFechaAsignacion(),
                 l.getNumeroExpedienteReferencia(),
                 fechaPlazo
+            );
+        }).toList();
+    }
+
+    @Override
+    public List<RespuestaInformeRadicacion> obtenerInformeRadicaciones() {
+        servicioAuditLog.registrarEvento(
+            servicioContextoUsuario.obtenerIdentificadorActual(), "ACCESO_INFORME", "Radicacion",
+            "informe-radicaciones",
+            null,
+            "consulta de informe completo de radicaciones",
+            UtilRed.obtenerIpActual()
+        );
+        List<RadicacionSolicitud> radicaciones = repositorioRadicacionSolicitud.buscarFiltrado(null, null, null, null);
+        List<Long> ids = radicaciones.stream().map(RadicacionSolicitud::getId).toList();
+        Map<Long, EvaluacionRadicacion> evalPorRadicacion = ids.isEmpty()
+            ? Map.of()
+            : repositorioEvaluacion.findByRadicacionIdIn(ids).stream()
+                .collect(Collectors.toMap(e -> e.getRadicacion().getId(), e -> e));
+
+        return radicaciones.stream().map(r -> {
+            EvaluacionRadicacion ev = evalPorRadicacion.get(r.getId());
+            Lote lote = r.getLote();
+            return new RespuestaInformeRadicacion(
+                r.getId(),
+                r.getNumeroRadicado(),
+                r.getEmpresa().getNombre(),
+                r.getEmpresa().getCuit(),
+                r.getEmpresa().getActividadEconomica(),
+                r.getEstado().name(),
+                r.getFechaRadicacion(),
+                r.getFechaPlazo(),
+                lote != null ? lote.getCodigo() : null,
+                r.getTiempoEstimadoObraMeses(),
+                r.getEmpleadosPrevistos(),
+                ev != null ? ev.getEtapa1EmpleoDirecto() : null,
+                ev != null ? ev.getEtapa1MateriaPrimaLocal() : null,
+                ev != null ? ev.getEtapa1ImpactoAmbiental() : null,
+                ev != null ? ev.puntuacionEtapa1() : null,
+                ev != null ? ev.getEtapa1Observaciones() : null,
+                ev != null && ev.etapa1Completa(),
+                ev != null ? ev.getEtapa2Rentabilidad() : null,
+                ev != null ? ev.getEtapa2SolidezFinanciera() : null,
+                ev != null ? ev.getEtapa2InversionDeclarada() : null,
+                ev != null ? ev.puntuacionEtapa2() : null,
+                ev != null ? ev.getEtapa2Observaciones() : null,
+                ev != null && ev.etapa2Completa(),
+                ev != null ? ev.getEtapa3ViabilidadTecnica() : null,
+                ev != null ? ev.getEtapa3CronogramaObra() : null,
+                ev != null ? ev.getEtapa3CalidadDocumentacion() : null,
+                ev != null ? ev.puntuacionEtapa3() : null,
+                ev != null ? ev.getEtapa3Observaciones() : null,
+                ev != null && ev.etapa3Completa(),
+                ev != null ? ev.puntuacionTotal() : null,
+                ev != null ? ev.getEvaluador() : null
             );
         }).toList();
     }
@@ -238,7 +305,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         List<RespuestaInformeEmpresa.LoteInforme> lotesInforme = lotes.stream()
             .map(l -> new RespuestaInformeEmpresa.LoteInforme(
                 l.getId(), l.getCodigo(), l.getSuperficieMetrosCuadrados(),
-                Optional.ofNullable(l.getEstadoAsignacion()).map(Enum::name).orElse(null),
+                l.getEstadoAsignacionLegacy(),
                 l.getZona(), l.getFechaAsignacion()
             ))
             .toList();

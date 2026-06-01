@@ -2,6 +2,11 @@ const ModuloInfraestructura = (() => {
     let _servicioActualId = null;
     let _esGestor = false;
 
+    function _esc(val) {
+        if (val == null) return '';
+        return String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     async function cargar() {
         _esGestor = !Autenticacion.tieneAcceso(['EMPRESA']) ||
             Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
@@ -28,13 +33,13 @@ const ModuloInfraestructura = (() => {
                      onclick="ModuloInfraestructura.abrirDetalle(${s.id})">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="fw-bold mb-0">${s.nombre}</h6>
+                            <h6 class="fw-bold mb-0">${_esc(s.nombre)}</h6>
                             <span class="badge ${clsBadge}"><i class="bi ${icono} me-1"></i>${label}</span>
                         </div>
-                        ${s.descripcionTecnica ? `<p class="text-muted small mb-2">${s.descripcionTecnica}</p>` : ''}
-                        ${s.ultimoComentario ? `<p class="small fst-italic text-muted mb-1">"${s.ultimoComentario}"</p>` : ''}
+                        ${s.descripcionTecnica ? `<p class="text-muted small mb-2">${_esc(s.descripcionTecnica)}</p>` : ''}
+                        ${s.ultimoComentario ? `<p class="small fst-italic text-muted mb-1">"${_esc(s.ultimoComentario)}"</p>` : ''}
                         <small class="text-muted">
-                            ${s.ultimoTecnicoResponsable ? `Por: ${s.ultimoTecnicoResponsable} · ` : ''}
+                            ${s.ultimoTecnicoResponsable ? `Por: ${_esc(s.ultimoTecnicoResponsable)} · ` : ''}
                             ${s.fechaUltimaActualizacion ? s.fechaUltimaActualizacion.substring(0, 10) : ''}
                         </small>
                     </div>
@@ -78,7 +83,7 @@ const ModuloInfraestructura = (() => {
 
         await _cargarHistorial(servicioId);
         ocultarAlertaModal('alertaModalServicio');
-        new bootstrap.Modal(document.getElementById('modalDetalleServicio')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleServicio')).show();
     }
 
     async function _cargarHistorial(servicioId) {
@@ -98,8 +103,8 @@ const ModuloInfraestructura = (() => {
                         <span class="badge ${clsBadge}"><i class="bi ${icono} me-1"></i>${label}</span>
                         <small class="text-muted">${e.fechaEvento ? e.fechaEvento.substring(0, 10) : ''}</small>
                     </div>
-                    ${e.comentario ? `<p class="small text-muted mb-0 mt-1">${e.comentario}</p>` : ''}
-                    ${e.usuario ? `<small class="text-muted">Por: ${e.usuario}</small>` : ''}
+                    ${e.comentario ? `<p class="small text-muted mb-0 mt-1">${_esc(e.comentario)}</p>` : ''}
+                    ${e.usuario ? `<small class="text-muted">Por: ${_esc(e.usuario)}</small>` : ''}
                 </li>`;
             }).join('')
             + '</ul>';
@@ -139,7 +144,7 @@ const ModuloInfraestructura = (() => {
     function abrirCreacion() {
         document.getElementById('formNuevoServicio')?.reset();
         ocultarAlertaModal('alertaModalNuevoServicio');
-        new bootstrap.Modal(document.getElementById('modalNuevoServicio')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevoServicio')).show();
     }
 
     async function guardarNuevoServicio() {
@@ -164,7 +169,7 @@ const ModuloInfraestructura = (() => {
             MANTENIMIENTO:{ clsCard: 'border-warning border-opacity-25', clsBadge: 'bg-warning-subtle text-warning', label: 'Mantenimiento', icono: 'bi-tools' },
             FALLA_CRITICA:{ clsCard: 'border-danger border-opacity-25',  clsBadge: 'bg-danger-subtle text-danger',   label: 'Falla crítica', icono: 'bi-exclamation-triangle-fill' },
         };
-        return cfg[estado] ?? { clsCard: '', clsBadge: 'bg-light text-muted', label: estado, icono: 'bi-circle' };
+        return cfg[estado] ?? { clsCard: '', clsBadge: 'bg-light text-muted', label: _esc(estado), icono: 'bi-circle' };
     }
 
     return { cargar, abrirDetalle, guardarEstado, abrirCreacion, guardarNuevoServicio };

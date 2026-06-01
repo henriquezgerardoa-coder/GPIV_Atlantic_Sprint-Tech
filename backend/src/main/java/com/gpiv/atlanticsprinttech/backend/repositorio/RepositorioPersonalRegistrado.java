@@ -12,4 +12,12 @@ public interface RepositorioPersonalRegistrado extends JpaRepository<PersonalReg
     Optional<PersonalRegistrado> findByIdAndEmpresaId(Long id, Long empresaId);
 
     boolean existsByEmpresaIdAndCuit(Long empresaId, String cuit);
+
+    java.util.Optional<com.gpiv.atlanticsprinttech.entities.dominio.PersonalRegistrado> findByEmpresaIdAndCuit(Long empresaId, String cuit);
+
+    long countByEmpresaIdAndDeclarado(Long empresaId, boolean declarado);
+
+    List<PersonalRegistrado> findByEmpresaIdAndDeclaradoFalseOrderByNombreCompletoAsc(Long empresaId);
+
+    Optional<PersonalRegistrado> findTopByEmpresaIdAndDeclaradoTrueOrderByFechaDeclaracionDesc(Long empresaId);
 }

@@ -2,6 +2,11 @@ const ModuloMonitor = (() => {
     let _todos = [];
     let _filtroEstado = null;
 
+    function _esc(val) {
+        if (val == null) return '';
+        return String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     async function cargar() {
         _filtroEstado = null;
         document.getElementById('btnLimpiarFiltroMonitor')?.classList.add('d-none');
@@ -58,7 +63,7 @@ const ModuloMonitor = (() => {
                      style="cursor:pointer" onclick="ModuloMonitor.filtrarPorEstado('${estado}')">
                     <div class="card-body py-2 px-3">
                         <div class="fw-bold">${cantidad}</div>
-                        <small>${label}</small>
+                        <small>${_esc(label)}</small>
                     </div>
                 </div>
             </div>`;
@@ -83,9 +88,9 @@ const ModuloMonitor = (() => {
                 : e.diasSinMovimiento > 14 ? 'text-warning fw-semibold' : 'text-muted';
             return `
             <tr>
-                <td class="ps-3 fw-semibold">${e.numeroRadicado || e.id}${alerta}</td>
-                <td>${e.nombreEmpresa || '-'}</td>
-                <td><small class="text-muted">${e.tipoSolicitud || '-'}</small></td>
+                <td class="ps-3 fw-semibold">${_esc(e.numeroRadicado) || e.id}${alerta}</td>
+                <td>${_esc(e.nombreEmpresa) || '-'}</td>
+                <td><small class="text-muted">${_esc(e.tipoSolicitud) || '-'}</small></td>
                 <td>${badgeEstado}</td>
                 <td><small>${e.fechaRadicacion ? e.fechaRadicacion.substring(0, 10) : '-'}</small></td>
                 <td><small ${e.plazoVencido ? 'class="text-danger fw-semibold"' : ''}>${e.fechaPlazo ? e.fechaPlazo.substring(0, 10) : '-'}</small></td>
@@ -134,7 +139,7 @@ const ModuloMonitor = (() => {
         if (cuerpo) {
             const eventos = [];
             if (expediente.fechaRadicacion) eventos.push({ fecha: expediente.fechaRadicacion, texto: 'Radicación presentada', tipo: 'info' });
-            if (expediente.fechaUltimaActualizacion) eventos.push({ fecha: expediente.fechaUltimaActualizacion, texto: `Última actualización — ${expediente.estado}`, tipo: 'primary' });
+            if (expediente.fechaUltimaActualizacion) eventos.push({ fecha: expediente.fechaUltimaActualizacion, texto: `Última actualización — ${_esc(expediente.estado)}`, tipo: 'primary' });
             if (expediente.fechaAprobacion) eventos.push({ fecha: expediente.fechaAprobacion, texto: 'Aprobado / Habilitado', tipo: 'success' });
             if (expediente.fechaPlazo) eventos.push({ fecha: expediente.fechaPlazo, texto: 'Plazo estimado de obra', tipo: expediente.plazoVencido ? 'danger' : 'warning' });
 
@@ -171,7 +176,7 @@ const ModuloMonitor = (() => {
             REQUIERE_SUBSANACION: ['bg-warning-subtle text-warning',     'Subsanación'],
         };
         const [cls, label] = cfg[estado] ?? ['bg-light text-muted', estado];
-        return `<span class="badge ${cls}">${label}</span>`;
+        return `<span class="badge ${cls}">${_esc(label)}</span>`;
     }
 
     return { cargar, filtrarPorEstado, filtrarPorVencidos, limpiarFiltro, abrirTimeline };

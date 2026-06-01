@@ -63,6 +63,7 @@ public class MapeadorRadicacion {
     }
 
     public RespuestaLote toLoteRespuesta(Lote lote) {
+        var etapa = lote.getEtapa();
         return new RespuestaLote(
             lote.getId(),
             lote.getCodigo(),
@@ -71,7 +72,7 @@ public class MapeadorRadicacion {
             lote.getEmpresaId(),
             lote.getNombreEmpresa(),
             lote.getCuitEmpresa(),
-            lote.getNombreEstadoAsignacion(),
+            lote.getEstadoAsignacionLegacy(),
             lote.getFechaAsignacionTexto(),
             lote.getNumeroExpedienteReferencia(),
             lote.getZona(),
@@ -79,7 +80,13 @@ public class MapeadorRadicacion {
             lote.getRubroEmpresa(),
             lote.getReferenteEmpresa(),
             lote.getCorreoElectronicoEmpresa(),
-            lote.getTelefonoEmpresa()
+            lote.getTelefonoEmpresa(),
+            etapa != null ? etapa.name() : null,
+            etapa != null ? etapa.etiquetaLegible() : null,
+            lote.getFechaInicioEtapaActual() != null ? lote.getFechaInicioEtapaActual().toString() : null,
+            lote.getFechaLimiteEtapaActual() != null ? lote.getFechaLimiteEtapaActual().toString() : null,
+            lote.etapaVencida(),
+            lote.diasEnEtapaActual()
         );
     }
 

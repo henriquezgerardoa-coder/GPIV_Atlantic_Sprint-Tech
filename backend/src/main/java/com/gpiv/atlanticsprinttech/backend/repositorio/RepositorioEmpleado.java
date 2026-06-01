@@ -11,6 +11,8 @@ public interface RepositorioEmpleado extends JpaRepository<Empleado, Long> {
 
 	List<Empleado> findByEmpresa_Id(Long empresaId);
 
+	List<Empleado> findByEmpresa_IdAndDeclaradoTrue(Long empresaId);
+
 	@Query("SELECT COUNT(e) FROM Empleado e WHERE e.empresa.id = :empresaId")
 	long countByEmpresaId(@Param("empresaId") Long empresaId);
 
@@ -20,5 +22,11 @@ public interface RepositorioEmpleado extends JpaRepository<Empleado, Long> {
 	Optional<Empleado> findByIdAndEmpresaId(@Param("empleadoId") Long empleadoId, @Param("empresaId") Long empresaId);
 
 	boolean existsByEmpresa_IdAndCuit(Long empresaId, String cuit);
+
+	long countByEmpresa_IdAndDeclarado(Long empresaId, boolean declarado);
+
+	List<Empleado> findByEmpresa_IdAndDeclaradoFalseOrderByNombreAsc(Long empresaId);
+
+	Optional<Empleado> findTopByEmpresa_IdAndDeclaradoTrueOrderByFechaDeclaracionDesc(Long empresaId);
 }
 

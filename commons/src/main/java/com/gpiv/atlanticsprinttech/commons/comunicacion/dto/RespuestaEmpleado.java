@@ -6,7 +6,8 @@ public record RespuestaEmpleado(
 	Long id,
 	String cuit,
 	String nombre,
-	LocalDateTime fechaRegistro
+	LocalDateTime fechaRegistro,
+	boolean declarado
 ) {
 }
 

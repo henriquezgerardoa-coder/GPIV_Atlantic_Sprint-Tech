@@ -33,6 +33,9 @@ public class Censo {
     @Column(name = "anio_periodo", nullable = false)
     private int anioPeriodo;
 
+    @Column(nullable = false)
+    private int semestre = 0;
+
     @Column(name = "cantidad_personal_registrado", nullable = false)
     private int cantidadPersonalRegistrado;
 
@@ -48,6 +51,7 @@ public class Censo {
     private Censo(
         Empresa empresa,
         int anioPeriodo,
+        int semestre,
         int cantidadPersonalRegistrado,
         int cantidadPersonalNoRegistrado,
         String observacion
@@ -55,6 +59,7 @@ public class Censo {
         this.empresa = empresa;
         this.fechaDeclaracion = LocalDate.now();
         this.anioPeriodo = anioPeriodo;
+        this.semestre = semestre;
         this.cantidadPersonalRegistrado = cantidadPersonalRegistrado;
         this.cantidadPersonalNoRegistrado = cantidadPersonalNoRegistrado;
         this.observacion = observacion;
@@ -63,11 +68,12 @@ public class Censo {
     public static Censo crear(
         Empresa empresa,
         int anioPeriodo,
+        int semestre,
         int cantidadPersonalRegistrado,
         int cantidadPersonalNoRegistrado,
         String observacion
     ) {
-        return new Censo(empresa, anioPeriodo, cantidadPersonalRegistrado, cantidadPersonalNoRegistrado, observacion);
+        return new Censo(empresa, anioPeriodo, semestre, cantidadPersonalRegistrado, cantidadPersonalNoRegistrado, observacion);
     }
 
     public Long getId() {
@@ -84,6 +90,10 @@ public class Censo {
 
     public int getAnioPeriodo() {
         return anioPeriodo;
+    }
+
+    public int getSemestre() {
+        return semestre;
     }
 
     public int getCantidadPersonalRegistrado() {

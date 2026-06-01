@@ -27,7 +27,7 @@ const ApiCliente = (() => {
         });
         if (respuesta.status === 401) {
             sessionStorage.clear();
-            window.location.href = '/ingreso.html';
+            window.location.href = '/index.html';
             return null;
         }
         return respuesta;

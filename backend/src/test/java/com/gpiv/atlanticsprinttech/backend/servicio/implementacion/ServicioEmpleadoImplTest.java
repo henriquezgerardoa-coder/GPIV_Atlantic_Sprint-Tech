@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioCenso;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpleado;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
@@ -38,12 +39,17 @@ class ServicioEmpleadoImplTest {
 	@Mock
 	private RepositorioEmpresa repositorioEmpresa;
 
+	@Mock
+	private RepositorioCenso repositorioCenso;
 
 	@Mock
 	private ServicioContextoUsuario servicioContextoUsuario;
 
 	@Mock
 	private ServicioAuditLog servicioAuditLog;
+
+	private static final String CUIT_DIGITOS = "20111222333";
+	private static final String CUIT_FORMATEADO = "20-11122233-3";
 
 	private Usuario usuarioEmpresa;
 	private Usuario usuarioAdmin;
@@ -61,7 +67,7 @@ class ServicioEmpleadoImplTest {
 		usuarioAdmin = Usuario.crear("usuario_admin", "Usuario Admin",
 			"hash_clave", true, Set.of(RolUsuario.ADMINISTRADOR));
 
-		solicitudEmpleado = new SolicitudEmpleado("20111222333", "Juan González");
+		solicitudEmpleado = new SolicitudEmpleado(CUIT_DIGITOS, "Juan González");
 	}
 
 	@Test
@@ -76,16 +82,16 @@ class ServicioEmpleadoImplTest {
 			.thenReturn(empresaId);
 		when(repositorioEmpresa.findById(empresaId))
 			.thenReturn(Optional.of(empresa));
-		when(repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, solicitudEmpleado.cuit()))
+		when(repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, CUIT_FORMATEADO))
 			.thenReturn(false);
-		Empleado empleadoCreado = Empleado.crear(solicitudEmpleado.cuit(), solicitudEmpleado.nombre(), empresa);
+		Empleado empleadoCreado = Empleado.crear(CUIT_FORMATEADO, solicitudEmpleado.nombre(), empresa);
 		when(repositorioEmpleado.save(any(Empleado.class)))
 			.thenReturn(empleadoCreado);
 
 		Empleado resultado = servicioEmpleado.crear(empresaId, solicitudEmpleado, "usuario_empresa");
 
 		assertNotNull(resultado);
-		assertEquals(solicitudEmpleado.cuit(), resultado.getCuit());
+		assertEquals(CUIT_FORMATEADO, resultado.getCuit());
 		assertEquals(solicitudEmpleado.nombre(), resultado.getNombre());
 	}
 
@@ -132,7 +138,7 @@ class ServicioEmpleadoImplTest {
 			.thenReturn(empresaId);
 		when(repositorioEmpresa.findById(empresaId))
 			.thenReturn(Optional.of(empresa));
-		when(repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, solicitudEmpleado.cuit()))
+		when(repositorioEmpleado.existsByEmpresa_IdAndCuit(empresaId, CUIT_FORMATEADO))
 			.thenReturn(true);
 
 		assertThrows(ResponseStatusException.class,

@@ -2,10 +2,6 @@ package com.gpiv.atlanticsprinttech.commons.comunicacion.dto;
 
 import java.util.Map;
 
-/**
- * Resumen estadistico del parque industrial.
- * Accesible para ADMINISTRADOR y DIRECTIVO (R-14: lectura de informes).
- */
 public record RespuestaEstadisticas(
     long totalEmpresas,
     long totalLotes,
@@ -17,8 +13,10 @@ public record RespuestaEstadisticas(
     long radicacionesEnRevision,
     long radicacionesAprobadas,
     long radicacionesRechazadas,
-    long lotesPreadjudicados,
-    long lotesAdjudicados,
-    long lotesDesadjudicados
+    long lotesProyectoEnEvaluacion,
+    long lotesAdjudicadoPrecario,
+    long lotesEnConstruccion,
+    long lotesOperativos,
+    long lotesEscriturados,
+    long lotesRevertidos
 ) {}
-

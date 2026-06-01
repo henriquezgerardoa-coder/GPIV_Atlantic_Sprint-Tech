@@ -38,6 +38,9 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
 
     boolean existsByEmpresaIdAndEstado(Long empresaId, EstadoRadicacion estado);
 
+    @Query("SELECT DISTINCT r.empresa.id FROM RadicacionSolicitud r WHERE r.empresa.id IN :ids AND r.estado = :estado")
+    java.util.Set<Long> findEmpresaIdsConEstado(@Param("ids") List<Long> ids, @Param("estado") EstadoRadicacion estado);
+
     Optional<RadicacionSolicitud> findFirstByEmpresaIdOrderByFechaUltimaActualizacionDesc(Long empresaId);
 
     boolean existsByEmpresaId(Long empresaId);

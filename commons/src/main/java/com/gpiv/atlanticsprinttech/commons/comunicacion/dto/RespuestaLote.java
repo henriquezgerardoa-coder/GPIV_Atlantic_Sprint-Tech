@@ -16,7 +16,12 @@ public record RespuestaLote(
     String rubroEmpresa,
     String referenteEmpresa,
     String correoElectronicoEmpresa,
-    String telefonoEmpresa
+    String telefonoEmpresa,
+    String etapa,
+    String etapaEtiqueta,
+    String fechaInicioEtapaActual,
+    String fechaLimiteEtapaActual,
+    boolean etapaVencida,
+    long diasEnEtapaActual
 ) {
 }
-

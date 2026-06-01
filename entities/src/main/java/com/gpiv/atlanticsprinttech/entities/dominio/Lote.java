@@ -2,6 +2,8 @@ package com.gpiv.atlanticsprinttech.entities.dominio;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,10 +11,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,9 +45,15 @@ public class Lote {
     @Column(name = "fecha_asignacion")
     private LocalDate fechaAsignacion;
 
-    @Convert(converter = EstadoAsignacionLoteConverter.class)
-    @Column(name = "estado_asignacion", length = 40)
-    private EstadoAsignacionLote estadoAsignacion;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "etapa", nullable = false, length = 40)
+    private EtapaCicloLote etapa = EtapaCicloLote.DISPONIBLE;
+
+    @Column(name = "fecha_inicio_etapa_actual")
+    private LocalDate fechaInicioEtapaActual;
+
+    @Column(name = "fecha_limite_etapa_actual")
+    private LocalDate fechaLimiteEtapaActual;
 
     @Column(name = "numero_expediente_referencia", length = 40)
     private String numeroExpedienteReferencia;
@@ -53,7 +61,6 @@ public class Lote {
     @Column(name = "zona", length = 20)
     private String zona;
 
-    // Nuevos campos para geometría y relaciones espaciales
     // insertable/updatable=false: JPA no puede bindear geometry como varchar; actualizaciones via query nativa
     @Column(name = "geom", columnDefinition = "geometry(Polygon,4326)", insertable = false, updatable = false)
     private String geom;
@@ -84,6 +91,8 @@ public class Lote {
         this.ocupado = ocupado;
         this.empresa = empresa;
         this.zona = zona;
+        this.etapa = EtapaCicloLote.DISPONIBLE;
+        this.fechaInicioEtapaActual = LocalDate.now();
     }
 
     public static Lote crear(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa, String zona) {
@@ -114,8 +123,16 @@ public class Lote {
         return fechaAsignacion;
     }
 
-    public EstadoAsignacionLote getEstadoAsignacion() {
-        return estadoAsignacion;
+    public EtapaCicloLote getEtapa() {
+        return etapa;
+    }
+
+    public LocalDate getFechaInicioEtapaActual() {
+        return fechaInicioEtapaActual;
+    }
+
+    public LocalDate getFechaLimiteEtapaActual() {
+        return fechaLimiteEtapaActual;
     }
 
     public String getNumeroExpedienteReferencia() {
@@ -159,12 +176,16 @@ public class Lote {
             ? fechaAsignacion.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE) : null;
     }
 
-    public String getNombreEstadoAsignacion() {
-        return estadoAsignacion != null ? estadoAsignacion.name() : null;
+    public String getNombreEtapa() {
+        return etapa != null ? etapa.name() : null;
+    }
+
+    public String getEstadoAsignacionLegacy() {
+        return etapa != null ? etapa.estadoAsignacionLegacy() : null;
     }
 
     public boolean esAdjudicable() {
-        return !ocupado && empresa == null && estadoAsignacion == null;
+        return etapa == EtapaCicloLote.DISPONIBLE;
     }
 
     public boolean tieneEmpresaAsignada() {
@@ -176,14 +197,34 @@ public class Lote {
         return idActual == null || !idActual.equals(nuevaEmpresaId);
     }
 
+    public boolean etapaVencida() {
+        return fechaLimiteEtapaActual != null
+            && LocalDate.now().isAfter(fechaLimiteEtapaActual)
+            && !etapa.esTerminal()
+            && etapa != EtapaCicloLote.REVERTIDO
+            && etapa != EtapaCicloLote.DISPONIBLE;
+    }
+
+    public long diasEnEtapaActual() {
+        if (fechaInicioEtapaActual == null) return 0;
+        return ChronoUnit.DAYS.between(fechaInicioEtapaActual, LocalDate.now());
+    }
+
+    public void transicionar(EtapaCicloLote nuevaEtapa) {
+        this.etapa = nuevaEtapa;
+        this.fechaInicioEtapaActual = LocalDate.now();
+        Integer plazo = nuevaEtapa.plazoDiasDefault();
+        this.fechaLimiteEtapaActual = (plazo != null) ? LocalDate.now().plusDays(plazo) : null;
+    }
+
     public void ocuparConEmpresa(Empresa empresaAsignada, String numeroRadicado) {
         this.ocupado = true;
         this.empresa = empresaAsignada;
         if (this.fechaAsignacion == null) {
             this.fechaAsignacion = LocalDate.now();
         }
-        this.estadoAsignacion = EstadoAsignacionLote.PREADJUDICADO;
         this.numeroExpedienteReferencia = numeroRadicado;
+        transicionar(EtapaCicloLote.PROYECTO_EN_EVALUACION);
     }
 
     public void actualizarDatos(String codigo, Double superficieMetrosCuadrados, boolean ocupado, Empresa empresa, String zona) {
@@ -195,26 +236,11 @@ public class Lote {
 
         if (this.empresa == null) {
             this.fechaAsignacion = null;
-            this.estadoAsignacion = null;
             this.numeroExpedienteReferencia = null;
+            transicionar(EtapaCicloLote.DISPONIBLE);
         } else if (this.fechaAsignacion == null) {
             this.fechaAsignacion = LocalDate.now();
         }
-    }
-
-    public void actualizarAsignacion(EstadoAsignacionLote estadoAsignacion, String numeroExpedienteReferencia) {
-        if (this.empresa == null) {
-            this.fechaAsignacion = null;
-            this.estadoAsignacion = null;
-            this.numeroExpedienteReferencia = null;
-            return;
-        }
-
-        if (this.fechaAsignacion == null) {
-            this.fechaAsignacion = LocalDate.now();
-        }
-        this.estadoAsignacion = estadoAsignacion;
-        this.numeroExpedienteReferencia = numeroExpedienteReferencia;
     }
 
     // Nuevos getters/setters para geometría y relaciones

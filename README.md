@@ -372,3 +372,4 @@ En pruebas se usa `H2` en memoria (`backend/src/test/resources/application-test.
 - Encapsulamiento en entidades, exponiendo solo comportamiento necesario.
 - Servicio mediante interfaz para mantener polimorfismo sin sobreingenieria.
 
+ 

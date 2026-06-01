@@ -6,6 +6,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaCenso;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaCensoVehiculo;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaOperacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaPersonalCenso;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaResumenDeclaracion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudCenso;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudCensoVehiculo;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudPersonalCenso;
@@ -87,6 +88,22 @@ public class ControladorCenso {
     ) {
         servicioCenso.eliminarPersonal(auth.getName(), empresaId, personalId);
         return ResponseEntity.ok(new RespuestaOperacion("Empleado eliminado"));
+    }
+
+    @GetMapping("/personal/resumen")
+    public RespuestaResumenDeclaracion obtenerResumen(
+        @PathVariable Long empresaId,
+        Authentication auth
+    ) {
+        return servicioCenso.obtenerResumenDeclaracion(auth.getName(), empresaId);
+    }
+
+    @PostMapping("/personal/declarar")
+    public RespuestaCenso generarDeclaracion(
+        @PathVariable Long empresaId,
+        Authentication auth
+    ) {
+        return mapeador.aRespuesta(servicioCenso.generarDeclaracionJurada(auth.getName(), empresaId));
     }
 
     // ── Vehículos ──────────────────────────────────────────────────────────

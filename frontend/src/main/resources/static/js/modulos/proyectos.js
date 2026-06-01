@@ -6,6 +6,11 @@ const ModuloProyectos = (() => {
     let _puedeGestionarEstado = false;
     let _puedeCrearProyecto = false;
 
+    function _esc(val) {
+        if (val == null) return '';
+        return String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     async function cargar() {
         _esTecnico = Autenticacion.tieneAcceso(['TECNICO'])
             && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
@@ -34,10 +39,10 @@ const ModuloProyectos = (() => {
             return `
             <tr>
                 <td class="ps-3">
-                    <div class="fw-semibold">${p.nombre}</div>
-                    ${p.descripcion ? `<small class="text-muted">${p.descripcion.substring(0, 60)}${p.descripcion.length > 60 ? '…' : ''}</small>` : ''}
+                    <div class="fw-semibold">${_esc(p.nombre)}</div>
+                    ${p.descripcion ? `<small class="text-muted">${_esc(p.descripcion.substring(0, 60))}${p.descripcion.length > 60 ? '…' : ''}</small>` : ''}
                 </td>
-                <td>${p.nombreEmpresa || '-'}</td>
+                <td>${_esc(p.nombreEmpresa) || '-'}</td>
                 <td>${estadoBadge}</td>
                 <td>
                     <div class="progress" style="height:8px">
@@ -47,7 +52,7 @@ const ModuloProyectos = (() => {
                     ${p.tieneHitosVencidos ? ' <i class="bi bi-exclamation-triangle-fill text-danger" title="Hitos vencidos"></i>' : ''}
                 </td>
                 <td>${p.fechaEstimadaFin ? p.fechaEstimadaFin.substring(0, 10) : '-'}</td>
-                <td>${p.responsableSeguimiento || '-'}</td>
+                <td>${_esc(p.responsableSeguimiento) || '-'}</td>
                 <td class="text-center">
                     <button class="btn btn-sm btn-outline-primary me-1" title="Ver detalle e hitos"
                             onclick="ModuloProyectos.abrirHitos(${p.id})">
@@ -74,7 +79,7 @@ const ModuloProyectos = (() => {
         lista.innerHTML = alertas.map(a => `
             <li class="list-group-item border-0 py-1 px-0 bg-transparent">
                 <i class="bi bi-clock-history me-1 text-danger"></i>
-                <strong>${a.descripcion}</strong>
+                <strong>${_esc(a.descripcion)}</strong>
                 ${a.fechaVencimiento ? ` — venció el ${a.fechaVencimiento.substring(0, 10)}` : ''}
             </li>`).join('');
     }
@@ -92,7 +97,7 @@ const ModuloProyectos = (() => {
         document.getElementById('bloqueFormNuevoHito')?.classList.toggle('d-none', !_puedeGestionarHitos);
         _renderizarDetalleProyecto(proyecto);
         _renderizarHitos(proyecto.hitos || []);
-        new bootstrap.Modal(document.getElementById('modalHitosProyecto')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalHitosProyecto')).show();
     }
 
     function _renderizarDetalleProyecto(p) {
@@ -114,7 +119,7 @@ const ModuloProyectos = (() => {
             </div>
             <div class="col-sm-6 col-md-4">
                 <span class="text-muted">Responsable:</span>
-                <span class="ms-1">${p.responsableSeguimiento || '—'}</span>
+                <span class="ms-1">${_esc(p.responsableSeguimiento) || '—'}</span>
             </div>
             <div class="col-sm-6 col-md-4">
                 <span class="text-muted">Inicio real:</span>
@@ -132,7 +137,7 @@ const ModuloProyectos = (() => {
                 <span class="text-muted">Monto inversión:</span>
                 <span class="ms-1">${fmtMonto(p.montoInversion)}</span>
             </div>
-            ${p.descripcion ? `<div class="col-12"><span class="text-muted">Descripción:</span> <span class="ms-1">${p.descripcion}</span></div>` : ''}`;
+            ${p.descripcion ? `<div class="col-12"><span class="text-muted">Descripción:</span> <span class="ms-1">${_esc(p.descripcion)}</span></div>` : ''}`;
     }
 
     function _renderizarHitos(hitos) {
@@ -150,7 +155,7 @@ const ModuloProyectos = (() => {
                             : '<i class="bi bi-circle text-muted"></i>'}
                 </span>
                 <div class="flex-grow-1">
-                    <span class="${h.cumplido ? 'text-decoration-line-through text-muted' : ''}">${h.descripcion}</span>
+                    <span class="${h.cumplido ? 'text-decoration-line-through text-muted' : ''}">${_esc(h.descripcion)}</span>
                     ${h.fechaVencimiento ? `<small class="d-block text-muted">Plazo: ${h.fechaVencimiento.substring(0, 10)}</small>` : ''}
                 </div>
                 ${_puedeGestionarHitos && !h.cumplido ? `
@@ -237,7 +242,7 @@ const ModuloProyectos = (() => {
         const selector = document.getElementById('selectorEstadoProyecto');
         if (selector) selector.value = estadoActual;
         ocultarAlertaModal('alertaModalEstado');
-        new bootstrap.Modal(document.getElementById('modalCambioEstadoProyecto')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCambioEstadoProyecto')).show();
     }
 
     async function guardarEstado() {
@@ -265,7 +270,7 @@ const ModuloProyectos = (() => {
         ocultarAlertaModal('alertaModalNuevoProyecto');
         document.getElementById('formNuevoProyecto')?.reset();
         await _cargarRadicacionesSelector();
-        new bootstrap.Modal(document.getElementById('modalNuevoProyecto')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevoProyecto')).show();
     }
 
     async function _cargarRadicacionesSelector() {
@@ -275,7 +280,7 @@ const ModuloProyectos = (() => {
         if (!resp?.ok) return;
         const radicaciones = await resp.json();
         selector.innerHTML = '<option value="">Sin radicación asociada</option>'
-            + radicaciones.map(r => `<option value="${r.id}">${r.numeroRadicado} — ${r.nombreEmpresa || ''}</option>`).join('');
+            + radicaciones.map(r => `<option value="${r.id}">${_esc(r.numeroRadicado)} — ${_esc(r.nombreEmpresa) || ''}</option>`).join('');
     }
 
     async function guardarNuevoProyecto() {
@@ -364,9 +369,9 @@ const ModuloProyectos = (() => {
                 </button>` : '—';
             return `
             <tr>
-                <td class="ps-3 fw-semibold">${h.nombreProyecto}</td>
-                <td class="text-muted small">${h.nombreEmpresa}</td>
-                <td>${h.descripcion}</td>
+                <td class="ps-3 fw-semibold">${_esc(h.nombreProyecto)}</td>
+                <td class="text-muted small">${_esc(h.nombreEmpresa)}</td>
+                <td>${_esc(h.descripcion)}</td>
                 <td class="small">${h.fechaVencimiento}</td>
                 <td>${tiempoLabel}</td>
                 <td class="text-center">${accion}</td>
@@ -383,7 +388,7 @@ const ModuloProyectos = (() => {
             CANCELADO:    ['bg-danger-subtle text-danger',      'Cancelado'],
         };
         const [cls, label] = cfg[estado] ?? ['bg-light text-muted', estado];
-        return `<span class="badge ${cls}">${label}</span>`;
+        return `<span class="badge ${cls}">${_esc(label)}</span>`;
     }
 
     return { cargar, abrirHitos, agregarHito, marcarHitoCumplido, eliminarHito, abrirCambioEstado, guardarEstado, abrirCreacion, guardarNuevoProyecto };

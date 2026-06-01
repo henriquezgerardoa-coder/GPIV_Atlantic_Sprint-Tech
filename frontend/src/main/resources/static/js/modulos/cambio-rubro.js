@@ -4,6 +4,11 @@ const ModuloCambioRubro = (() => {
     let resolucionModal = null;
     let solicitudEnResolucion = null;
 
+    function _esc(val) {
+        if (val == null) return '';
+        return String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
     async function cargar() {
         await Promise.all([cargarRubros(), cargarSolicitudes()]);
         ajustarVistaPorRol();
@@ -37,7 +42,7 @@ const ModuloCambioRubro = (() => {
         selector.innerHTML = '<option value="">Seleccionar rubro...</option>'
             + rubros.map(r => `
                 <option value="${r.id}">
-                    ${r.nombre}${r.requierePermisoEspecial ? ' ⚠ (requiere permiso especial)' : ''}
+                    ${_esc(r.nombre)}${r.requierePermisoEspecial ? ' ⚠ (requiere permiso especial)' : ''}
                 </option>`).join('');
     }
 
@@ -56,17 +61,17 @@ const ModuloCambioRubro = (() => {
         cuerpo.innerHTML = solicitudes.length
             ? solicitudes.map(s => {
                 const rubroSolicitadoTexto = s.nombreRubroSolicitado.toLowerCase() === 'otros' && s.descripcionOtros
-                    ? `Otros <span class="text-muted small">(${s.descripcionOtros})</span>`
-                    : s.nombreRubroSolicitado;
+                    ? `Otros <span class="text-muted small">(${_esc(s.descripcionOtros)})</span>`
+                    : _esc(s.nombreRubroSolicitado);
                 return `
                 <tr>
-                    <td class="ps-3 fw-semibold">${s.nombreEmpresa}</td>
-                    <td>${s.rubroAnteriorNombre || '<span class="text-muted">Sin rubro</span>'}</td>
+                    <td class="ps-3 fw-semibold">${_esc(s.nombreEmpresa)}</td>
+                    <td>${s.rubroAnteriorNombre ? _esc(s.rubroAnteriorNombre) : '<span class="text-muted">Sin rubro</span>'}</td>
                     <td>${rubroSolicitadoTexto}</td>
-                    <td class="small text-muted" style="max-width:200px">${s.justificacion}</td>
+                    <td class="small text-muted" style="max-width:200px">${_esc(s.justificacion)}</td>
                     <td>${badgeEstado(s.estado)}</td>
                     <td class="small text-muted">${formatearFecha(s.fechaSolicitud)}</td>
-                    <td class="small text-muted">${s.resueltoPor || '-'}</td>
+                    <td class="small text-muted">${_esc(s.resueltoPor) || '-'}</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-secondary" title="Ver detalle"
                             onclick="ModuloCambioRubro.verDetalle(${s.id})">
@@ -240,7 +245,7 @@ const ModuloCambioRubro = (() => {
     function badgeEstado(estado) {
         const clases = { PENDIENTE: 'warning text-dark', APROBADA: 'success', RECHAZADA: 'danger' };
         const textos = { PENDIENTE: 'Pendiente', APROBADA: 'Aprobada', RECHAZADA: 'Rechazada' };
-        return `<span class="badge bg-${clases[estado] || 'secondary'}">${textos[estado] || estado}</span>`;
+        return `<span class="badge bg-${clases[estado] || 'secondary'}">${textos[estado] || _esc(estado)}</span>`;
     }
 
     function formatearFecha(fechaIso) {

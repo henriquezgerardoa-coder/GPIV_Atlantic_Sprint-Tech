@@ -18,4 +18,7 @@ public interface RepositorioRadicacionHistorial extends JpaRepository<Radicacion
           AND h.estado = :estado
         """)
     boolean existsByEmpresaIdAndEstado(@Param("empresaId") Long empresaId, @Param("estado") EstadoRadicacion estado);
+
+    @Query("SELECT DISTINCT h.radicacion.empresa.id FROM RadicacionHistorial h WHERE h.radicacion.empresa.id IN :ids AND h.estado = :estado")
+    java.util.Set<Long> findEmpresaIdsConEstado(@Param("ids") java.util.List<Long> ids, @Param("estado") EstadoRadicacion estado);
 }

@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,19 +59,23 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
         List<ConversacionMensajeria> porParticipante = repositorioConversacion
             .findByParticipanteConDetalleOrderByFechaUltimaActualizacionDesc(usuario.getId());
 
-        if (!servicioContextoUsuario.esRolEmpresa(usuario)) {
-            return porParticipante;
+        Map<Long, ConversacionMensajeria> merged = new LinkedHashMap<>();
+        porParticipante.forEach(c -> merged.put(c.getId(), c));
+
+        if (usuario.getRoles().contains(RolUsuario.SECRETARIO)) {
+            repositorioConversacion.findPublicasConDetalleOrderByFechaUltimaActualizacionDesc()
+                .forEach(c -> merged.putIfAbsent(c.getId(), c));
         }
 
-        Long empresaId = usuario.getEmpresaId();
-        if (empresaId == null) return porParticipante;
+        if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+            Long empresaId = usuario.getEmpresaId();
+            if (empresaId != null) {
+                repositorioConversacion
+                    .findByEmpresaIdConDetalleOrderByFechaUltimaActualizacionDesc(empresaId)
+                    .forEach(c -> merged.putIfAbsent(c.getId(), c));
+            }
+        }
 
-        List<ConversacionMensajeria> porEmpresa = repositorioConversacion
-            .findByEmpresaIdConDetalleOrderByFechaUltimaActualizacionDesc(empresaId);
-
-        Map<Long, ConversacionMensajeria> merged = new LinkedHashMap<>();
-        Stream.concat(porParticipante.stream(), porEmpresa.stream())
-            .forEach(c -> merged.put(c.getId(), c));
         return merged.values().stream()
             .sorted(Comparator.comparing(ConversacionMensajeria::getFechaUltimaActualizacion).reversed())
             .toList();
@@ -173,7 +176,7 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
             telefonoNormalizado = null;
         }
 
-        Usuario responsable = obtenerResponsablePorDefecto();
+        Usuario responsable = obtenerSecretarioPorDefecto();
         ConversacionMensajeria conversacion = repositorioConversacion.save(
             ConversacionMensajeria.crearConsultaPublica(
                 responsable,
@@ -219,6 +222,8 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
         Long uid = usuario.getId();
         if (uid.equals(conversacion.getUsuarioResponsableId())) return true;
         if (conversacion.getUsuarioIniciadorId() != null && uid.equals(conversacion.getUsuarioIniciadorId())) return true;
+        if (usuario.getRoles().contains(RolUsuario.SECRETARIO)
+                && ConversacionMensajeria.ORIGEN_PUBLICO.equals(conversacion.getTipoOrigen())) return true;
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
             Long empresaId = usuario.getEmpresaId();
             return empresaId != null && empresaId.equals(conversacion.getEmpresaId());
@@ -233,6 +238,13 @@ public class ServicioMensajeriaImpl implements ServicioMensajeria {
             .findFirst()
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                 "No hay usuarios gestores disponibles para recibir consultas"));
+    }
+
+    private Usuario obtenerSecretarioPorDefecto() {
+        return repositorioUsuario.findActivosConRolesGestion(EnumSet.of(RolUsuario.SECRETARIO)).stream()
+            .findFirst()
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                "No hay secretarios activos para recibir la consulta"));
     }
 
     private String normalizarRequerido(String valor, String mensajeError) {

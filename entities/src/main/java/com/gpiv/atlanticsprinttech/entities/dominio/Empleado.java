@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,6 +31,12 @@ public class Empleado {
 
 	@Column(name = "fecha_registro", nullable = false)
 	private LocalDateTime fechaRegistro;
+
+	@Column(nullable = false)
+	private boolean declarado = false;
+
+	@Column(name = "fecha_declaracion")
+	private LocalDate fechaDeclaracion;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "empresa_id", nullable = false)
@@ -71,6 +78,19 @@ public class Empleado {
 
 	public Long getEmpresaId() {
 		return empresa == null ? null : empresa.getId();
+	}
+
+	public boolean isDeclarado() {
+		return declarado;
+	}
+
+	public LocalDate getFechaDeclaracion() {
+		return fechaDeclaracion;
+	}
+
+	public void declarar() {
+		this.declarado = true;
+		this.fechaDeclaracion = LocalDate.now();
 	}
 
 	public void actualizarDatos(String cuit, String nombre) {

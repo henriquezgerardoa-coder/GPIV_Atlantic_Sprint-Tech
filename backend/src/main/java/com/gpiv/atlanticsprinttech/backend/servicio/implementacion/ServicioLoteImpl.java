@@ -4,7 +4,6 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioLote;
-import com.gpiv.atlanticsprinttech.entities.dominio.EstadoAsignacionLote;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
@@ -38,6 +37,7 @@ public class ServicioLoteImpl implements ServicioLote {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Lote> listar(String identificadorIngreso) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
         if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -45,6 +45,12 @@ public class ServicioLoteImpl implements ServicioLote {
             return repositorioLote.findAllByEmpresaIdConEmpresa(empresaId);
         }
         return repositorioLote.findAllConEmpresa();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Lote> listarDisponibles() {
+        return repositorioLote.findAllDisponiblesConEmpresa();
     }
 
     @Override
@@ -78,7 +84,7 @@ public class ServicioLoteImpl implements ServicioLote {
         Empresa empresa = obtenerEmpresaOpcional(empresaObjetivo);
         validarCodigoDisponible(empresaObjetivo, codigo, null);
         Lote lote = Lote.crear(codigo, superficieMetrosCuadrados, ocupado, empresa, normalizarTexto(zona));
-        lote.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
+        lote.setExternalId(null);
         Lote guardado = repositorioLote.save(lote);
         servicioAuditLog.registrarEvento(
             identificadorIngreso, "CREACION_LOTE", "Lote",
@@ -112,7 +118,6 @@ public class ServicioLoteImpl implements ServicioLote {
         Empresa empresa = obtenerEmpresaOpcional(empresaObjetivo);
         validarCodigoDisponible(empresaObjetivo, codigo, loteActual);
         loteActual.actualizarDatos(codigo, superficieMetrosCuadrados, ocupado, empresa, normalizarTexto(zona));
-        loteActual.actualizarAsignacion(resolverEstadoAsignacion(estadoAsignacion), normalizarTexto(numeroExpedienteReferencia));
         Lote guardado = repositorioLote.save(loteActual);
         servicioAuditLog.registrarEvento(
             identificadorIngreso, "ACTUALIZACION_LOTE", "Lote",
@@ -186,19 +191,6 @@ public class ServicioLoteImpl implements ServicioLote {
         boolean cambioCodigo = !loteActual.getCodigo().equals(codigoNuevo);
         if ((cambioEmpresa || cambioCodigo) && repositorioLote.existsByEmpresa_IdAndCodigo(empresaId, codigoNuevo)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un lote con ese codigo para la empresa");
-        }
-    }
-
-    private EstadoAsignacionLote resolverEstadoAsignacion(String estadoAsignacion) {
-        String valor = normalizarTexto(estadoAsignacion);
-        if (valor == null) {
-            return null;
-        }
-        String normalizadoEnum = valor.toUpperCase().replace('-', '_').replace(' ', '_');
-        try {
-            return EstadoAsignacionLote.valueOf(normalizadoEnum);
-        } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estado de asignacion invalido");
         }
     }
 

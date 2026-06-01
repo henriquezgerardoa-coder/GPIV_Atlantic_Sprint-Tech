@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.servicio;
 
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaResumenDeclaracion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Censo;
 import com.gpiv.atlanticsprinttech.entities.dominio.PersonalRegistrado;
 import com.gpiv.atlanticsprinttech.entities.dominio.Vehiculo;
@@ -24,12 +25,16 @@ public interface ServicioCenso {
     PersonalRegistrado agregarPersonal(
         String identificadorIngreso,
         Long empresaId,
-        String cuit,
+        String cuil,
         String nombreCompleto,
         LocalDate fechaIngreso
     );
 
     void eliminarPersonal(String identificadorIngreso, Long empresaId, Long personalId);
+
+    RespuestaResumenDeclaracion obtenerResumenDeclaracion(String identificadorIngreso, Long empresaId);
+
+    Censo generarDeclaracionJurada(String identificadorIngreso, Long empresaId);
 
     List<Vehiculo> listarVehiculos(String identificadorIngreso, Long empresaId);
 

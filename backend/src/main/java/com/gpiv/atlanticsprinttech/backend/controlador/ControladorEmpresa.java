@@ -13,6 +13,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,8 +39,11 @@ public class ControladorEmpresa {
     }
     @GetMapping
     public List<RespuestaEmpresa> listar(Authentication autenticacion) {
-        return servicioEmpresa.listar(autenticacion.getName()).stream()
-            .map(e -> mapeador.toRespuesta(e, servicioEmpresa.permiteServiciosPostRadicacion(e.getId(), autenticacion.getName())))
+        List<Empresa> empresas = servicioEmpresa.listar(autenticacion.getName());
+        List<Long> ids = empresas.stream().map(Empresa::getId).toList();
+        Set<Long> habilitadas = servicioEmpresa.empresasHabilitadasParaServiciosPostRadicacion(ids);
+        return empresas.stream()
+            .map(e -> mapeador.toRespuesta(e, habilitadas.contains(e.getId())))
             .toList();
     }
 

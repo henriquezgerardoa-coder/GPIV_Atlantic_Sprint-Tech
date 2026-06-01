@@ -4,6 +4,7 @@ public record RespuestaPersonalCenso(
     Long id,
     String cuit,
     String nombreCompleto,
-    String fechaIngreso
+    String fechaIngreso,
+    boolean declarado
 ) {
 }

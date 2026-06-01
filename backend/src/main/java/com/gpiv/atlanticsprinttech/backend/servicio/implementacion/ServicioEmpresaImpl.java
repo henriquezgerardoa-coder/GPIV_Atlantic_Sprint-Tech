@@ -72,6 +72,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		this.objectMapper = objectMapper;
 	}
 	@Override
+	@Transactional(readOnly = true)
 	public List<Empresa> listar(String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
 		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
@@ -82,6 +83,19 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			return List.of(empresa);
 		}
 		return repositorioEmpresa.findAllWithRubroOrderByNombre();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public java.util.Set<Long> empresasHabilitadasParaServiciosPostRadicacion(List<Long> empresaIds) {
+		if (empresaIds.isEmpty()) return java.util.Set.of();
+		java.util.Set<Long> resultado = new java.util.HashSet<>(
+			repositorioRadicacionSolicitud.findEmpresaIdsConEstado(empresaIds, EstadoRadicacion.RADICADA)
+		);
+		resultado.addAll(
+			repositorioRadicacionHistorial.findEmpresaIdsConEstado(empresaIds, EstadoRadicacion.RADICADA)
+		);
+		return resultado;
 	}
 
 	@Override
@@ -247,7 +261,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 				l.getCodigo(),
 				l.getZona(),
 				l.getSuperficieMetrosCuadrados(),
-				Optional.ofNullable(l.getEstadoAsignacion()).map(Enum::name).orElse(null),
+				l.getEstadoAsignacionLegacy(),
 				l.getFechaAsignacion(),
 				l.getNumeroExpedienteReferencia()
 			))

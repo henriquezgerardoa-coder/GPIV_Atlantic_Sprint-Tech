@@ -66,5 +66,15 @@ public interface RepositorioConversacionMensajeria extends JpaRepository<Convers
         ORDER BY c.fechaUltimaActualizacion DESC
         """)
     List<ConversacionMensajeria> findByParticipanteConDetalleOrderByFechaUltimaActualizacionDesc(@Param("usuarioId") Long usuarioId);
+
+    @Query("""
+        SELECT c FROM ConversacionMensajeria c
+        LEFT JOIN FETCH c.empresa
+        JOIN FETCH c.usuarioResponsable
+        LEFT JOIN FETCH c.usuarioIniciador
+        WHERE c.tipoOrigen = 'PUBLICO'
+        ORDER BY c.fechaUltimaActualizacion DESC
+        """)
+    List<ConversacionMensajeria> findPublicasConDetalleOrderByFechaUltimaActualizacionDesc();
 }
 

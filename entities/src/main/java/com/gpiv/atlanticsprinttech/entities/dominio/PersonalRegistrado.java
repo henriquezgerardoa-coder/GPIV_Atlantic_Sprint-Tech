@@ -35,6 +35,12 @@ public class PersonalRegistrado {
     @Column(name = "fecha_ingreso", nullable = false)
     private LocalDate fechaIngreso;
 
+    @Column(nullable = false)
+    private boolean declarado = false;
+
+    @Column(name = "fecha_declaracion")
+    private LocalDate fechaDeclaracion;
+
     protected PersonalRegistrado() {
     }
 
@@ -47,6 +53,11 @@ public class PersonalRegistrado {
 
     public static PersonalRegistrado crear(Empresa empresa, String cuit, String nombreCompleto, LocalDate fechaIngreso) {
         return new PersonalRegistrado(empresa, cuit, nombreCompleto, fechaIngreso);
+    }
+
+    public void declarar() {
+        this.declarado = true;
+        this.fechaDeclaracion = LocalDate.now();
     }
 
     public Long getId() {
@@ -67,6 +78,14 @@ public class PersonalRegistrado {
 
     public LocalDate getFechaIngreso() {
         return fechaIngreso;
+    }
+
+    public boolean isDeclarado() {
+        return declarado;
+    }
+
+    public LocalDate getFechaDeclaracion() {
+        return fechaDeclaracion;
     }
 
     public void actualizarDatos(String nombreCompleto) {

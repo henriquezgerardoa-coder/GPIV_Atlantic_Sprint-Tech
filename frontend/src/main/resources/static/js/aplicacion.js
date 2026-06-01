@@ -3,25 +3,12 @@
 ═══════════════════════════════════════════════════ */
 
 const ConfiguracionInicial = (() => {
-    let _empresaSeleccionadaId = null;
     let _modal = null;
-    let _todasLasEmpresas = [];
 
     function mostrar() {
         const modalEl = document.getElementById('modalConfiguracionInicial');
         _modal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
-
-        modalEl.addEventListener('shown.bs.modal', () => {
-            _cargarRubros();
-            _cargarEmpresas();
-        }, { once: true });
-
-        modalEl.addEventListener('shown.bs.tab', e => {
-            if (e.target.dataset.bsTarget === '#panel-empresa-existente-ci' && !_todasLasEmpresas.length) {
-                _cargarEmpresas();
-            }
-        });
-
+        modalEl.addEventListener('shown.bs.modal', () => _cargarRubros(), { once: true });
         _modal.show();
     }
 
@@ -35,71 +22,8 @@ const ConfiguracionInicial = (() => {
             + rubros.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
     }
 
-    async function _cargarEmpresas() {
-        _empresaSeleccionadaId = null;
-        _todasLasEmpresas = [];
-        const busqueda = document.getElementById('campoBusquedaEmpresaCI');
-        if (busqueda) busqueda.value = '';
-        const contenedor = document.getElementById('resultadosBusquedaEmpresaCI');
-        if (!contenedor) return;
-        contenedor.innerHTML = '<p class="text-muted small text-center"><span class="spinner-border spinner-border-sm me-2"></span>Cargando empresas...</p>';
-        const respuesta = await ApiCliente.obtener('/api/empresas/disponibles');
-        if (!respuesta?.ok) {
-            contenedor.innerHTML = '<p class="text-danger small">Error al cargar las empresas. Intente nuevamente.</p>';
-            return;
-        }
-        _todasLasEmpresas = await respuesta.json();
-        _renderizarEmpresas(_todasLasEmpresas);
-    }
-
-    function _renderizarEmpresas(empresas) {
-        const contenedor = document.getElementById('resultadosBusquedaEmpresaCI');
-        if (!empresas.length) {
-            contenedor.innerHTML = '<p class="text-muted small text-center">No hay empresas registradas.</p>';
-            return;
-        }
-        contenedor.innerHTML = '<div class="list-group">' + empresas.map(e => `
-            <div class="list-group-item d-flex justify-content-between align-items-center${_empresaSeleccionadaId === e.id ? ' active' : ''}" id="itemEmpresaCI-${e.id}">
-                <div>
-                    <strong>${e.nombre}</strong>
-                    <small class="d-block text-muted">${e.razonSocial} — CUIT: ${e.cuit}</small>
-                </div>
-                <button type="button" class="btn btn-outline-primary btn-sm flex-shrink-0 ms-2"
-                        onclick="ConfiguracionInicial.seleccionarEmpresa(${e.id})">
-                    Seleccionar
-                </button>
-            </div>`).join('') + '</div>';
-    }
-
-    function filtrarEmpresas() {
-        const q = document.getElementById('campoBusquedaEmpresaCI').value.trim().toLowerCase();
-        const filtradas = q
-            ? _todasLasEmpresas.filter(e =>
-                e.nombre.toLowerCase().includes(q) ||
-                e.razonSocial.toLowerCase().includes(q) ||
-                e.cuit.toLowerCase().includes(q))
-            : _todasLasEmpresas;
-        _renderizarEmpresas(filtradas);
-    }
-
-    function seleccionarEmpresa(id) {
-        _empresaSeleccionadaId = id;
-        document.querySelectorAll('#resultadosBusquedaEmpresaCI .list-group-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('itemEmpresaCI-' + id)?.classList.add('active');
-        ocultarAlertaModal('alertaConfiguracionInicial');
-    }
-
     async function confirmar() {
         ocultarAlertaModal('alertaConfiguracionInicial');
-        const tabActiva = document.querySelector('#tabsConfigInicial .nav-link.active')?.dataset.bsTarget;
-        if (tabActiva === '#panel-nueva-empresa-ci') {
-            await _crearNuevaEmpresa();
-        } else {
-            await _vincularEmpresaExistente();
-        }
-    }
-
-    async function _crearNuevaEmpresa() {
         const campos = {
             nombre:             document.getElementById('ciNombre').value.trim(),
             razonSocial:        document.getElementById('ciRazonSocial').value.trim(),
@@ -132,39 +56,15 @@ const ConfiguracionInicial = (() => {
         }
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Confirmar y continuar';
-        await _completarSesion();
-    }
-
-    async function _vincularEmpresaExistente() {
-        if (!_empresaSeleccionadaId) {
-            mostrarAlertaModal('alertaConfiguracionInicial', 'Seleccioná una empresa de la lista.');
-            return;
-        }
-        const btn = document.getElementById('btnConfirmarConfiguracionInicial');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Vinculando...';
-        const respuesta = await ApiCliente.crear('/api/yo/vincular-empresa', { empresaId: _empresaSeleccionadaId });
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Confirmar y continuar';
-        if (!respuesta?.ok) {
-            const error = await respuesta?.json().catch(() => ({}));
-            mostrarAlertaModal('alertaConfiguracionInicial', error?.mensaje || 'No se pudo vincular la empresa.');
-            return;
-        }
-        await _completarSesion();
-    }
-
-    async function _completarSesion() {
         const respYo = await ApiCliente.obtener('/api/yo');
         if (respYo?.ok) {
-            const datosActualizados = await respYo.json();
-            sessionStorage.setItem('usuario', JSON.stringify(datosActualizados));
+            sessionStorage.setItem('usuario', JSON.stringify(await respYo.json()));
         }
         _modal?.hide();
         navegarA('empresas');
     }
 
-    return { mostrar, filtrarEmpresas, seleccionarEmpresa, confirmar };
+    return { mostrar, confirmar };
 })();
 
 /* ═══════════════════════════════════════════════════
@@ -202,7 +102,7 @@ function navegarA(seccion) {
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
     const esTecnicoExclusivo = Autenticacion.tieneAcceso(['TECNICO'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
-    const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor', 'censo', 'mapa']);
+    const seccionesRestringidasEmpresa = new Set(['proyectos', 'infraestructura', 'dashboard', 'monitor']);
     const seccionesRestringidasTecnico = new Set(['empresas', 'lotes', 'radicaciones', 'usuarios', 'audit-log', 'informes', 'censo', 'infraestructura', 'dashboard', 'monitor', 'cambio-rubro', 'panel', 'mapa']);
     if (esEmpresaExclusivo && seccionesRestringidasEmpresa.has(seccion)) {
         mostrarAlerta('No tienes acceso a esta sección.', 'danger');
@@ -339,8 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('itemNavInformes')?.classList.add('d-none');
         document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
         document.querySelectorAll('.acceso-informes').forEach(b => b.classList.add('d-none'));
-        document.getElementById('itemNavCenso')?.classList.add('d-none');
-        document.getElementById('itemNavCensoMovil')?.classList.add('d-none');
         document.getElementById('itemNavAuditLog')?.classList.add('d-none');
         document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
         document.getElementById('itemNavInfraestructura')?.classList.add('d-none');
@@ -357,11 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ocultarAccesosEmpresaRestringidos();
         document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
         document.getElementById('btnNuevoLote')?.classList.add('d-none');
-        document.getElementById('itemNavMapa')?.classList.add('d-none');
-        document.getElementById('itemNavMapaMovil')?.classList.add('d-none');
     }
 
-    // SECRETARIO: gestiona radicaciones, lotes, empresas, usuarios y censo
+    // SECRETARIO: gestiona radicaciones, lotes, empresas, usuarios, censo e informes
     const esSecretario = Autenticacion.tieneAcceso(['SECRETARIO'])
         && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO']);
     if (esSecretario) {
@@ -369,8 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
          'itemNavInfraestructura', 'itemNavInfraestructuraMovil',
          'itemNavDashboard', 'itemNavDashboardMovil',
          'itemNavMonitor', 'itemNavMonitorMovil',
-         'itemNavAuditLog', 'itemNavAuditLogMovil',
-         'itemNavInformes', 'itemNavInformesMovil']
+         'itemNavAuditLog', 'itemNavAuditLogMovil']
             .forEach(id => document.getElementById(id)?.classList.add('d-none'));
         document.getElementById('nav-panel')?.closest('.nav-item')?.classList.add('d-none');
     }
@@ -414,6 +309,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('nav-empresas')?.closest('.nav-item')?.classList.add('d-none');
         document.getElementById('nav-lotes')?.closest('.nav-item')?.classList.add('d-none');
         document.getElementById('nav-radicaciones')?.closest('.nav-item')?.classList.add('d-none');
+    }
+
+    // Alertas de vencimiento del ciclo de vida del lote (solo roles con acceso a lotes)
+    if (Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO', 'DIRECTIVO'])) {
+        ModuloCicloLote.cargarAlertas?.();
     }
 
     // Botón cerrar sesión
@@ -512,8 +412,6 @@ function ocultarAccesosEmpresaRestringidos() {
     document.getElementById('itemNavUsuariosMovil')?.classList.add('d-none');
     document.getElementById('itemNavInformes')?.classList.add('d-none');
     document.getElementById('itemNavInformesMovil')?.classList.add('d-none');
-    document.getElementById('itemNavCenso')?.classList.add('d-none');
-    document.getElementById('itemNavCensoMovil')?.classList.add('d-none');
     document.getElementById('itemNavAuditLog')?.classList.add('d-none');
     document.getElementById('itemNavAuditLogMovil')?.classList.add('d-none');
     document.getElementById('itemNavInfraestructura')?.classList.add('d-none');

@@ -3,6 +3,7 @@ package com.gpiv.atlanticsprinttech.backend.mapeador;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaCenso;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaCensoVehiculo;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaPersonalCenso;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaResumenDeclaracion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Censo;
 import com.gpiv.atlanticsprinttech.entities.dominio.PersonalRegistrado;
 import com.gpiv.atlanticsprinttech.entities.dominio.Vehiculo;
@@ -19,6 +20,7 @@ public class MapeadorCenso {
         return new RespuestaCenso(
             censo.getId(),
             censo.getAnioPeriodo(),
+            censo.getSemestre(),
             censo.getFechaDeclaracion().toString(),
             censo.getCantidadPersonalRegistrado(),
             censo.getCantidadPersonalNoRegistrado(),
@@ -32,7 +34,8 @@ public class MapeadorCenso {
             personal.getId(),
             personal.getCuit(),
             personal.getNombreCompleto(),
-            personal.getFechaIngreso().toString()
+            personal.getFechaIngreso().toString(),
+            personal.isDeclarado()
         );
     }
 
