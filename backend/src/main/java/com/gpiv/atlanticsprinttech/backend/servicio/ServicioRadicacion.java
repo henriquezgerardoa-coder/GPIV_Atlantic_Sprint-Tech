@@ -30,7 +30,8 @@ public interface ServicioRadicacion {
         String comentario,
         Integer tiempoEstimadoObraMeses,
         LocalDate fechaPlazo,
-        LocalDate fechaAprobacion
+        LocalDate fechaAprobacion,
+        String numeroResolucion
     );
 
     void registrarObservacion(String identificadorIngreso, Long id, String comentario);

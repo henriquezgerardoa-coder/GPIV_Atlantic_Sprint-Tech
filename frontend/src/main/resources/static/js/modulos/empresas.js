@@ -62,7 +62,7 @@ const ModuloEmpresas = (() => {
 
     async function cargarVistaAdmin() {
         mostrarPanelAdmin(true);
-        mostrarPanelEmpresaPropia(false);
+        document.getElementById('panelEmpresaPropia')?.classList.add('d-none');
         const estado = document.getElementById('estadoCargaEmpresasAdmin');
         const error  = document.getElementById('errorEmpresasAdmin');
         const vacio  = document.getElementById('sinEmpresasAdmin');

@@ -1373,3 +1373,48 @@ body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item {
 body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
     color: #1a5c37 !important;
 }
+/* ── Impresión / PDF de informes ──────────────────────────────────────────── */
+@media print {
+    body {
+        background: white !important;
+    }
+    nav.navbar,
+    nav.barra-lateral,
+    .offcanvas,
+    .modal-backdrop,
+    .seccion-contenido,
+    .contenido-principal > section,
+    .contenido-principal > div:not(.modal) {
+        display: none !important;
+    }
+    .contenido-principal {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .modal {
+        display: none !important;
+    }
+    .modal.modal-impresion {
+        display: block !important;
+        position: static !important;
+        overflow: visible !important;
+    }
+    .modal.modal-impresion .modal-dialog {
+        max-width: 100% !important;
+        margin: 0 !important;
+        max-height: none !important;
+    }
+    .modal.modal-impresion .modal-dialog-scrollable .modal-body {
+        overflow: visible !important;
+        max-height: none !important;
+    }
+    .modal.modal-impresion .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .modal.modal-impresion .modal-header .btn,
+    .modal.modal-impresion .btn-close {
+        display: none !important;
+    }
+}
+
