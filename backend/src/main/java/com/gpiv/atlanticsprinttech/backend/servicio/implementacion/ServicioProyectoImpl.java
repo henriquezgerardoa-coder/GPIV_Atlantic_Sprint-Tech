@@ -4,6 +4,7 @@ import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioHitoObra;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioUsuario;
+import com.gpiv.atlanticsprinttech.backend.servicio.ServicioMensajeria;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioProyecto;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto;
@@ -16,6 +17,7 @@ import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,19 +32,22 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     private final RepositorioRadicacionSolicitud repositorioRadicacion;
     private final RepositorioUsuario repositorioUsuario;
     private final ServicioContextoUsuario servicioContextoUsuario;
+    private final ServicioMensajeria servicioMensajeria;
 
     public ServicioProyectoImpl(
         RepositorioProyectoProductivo repositorioProyecto,
         RepositorioHitoObra repositorioHito,
         RepositorioRadicacionSolicitud repositorioRadicacion,
         RepositorioUsuario repositorioUsuario,
-        ServicioContextoUsuario servicioContextoUsuario
+        ServicioContextoUsuario servicioContextoUsuario,
+        ServicioMensajeria servicioMensajeria
     ) {
         this.repositorioProyecto = repositorioProyecto;
         this.repositorioHito = repositorioHito;
         this.repositorioRadicacion = repositorioRadicacion;
         this.repositorioUsuario = repositorioUsuario;
         this.servicioContextoUsuario = servicioContextoUsuario;
+        this.servicioMensajeria = servicioMensajeria;
     }
 
     @Override
@@ -93,12 +98,14 @@ public class ServicioProyectoImpl implements ServicioProyecto {
     @Override
     public ProyectoProductivo actualizarEstado(String identificadorIngreso, Long proyectoId, String estado) {
         Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
-        if (!servicioContextoUsuario.esRolAdministrador(usuario) && !usuario.tieneRol(RolUsuario.SECRETARIO)) {
+        if (!servicioContextoUsuario.esRolAdministrador(usuario)
+                && !usuario.tieneRol(RolUsuario.SECRETARIO)
+                && !servicioContextoUsuario.esRolTecnico(usuario)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Solo ADMINISTRADOR o SECRETARIO pueden modificar el estado del proyecto");
+                "Solo ADMINISTRADOR, SECRETARIO o TECNICO pueden modificar el estado del proyecto");
         }
 
-        ProyectoProductivo proyecto = repositorioProyecto.findById(proyectoId)
+        ProyectoProductivo proyecto = repositorioProyecto.findByIdConDetalle(proyectoId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Proyecto no encontrado"));
 
         EstadoProyecto nuevoEstado;
@@ -109,7 +116,28 @@ public class ServicioProyectoImpl implements ServicioProyecto {
         }
 
         proyecto.actualizarEstado(nuevoEstado);
-        return repositorioProyecto.save(proyecto);
+        ProyectoProductivo guardado = repositorioProyecto.save(proyecto);
+        if (nuevoEstado == EstadoProyecto.COMPLETADO) {
+            notificarProyectoCompletado(identificadorIngreso, guardado);
+        }
+        return guardado;
+    }
+
+    private void notificarProyectoCompletado(String remitenteIngreso, ProyectoProductivo proyecto) {
+        String asunto = "Proyecto «" + proyecto.getNombre() + "» completado";
+        String cuerpo = "El proyecto productivo «" + proyecto.getNombre()
+            + "» ha sido marcado como COMPLETADO por el técnico responsable.";
+        List<Usuario> destinatarios = repositorioUsuario.findActivosConRolesGestion(
+            Set.of(RolUsuario.SECRETARIO, RolUsuario.ADMINISTRADOR, RolUsuario.DIRECTIVO));
+        for (Usuario dest : destinatarios) {
+            if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
+                try {
+                    servicioMensajeria.crear(remitenteIngreso, dest.getId(), asunto, cuerpo);
+                } catch (Exception e) {
+                    // Notificación no crítica
+                }
+            }
+        }
     }
 
     @Override

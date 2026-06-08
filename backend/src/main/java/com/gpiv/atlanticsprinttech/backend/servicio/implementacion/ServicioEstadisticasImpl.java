@@ -75,7 +75,9 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         long enRevision  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.EN_REVISION.name(), 0L);
         long aprobadas   = radicacionesPorEstado.getOrDefault(EstadoRadicacion.APROBADA.name(), 0L)
             + radicacionesPorEstado.getOrDefault(EstadoRadicacion.RADICADA.name(), 0L);
-        long rechazadas  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.RECHAZADA.name(), 0L);
+        long rechazadas  = radicacionesPorEstado.getOrDefault(EstadoRadicacion.RECHAZADA.name(), 0L)
+            + radicacionesPorEstado.getOrDefault(EstadoRadicacion.CANCELADA.name(), 0L)
+            + radicacionesPorEstado.getOrDefault(EstadoRadicacion.DESADJUDICACION.name(), 0L);
 
         return new RespuestaEstadisticas(
             totalEmpresas,
@@ -103,7 +105,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
             "consulta de informe completo de empresas",
             UtilRed.obtenerIpActual()
         );
-        List<Empresa> empresas = repositorioEmpresa.findAll();
+        List<Empresa> empresas = repositorioEmpresa.findAllWithRubroOrderByNombre();
         return empresas.stream().map(this::aInformeEmpresa).toList();
     }
 
@@ -153,7 +155,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
         List<EstadoRadicacion> estadosConEmpleados = List.of(EstadoRadicacion.APROBADA, EstadoRadicacion.RADICADA);
 
         // Empresas y empleo
-        List<Empresa> empresas = repositorioEmpresa.findAll();
+        List<Empresa> empresas = repositorioEmpresa.findAllWithRubroOrderByNombre();
         long totalEmpresas = empresas.size();
         long empleosActuales = empresas.stream()
             .filter(e -> e.getCantidadEmpleados() != null)

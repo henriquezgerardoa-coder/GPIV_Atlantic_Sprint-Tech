@@ -1,6 +1,5 @@
 const ModuloRadicaciones = (() => {
     let radicaciones = [];
-    let rubrosRadicacion = [];
     let historialRadicacionSeleccionadaId = null;
     let historialEventos = [];
     let radicacionDetalleAdmin = null;
@@ -26,46 +25,16 @@ const ModuloRadicaciones = (() => {
     ]);
     const CAMPOS_FORMULARIO_RADICACION = [
         'campoTipoSolicitudRad', 'campoDescripcionRad', 'campoUsoEstimativoRad', 'activarRelevamientoPedidoLotes',
-        'relCorreo', 'relRazonSocial', 'relCuit', 'relIngresosBrutos', 'relActividadPrincipal', 'relActividadSecundaria',
-        'relTipoEmpresa', 'relObjetoProyecto', 'relDireccion', 'relPersonaReferente', 'relTelefono', 'relCorreoElectronico',
-        'relRubro', 'relRubroOtro', 'relDescripcionServicio', 'relEmplazamiento', 'relPersonalJerarquico', 'relPersonalProduccion',
-        'relPersonalAdministrativo', 'relTiempoRadicacion', 'relNecesidadM2', 'relSupTrabajo', 'relSupDeposito',
+        'relTipoEmpresa', 'relObjetoProyecto',
+        'relTiempoRadicacion', 'relNecesidadM2', 'relSupTrabajo', 'relSupDeposito',
         'relSupExpansion', 'relSupEstacionamiento', 'relTienePlanos', 'relPersonalAOcupar', 'relMateriasPrimas',
         'relDestinoProduccion', 'relTension', 'relPotenciaKw', 'relAguaLtsMes', 'relRequiereGas', 'relTipoResiduos',
         'relTratamientoPlanta', 'relBalanzaPublica', 'relComedorUnitario', 'relSalonCoworking',
         'adjRadTipoDocumento', 'adjRadDescripcion'
     ];
 
-    async function cargarRubrosParaFormulario() {
-        const resp = await ApiCliente.obtener('/api/catalogos/rubros');
-        if (!resp?.ok) return;
-        rubrosRadicacion = await resp.json();
-        const selector = document.getElementById('relRubro');
-        if (!selector) return;
-        const valorActual = selector.value;
-        selector.innerHTML = '<option value="">Seleccionar rubro...</option>'
-            + rubrosRadicacion.map(r =>
-                `<option value="${r.nombre}"${r.requierePermisoEspecial ? ' data-especial="true"' : ''}>${r.nombre}${r.requierePermisoEspecial ? ' ⚠ (requiere permiso especial)' : ''}</option>`
-            ).join('');
-        if (valorActual) selector.value = valorActual;
-        toggleRubroOtros();
-    }
-
-    function toggleRubroOtros() {
-        const selector = document.getElementById('relRubro');
-        const bloque = document.getElementById('bloqueRelRubroOtro');
-        if (!selector || !bloque) return;
-        const esOtros = selector.value.toLowerCase() === 'otros';
-        bloque.classList.toggle('d-none', !esOtros);
-        if (!esOtros) {
-            const campo = document.getElementById('relRubroOtro');
-            if (campo) campo.value = '';
-        }
-    }
-
     async function cargar() {
         inicializarFormularioRadicacion();
-        await cargarRubrosParaFormulario();
         ajustarVistaRadicacionesPorRol();
         const params = new URLSearchParams();
         const estado = document.getElementById('filtroEstadoRad')?.value;
@@ -143,11 +112,12 @@ const ModuloRadicaciones = (() => {
     const TRANSICIONES_VALIDAS_RAD = {
         PENDIENTE:                       ['EN_REVISION', 'RECHAZADA', 'CANCELADA'],
         EN_REVISION:                     ['APROBADA', 'RECHAZADA', 'REQUIERE_INFORMACION_ADICIONAL', 'CANCELADA'],
-        REQUIERE_INFORMACION_ADICIONAL:  ['EN_REVISION', 'RECHAZADA', 'CANCELADA'],
-        APROBADA:                        ['RADICADA'],
+        REQUIERE_INFORMACION_ADICIONAL:  ['PENDIENTE', 'RECHAZADA', 'CANCELADA'],
+        APROBADA:                        ['RADICADA', 'DESADJUDICACION', 'CANCELADA'],
         RADICADA:                        [],
         RECHAZADA:                       [],
-        CANCELADA:                       []
+        CANCELADA:                       [],
+        DESADJUDICACION:                 []
     };
     const NOMBRES_ESTADO_RAD = {
         EN_REVISION:                    'En revisión',
@@ -155,17 +125,23 @@ const ModuloRadicaciones = (() => {
         RADICADA:                       'Radicada',
         RECHAZADA:                      'Rechazada',
         REQUIERE_INFORMACION_ADICIONAL: 'Requiere información adicional',
-        CANCELADA:                      'Cancelada'
+        CANCELADA:                      'Cancelada',
+        DESADJUDICACION:                'Desadjudicación'
     };
 
-    function opcionesEstadoGestion(estadoActual) {
-        const siguientes = TRANSICIONES_VALIDAS_RAD[estadoActual] || [];
+    function opcionesEstadoGestion(estadoActual, proyectoEstado) {
+        let siguientes = TRANSICIONES_VALIDAS_RAD[estadoActual] || [];
         if (siguientes.length === 0) {
             return '<option value="" disabled>Sin cambios de estado posibles</option>';
         }
-        return siguientes
-            .map(v => `<option value="${v}">${NOMBRES_ESTADO_RAD[v] || v}</option>`)
-            .join('');
+        return siguientes.map(v => {
+            const bloqueada = v === 'RADICADA' && proyectoEstado !== 'COMPLETADO';
+            const etiqueta = NOMBRES_ESTADO_RAD[v] || v;
+            if (bloqueada) {
+                return `<option value="${v}" disabled title="El proyecto debe estar Completado">${etiqueta} (proyecto pendiente)</option>`;
+            }
+            return `<option value="${v}">${etiqueta}</option>`;
+        }).join('');
     }
 
     function poblarSelectorRadicaciones() {
@@ -524,11 +500,24 @@ const ModuloRadicaciones = (() => {
                 return;
             }
 
-            const detalle = await respDetalle.json();
+            let detalle = await respDetalle.json();
             const documentos = respDocs?.ok ? await respDocs.json() : [];
             const historial = respHist?.ok ? await respHist.json() : [];
             const loteAsignado = (respLoteAsignado?.ok && respLoteAsignado.status !== 204)
                 ? await respLoteAsignado.json() : null;
+
+            // Auto-transición PENDIENTE → EN_REVISION al visualizar el detalle (Secretario/Admin)
+            const esEmpresaVisor = Autenticacion.tieneAcceso(['EMPRESA']) && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO', 'TECNICO']);
+            if (detalle.estado === 'PENDIENTE' && !esEmpresaVisor) {
+                const respTransicion = await ApiCliente.parche(`/api/radicaciones/${id}/estado`, {
+                    estado: 'EN_REVISION',
+                    comentario: 'Expediente tomado en revisión'
+                });
+                if (respTransicion?.ok) {
+                    detalle = await respTransicion.json();
+                    verHistorial(id, null, true);
+                }
+            }
 
             // Lotes solo se necesitan cuando no hay lote asignado y el usuario puede asignar uno
             lotesDisponibles = [];
@@ -615,11 +604,16 @@ const ModuloRadicaciones = (() => {
 
         const selector = document.getElementById('selectorNuevoEstadoRadAdmin');
         if (selector) {
-            selector.innerHTML = opcionesEstadoGestion(detalle?.estado);
+            selector.innerHTML = opcionesEstadoGestion(detalle?.estado, detalle?.proyectoEstado);
             selector.onchange = () => {
                 actualizarRequisitoObservacion(selector.value);
                 toggleCamposPlazo(selector.value);
             };
+            // Saltar opciones deshabilitadas al inicializar
+            if (selector.options[selector.selectedIndex]?.disabled) {
+                const habilitada = [...selector.options].find(o => !o.disabled && o.value);
+                if (habilitada) selector.value = habilitada.value;
+            }
             actualizarRequisitoObservacion(selector.value);
             toggleCamposPlazo(selector.value);
         }
@@ -634,7 +628,7 @@ const ModuloRadicaciones = (() => {
         renderizarEvaluacion(evaluacion, detalle?.estado);
 
         // Relevamiento
-        renderizarRelevamiento(relevamiento, detalle?.tieneRelevamientoPedidoLotes);
+        renderizarRelevamiento(relevamiento, detalle?.tieneRelevamientoPedidoLotes, detalle, historial, documentos);
 
         const cuerpoDocs = document.getElementById('cuerpoDocumentosDetalleRadAdmin');
         if (cuerpoDocs) {
@@ -668,62 +662,77 @@ const ModuloRadicaciones = (() => {
         }
     }
 
-    function renderizarRelevamiento(rel, tieneRelevamiento) {
+    function renderizarRelevamiento(rel, tieneRelevamiento, detalle, historial, documentos) {
         const bloque = document.getElementById('bloqueRelevamientoDetalleRad');
         const contenido = document.getElementById('contenidoRelevamientoDetalleRad');
         if (!bloque || !contenido) return;
-        if (!tieneRelevamiento) { bloque.classList.add('d-none'); return; }
         bloque.classList.remove('d-none');
-        if (!rel) {
-            contenido.innerHTML = '<div class="col-12 text-muted small">No se pudieron cargar los datos del relevamiento.</div>';
-            return;
-        }
 
         const campo = (etiqueta, valor) => valor != null && valor !== ''
             ? `<div class="col-md-4"><span class="text-muted">${etiqueta}:</span> <span class="fw-semibold">${valor}</span></div>`
             : '';
         const bool = v => v === true ? 'Sí' : v === false ? 'No' : '-';
 
-        contenido.innerHTML = [
-            campo('Razón social', rel.razonSocialEmpresa),
-            campo('CUIT', rel.cuit),
-            campo('Correo', rel.correo),
-            campo('Ingresos brutos', rel.ingresosBrutos),
-            campo('Actividad principal', rel.actividadPrincipal),
-            campo('Actividad secundaria', rel.actividadSecundaria),
-            campo('Tipo empresa', rel.tipoEmpresa),
-            campo('Objeto del proyecto', rel.objetoProyecto),
-            campo('Dirección', rel.direccion),
-            campo('Referente', rel.personaReferente),
-            campo('Teléfono', rel.telefono),
-            campo('Correo contacto', rel.correoElectronico),
-            campo('Rubro', rel.rubro),
-            campo('Detalle rubro', rel.rubroOtro),
-            campo('Descripción servicio/bien', rel.descripcionServicioBienOfrecido),
-            campo('Emplazamiento', rel.emplazamientoActual),
-            campo('Personal jerárquico', rel.personalJerarquico),
-            campo('Personal producción', rel.personalProduccion),
-            campo('Personal administrativo', rel.personalAdministrativo),
-            campo('Tiempo radicación', rel.tiempoRadicacionMeses != null ? `${rel.tiempoRadicacionMeses} meses` : null),
-            campo('Necesidad m²', rel.necesidadMetrosCuadrados != null ? `${rel.necesidadMetrosCuadrados} m²` : null),
-            campo('Personal a ocupar', rel.personalAOcupar),
-            campo('Sup. trabajo', rel.superficieCubiertaTrabajo != null ? `${rel.superficieCubiertaTrabajo} m²` : null),
-            campo('Sup. depósito', rel.superficieCubiertaDeposito != null ? `${rel.superficieCubiertaDeposito} m²` : null),
-            campo('Sup. expansión', rel.superficieFuturaExpansion != null ? `${rel.superficieFuturaExpansion} m²` : null),
-            campo('Sup. estacionamiento', rel.superficieEstacionamiento != null ? `${rel.superficieEstacionamiento} m²` : null),
-            campo('Tiene planos', bool(rel.tienePlanos)),
-            campo('Tensión', rel.tensionAlimentacion),
-            campo('Potencia (kW)', rel.potenciaInstaladaKw),
-            campo('Agua (lts/mes)', rel.aguaLtsMes),
-            campo('Requiere gas', bool(rel.requiereGas)),
-            campo('Tratamiento en planta', bool(rel.tratamientoEnPlanta)),
-            campo('Balanza pública', bool(rel.necesitaBalanzaPublica)),
-            campo('Comedor unitario', bool(rel.necesitaComedorUnitario)),
-            campo('SUM/coworking', bool(rel.necesitaSalonCoworking)),
-            rel.materiasPrimas ? `<div class="col-12"><span class="text-muted">Materias primas:</span> <span class="fw-semibold">${rel.materiasPrimas}</span></div>` : '',
-            rel.destinoProduccion ? `<div class="col-12"><span class="text-muted">Destino producción:</span> <span class="fw-semibold">${rel.destinoProduccion}</span></div>` : '',
-            rel.tipoResiduosEfluentes ? `<div class="col-12"><span class="text-muted">Residuos/efluentes:</span> <span class="fw-semibold">${rel.tipoResiduosEfluentes}</span></div>` : '',
-        ].join('');
+        // Empresa que solicita (datos del sistema)
+        const razonSocial = detalle?.razonSocialEmpresa || detalle?.nombreEmpresa || '-';
+        const seccionEmpresa = `
+            <div class="col-12 mb-1">
+                <strong class="small">Empresa que solicita:</strong> <span class="fw-semibold">${razonSocial}</span>
+            </div>
+            ${campo('CUIT', detalle?.cuitEmpresa)}
+            ${campo('Actividad económica', detalle?.actividadEconomicaEmpresa)}
+            ${campo('Dirección', detalle?.direccionEmpresa)}
+            ${campo('Correo electrónico', detalle?.correoElectronicoEmpresa)}
+            ${campo('Teléfono', detalle?.telefonoEmpresa)}
+            <div class="col-12"><hr class="my-2"></div>
+        `;
+
+        // Tipo y destino de la solicitud (datos del expediente)
+        const seccionSolicitud = `
+            ${campo('1. Tipo de solicitud', detalle?.tipoSolicitud)}
+            ${campo('2. Destino del Lote', detalle?.usoEstimativo)}
+        `;
+
+        // Campos del relevamiento
+        let seccionRelevamiento = '';
+        if (tieneRelevamiento && rel) {
+            seccionRelevamiento = [
+                campo('3. Tiempo de radicación', rel.tiempoRadicacionMeses != null ? `${rel.tiempoRadicacionMeses} meses` : null),
+                campo('4. Necesidad de m²', rel.necesidadMetrosCuadrados != null ? `${rel.necesidadMetrosCuadrados} m²` : null),
+                campo('5. Personal a ocupar', rel.personalAOcupar),
+                campo('6. Sup. trabajo (m²)', rel.superficieCubiertaTrabajo != null ? `${rel.superficieCubiertaTrabajo} m²` : null),
+                campo('7. Sup. depósito (m²)', rel.superficieCubiertaDeposito != null ? `${rel.superficieCubiertaDeposito} m²` : null),
+                campo('8. Sup. expansión (m²)', rel.superficieFuturaExpansion != null ? `${rel.superficieFuturaExpansion} m²` : null),
+                campo('9. Sup. estacionamiento (m²)', rel.superficieEstacionamiento != null ? `${rel.superficieEstacionamiento} m²` : null),
+                campo('10. Tiene planos', bool(rel.tienePlanos)),
+                campo('11. Tensión alimentación', rel.tensionAlimentacion),
+                campo('12. Potencia instalada simultánea (kW)', rel.potenciaInstaladaKw),
+                campo('13. Agua (lts/mes)', rel.aguaLtsMes),
+                campo('14. Gas', bool(rel.requiereGas)),
+                campo('15. Tratamiento en planta', bool(rel.tratamientoEnPlanta)),
+                campo('16. Necesidad balanza pública', bool(rel.necesitaBalanzaPublica)),
+                campo('17. Necesidad comedor unitario', bool(rel.necesitaComedorUnitario)),
+                campo('18. Necesidad SUM/coworking', bool(rel.necesitaSalonCoworking)),
+                rel.materiasPrimas ? `<div class="col-12"><span class="text-muted">19. Materias primas:</span> <span class="fw-semibold">${rel.materiasPrimas}</span></div>` : '',
+                rel.destinoProduccion ? `<div class="col-12"><span class="text-muted">20. Destino de la producción:</span> <span class="fw-semibold">${rel.destinoProduccion}</span></div>` : '',
+                rel.tipoResiduosEfluentes ? `<div class="col-12"><span class="text-muted">21. Residuos/Efluentes:</span> <span class="fw-semibold">${rel.tipoResiduosEfluentes}</span></div>` : '',
+                campo('Tipo empresa', rel.tipoEmpresa),
+                campo('Objeto del proyecto', rel.objetoProyecto),
+            ].join('');
+        } else if (tieneRelevamiento && !rel) {
+            seccionRelevamiento = '<div class="col-12 text-muted small">No se pudieron cargar los datos del relevamiento.</div>';
+        }
+
+        // Adjunta documentación
+        const tieneDocumentos = documentos && documentos.length > 0;
+        const seccionDoc = campo('22. Adjunta documentación', tieneDocumentos ? 'Sí' : 'No');
+
+        // Usuario que realiza la solicitud (último elemento del historial = evento de creación)
+        const eventoCreacion = historial && historial.length > 0 ? historial[historial.length - 1] : null;
+        const usuarioSolicitud = eventoCreacion?.usuario || '-';
+        const seccionUsuario = campo('23. Usuario que realiza la solicitud', usuarioSolicitud);
+
+        contenido.innerHTML = seccionEmpresa + seccionSolicitud + seccionRelevamiento + seccionDoc + seccionUsuario;
     }
 
     function renderizarSeccionLote(loteAsignado, necesidadM2) {
@@ -747,6 +756,12 @@ const ModuloRadicaciones = (() => {
             if (spanSuperficie && necesidadM2) {
                 spanSuperficie.textContent = `${necesidadM2.toLocaleString('es-AR')} m²`;
             }
+        }
+
+        // Superficie solicitada dentro de la tarjeta de lote asignado
+        const spanSupInLote = document.getElementById('detRadSupSolicitadaEnLote');
+        if (spanSupInLote) {
+            spanSupInLote.textContent = necesidadM2 ? `${necesidadM2.toLocaleString('es-AR')} m²` : '-';
         }
 
         // Limpiar estado anterior
@@ -941,7 +956,7 @@ const ModuloRadicaciones = (() => {
             calcularFechaPlazo();
         }
 
-        const estadosResolucion = ['APROBADA', 'RADICADA', 'RECHAZADA', 'CANCELADA'];
+        const estadosResolucion = ['APROBADA', 'RADICADA', 'RECHAZADA', 'CANCELADA', 'DESADJUDICACION'];
         const wrapperNroRes = document.getElementById('wrapperNumeroResolucionEstadoRad');
         if (wrapperNroRes) wrapperNroRes.classList.toggle('d-none', !estadosResolucion.includes(estado));
 
@@ -985,15 +1000,23 @@ const ModuloRadicaciones = (() => {
         const label = document.getElementById('labelObservacionesRadAdmin');
         const campo = document.getElementById('campoObservacionesRadAdmin');
         if (!label || !campo) return;
-        if (estado === 'RECHAZADA' || estado === 'CANCELADA') {
-            label.textContent = estado === 'RECHAZADA' ? 'Motivo de rechazo' : 'Motivo de cancelación';
+        const etiquetas = {
+            RECHAZADA: 'Motivo de rechazo',
+            CANCELADA: 'Motivo de cancelación',
+            DESADJUDICACION: 'Motivo de desadjudicación'
+        };
+        const placeholders = {
+            RECHAZADA: 'Ingrese el motivo de rechazo (obligatorio)',
+            CANCELADA: 'Ingrese el motivo de cancelación (obligatorio)',
+            DESADJUDICACION: 'Ingrese el motivo de desadjudicación (obligatorio)'
+        };
+        if (etiquetas[estado]) {
+            label.textContent = etiquetas[estado];
             const asterisco = document.createElement('span');
             asterisco.className = 'text-danger fw-bold';
             asterisco.textContent = ' *';
             label.appendChild(asterisco);
-            campo.placeholder = estado === 'RECHAZADA'
-                ? 'Ingrese el motivo de rechazo (obligatorio)'
-                : 'Ingrese el motivo de cancelación (obligatorio)';
+            campo.placeholder = placeholders[estado];
             campo.required = true;
         } else {
             label.textContent = 'Observaciones';
@@ -1013,7 +1036,7 @@ const ModuloRadicaciones = (() => {
             mostrarAlerta('Seleccione un nuevo estado.', 'danger');
             return;
         }
-        const requiereObservacion = nuevoEstado === 'RECHAZADA' || nuevoEstado === 'CANCELADA';
+        const requiereObservacion = nuevoEstado === 'RECHAZADA' || nuevoEstado === 'CANCELADA' || nuevoEstado === 'DESADJUDICACION';
         if (requiereObservacion && !observaciones) {
             mostrarAlerta('Debe ingresar observaciones para el estado seleccionado.', 'danger');
             return;
@@ -1103,8 +1126,7 @@ const ModuloRadicaciones = (() => {
         let filtrado = [...(listado || [])];
         if (estadoSimple) {
             filtrado = filtrado.filter(r => r.estado === estadoSimple);
-        }
-        if (estadosSeleccionadosListado.size > 0) {
+        } else if (estadosSeleccionadosListado.size > 0) {
             filtrado = filtrado.filter(r => estadosSeleccionadosListado.has(r.estado));
         }
         return filtrado;
@@ -1119,6 +1141,8 @@ const ModuloRadicaciones = (() => {
             chk.addEventListener('change', () => {
                 const seleccionados = [...checks].filter(x => x.checked).map(x => x.value);
                 estadosSeleccionadosListado = new Set(seleccionados);
+                const dropdown = document.getElementById('filtroEstadoRad');
+                if (dropdown) dropdown.value = '';
                 cargar();
             });
         });
@@ -1164,25 +1188,8 @@ const ModuloRadicaciones = (() => {
 
     function construirRelevamientoPedidoLotes() {
         const relevamiento = {
-            correo: leerTexto('relCorreo'),
-            razonSocialEmpresa: leerTexto('relRazonSocial'),
-            cuit: leerTexto('relCuit'),
-            ingresosBrutos: leerTexto('relIngresosBrutos'),
-            actividadPrincipal: leerTexto('relActividadPrincipal'),
-            actividadSecundaria: leerTexto('relActividadSecundaria'),
             tipoEmpresa: leerTexto('relTipoEmpresa'),
             objetoProyecto: leerTexto('relObjetoProyecto'),
-            direccion: leerTexto('relDireccion'),
-            personaReferente: leerTexto('relPersonaReferente'),
-            telefono: leerTexto('relTelefono'),
-            correoElectronico: leerTexto('relCorreoElectronico'),
-            rubro: leerTexto('relRubro'),
-            rubroOtro: leerTexto('relRubroOtro'),
-            descripcionServicioBienOfrecido: leerTexto('relDescripcionServicio'),
-            emplazamientoActual: leerTexto('relEmplazamiento'),
-            personalJerarquico: leerEntero('relPersonalJerarquico'),
-            personalProduccion: leerEntero('relPersonalProduccion'),
-            personalAdministrativo: leerEntero('relPersonalAdministrativo'),
             tiempoRadicacionMeses: leerEntero('relTiempoRadicacion'),
             necesidadMetrosCuadrados: leerEntero('relNecesidadM2'),
             superficieCubiertaTrabajo: leerDecimal('relSupTrabajo'),
@@ -1203,16 +1210,6 @@ const ModuloRadicaciones = (() => {
             necesitaComedorUnitario: leerBooleano('relComedorUnitario'),
             necesitaSalonCoworking: leerBooleano('relSalonCoworking')
         };
-
-        if (!relevamiento.correo || !relevamiento.razonSocialEmpresa || !relevamiento.cuit || !relevamiento.actividadPrincipal) {
-            mostrarErrorRadicacion('Complete los campos obligatorios del relevamiento (correo, razón social, CUIT y actividad principal).');
-            return null;
-        }
-        const cuitDigitos = relevamiento.cuit.replace(/-/g, '').trim();
-        if (cuitDigitos.length === 11 && !validarDigitoVerificadorCuit(cuitDigitos)) {
-            mostrarErrorRadicacion('El CUIT ingresado no es válido (dígito verificador incorrecto).');
-            return null;
-        }
         return relevamiento;
     }
 
@@ -1232,15 +1229,6 @@ const ModuloRadicaciones = (() => {
 
     function leerBooleano(id) {
         return document.getElementById(id)?.value === 'true';
-    }
-
-    function validarDigitoVerificadorCuit(cuit11) {
-        const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-        const suma = pesos.reduce((acc, p, i) => acc + p * Number(cuit11[i]), 0);
-        const resto = suma % 11;
-        if (resto === 1) return false;
-        const digitoEsperado = resto === 0 ? 0 : 11 - resto;
-        return Number(cuit11[10]) === digitoEsperado;
     }
 
     function inicializarFormularioRadicacion() {
@@ -1603,7 +1591,6 @@ const ModuloRadicaciones = (() => {
         descartarBorrador,
         abrirModalNuevaSolicitud,
         subirDocumentoDesdeModal,
-        toggleRubroOtros,
         toggleAdjuntoRadicacion,
         subirActaRubrica,
         registrarObservacion,

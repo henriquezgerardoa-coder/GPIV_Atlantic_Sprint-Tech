@@ -1,7 +1,9 @@
 const ModuloEmpresas = (() => {
     let empresas = [];
+    let empresaEnDetalle = null;
     let modoEdicion = false;
     let idEdicion = null;
+    let _editandoSoloContacto = false;
     let _paginaActual = 0;
     const POR_PAGINA = 25;
     let empresaPropia = null;
@@ -57,7 +59,7 @@ const ModuloEmpresas = (() => {
         document.getElementById('panelEmpresaPropia')?.classList.toggle('d-none', !mostrar);
         document.getElementById('panelEmpresasGestion')?.classList.toggle('d-none', mostrar);
         document.getElementById('panelEmpresasAdminVisualizacion')?.classList.toggle('d-none', true);
-        document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
+        if (mostrar) document.getElementById('btnNuevaEmpresa')?.classList.add('d-none');
     }
 
     async function cargarVistaAdmin() {
@@ -137,8 +139,15 @@ const ModuloEmpresas = (() => {
             id: empresa?.id, nombre: empresa?.nombre, razonSocial: empresa?.razonSocial,
             cuit: empresa?.cuit, telefono: empresa?.telefono,
             direccion: empresa?.direccion, actividadEconomica: empresa?.actividadEconomica,
-            correoElectronico: empresa?.correoElectronico, totalEmpleados: empresa?.cantidadEmpleados ?? 0,
-            totalVehiculos: 0, vehiculos: [], lotes: [], fechaRegistro: null, statusEmpresa: null, estadoExpediente: null, usuariosAsociados: []
+            correoElectronico: empresa?.correoElectronico,
+            fechaRegistro: empresa?.fechaRegistro ?? null,
+            statusEmpresa: empresa?.statusEmpresa ?? null,
+            referente: empresa?.referente ?? null,
+            ingresosBrutos: empresa?.ingresosBrutos ?? null,
+            cantidadEmpleados: empresa?.cantidadEmpleados ?? null,
+            totalEmpleados: empresa?.cantidadEmpleados ?? 0,
+            totalVehiculos: 0, vehiculos: [], lotes: [],
+            estadoExpediente: null, usuariosAsociados: [], serviciosPostRadicacion: null
         };
     }
 
@@ -154,6 +163,10 @@ const ModuloEmpresas = (() => {
     };
 
     function renderizarDetalleAdmin(detalle) {
+        empresaEnDetalle = detalle || null;
+        const puedeEditar = Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
+        document.getElementById('btnEditarDesdeDetalleEmpresaAdmin')?.classList.toggle('d-none', !puedeEditar);
+
         setTexto('detEmpresaNombre', detalle?.nombre);
         setTexto('detEmpresaRazonSocial', detalle?.razonSocial);
         setTexto('detEmpresaCuit', detalle?.cuit);
@@ -165,6 +178,9 @@ const ModuloEmpresas = (() => {
         setTexto('detEmpresaActividad', detalle?.actividadEconomica);
         setTexto('detEmpresaRubro', detalle?.rubroNombre || 'Sin rubro asignado');
         setTexto('detEmpresaEstado', detalle?.estadoExpediente || 'Sin expediente');
+        setTexto('detEmpresaReferente', detalle?.referente || '-');
+        setTexto('detEmpresaIngresosBrutos', detalle?.ingresosBrutos || '-');
+        setTexto('detEmpresaCantidadEmpleadosActivos', detalle?.cantidadEmpleados != null ? String(detalle.cantidadEmpleados) : 'Sin declarar');
         setTexto('detTotalEmpleados', `${detalle?.totalEmpleados ?? 0}`);
         setTexto('detTotalVehiculos', `${detalle?.totalVehiculos ?? 0}`);
 
@@ -216,10 +232,45 @@ const ModuloEmpresas = (() => {
 
         const cuerpoVehiculos = document.getElementById('cuerpoVehiculosEmpresaAdmin');
         const vehiculos = detalle?.vehiculos || [];
-        if (!cuerpoVehiculos) return;
-        cuerpoVehiculos.innerHTML = vehiculos.length
-            ? vehiculos.map(v => `<tr><td>${v.placa || '-'}</td><td>${v.tipo || '-'}</td><td>${v.descripcion || '-'}</td></tr>`).join('')
-            : '<tr><td colspan="3" class="text-muted">Sin vehículos registrados</td></tr>';
+        if (cuerpoVehiculos) {
+            cuerpoVehiculos.innerHTML = vehiculos.length
+                ? vehiculos.map(v => `<tr><td>${v.placa || '-'}</td><td>${v.tipo || '-'}</td><td>${v.descripcion || '-'}</td></tr>`).join('')
+                : '<tr><td colspan="3" class="text-muted">Sin vehículos registrados</td></tr>';
+        }
+
+        const seccionServicios = document.getElementById('seccionServiciosDetalleAdmin');
+        const contenidoServicios = document.getElementById('contenidoServiciosDetalleAdmin');
+        const servicios = detalle?.serviciosPostRadicacion;
+        if (seccionServicios) {
+            if (!servicios) {
+                seccionServicios.classList.add('d-none');
+            } else {
+                seccionServicios.classList.remove('d-none');
+                if (contenidoServicios) {
+                    const filas = [
+                        ['Solicita agua cruda', servicios.solicitaAguaCruda ? 'Sí' : 'No', ''],
+                        servicios.consumoAguaCrudaM3 != null ? ['Agua cruda', (servicios.consumoAguaCrudaM3).toLocaleString('es-AR'), 'm³/mes'] : null,
+                        servicios.consumoLuzKwh != null ? ['Luz', (servicios.consumoLuzKwh).toLocaleString('es-AR'), 'kWh/mes'] : null,
+                        servicios.consumoGasM3 != null ? ['Gas', (servicios.consumoGasM3).toLocaleString('es-AR'), 'm³/mes'] : null,
+                        servicios.consumoInternetMbps != null ? ['Internet', (servicios.consumoInternetMbps).toLocaleString('es-AR'), 'Mbps'] : null,
+                    ].filter(Boolean);
+                    const adicionales = servicios.consumosAdicionales || [];
+                    contenidoServicios.innerHTML = `
+                        <div class="row g-2 small">
+                            ${filas.map(([label, valor, unidad]) => `
+                                <div class="col-md-4"><strong>${label}:</strong> ${valor}${unidad ? ' <span class="text-muted">' + unidad + '</span>' : ''}</div>
+                            `).join('')}
+                        </div>
+                        ${adicionales.length ? `
+                            <div class="mt-2 small">
+                                <strong>Servicios adicionales:</strong>
+                                <ul class="mb-0 mt-1">
+                                    ${adicionales.map(a => `<li>${a.nombre}${a.consumoEstimado != null ? ': ' + a.consumoEstimado + (a.unidad ? ' ' + a.unidad : '') : ''}${a.detalle ? ' — ' + a.detalle : ''}</li>`).join('')}
+                                </ul>
+                            </div>` : ''}`;
+                }
+            }
+        }
     }
 
     // ─── Panel EMPRESA (su propia empresa) ──────────────────────────────────────
@@ -281,15 +332,45 @@ const ModuloEmpresas = (() => {
         setTexto('empNombrePropio', emp.nombre || '-');
         setTexto('empRazonSocialPropio', emp.razonSocial || '-');
         setTexto('empCuitPropio', emp.cuit || '-');
+        setTexto('empStatusPropio', emp.statusEmpresa || '-');
         setTexto('empActividadPropia', emp.actividadEconomica || '-');
+        setTexto('empFechaRegistroPropio', formatearFechaHora(emp.fechaRegistro));
         setTexto('empRubroPropio', emp.rubroNombre || 'Sin rubro asignado');
         setTexto('empDireccionPropia', emp.direccion || '-');
         setTexto('empCorreoPropio', emp.correoElectronico || '-');
         setTexto('empTelefonoPropio', emp.telefono || '-');
-        // Mostrar botón según si tiene rubro o no
+        setTexto('empReferentePropio', emp.referente || '-');
+        setTexto('empIngresosBrutosPropio', emp.ingresosBrutos || '-');
+        setTexto('empCantidadEmpleadosActivosPropio', emp.cantidadEmpleados != null ? String(emp.cantidadEmpleados) : '-');
         const tieneRubro = !!emp.rubroId;
         document.getElementById('btnSeleccionarRubroInicial')?.classList.toggle('d-none', tieneRubro);
         document.getElementById('btnSolicitarCambioRubro')?.classList.toggle('d-none', !tieneRubro);
+
+        // Encabezado de sección personalizado
+        const icono = '<i class="bi bi-building text-primary me-2"></i>';
+        const titulo = document.getElementById('tituloSeccionEmpresas');
+        const subtitulo = document.getElementById('subtituloSeccionEmpresas');
+        if (titulo) titulo.innerHTML = `${icono}Empresa: ${emp.nombre || ''}`;
+        if (subtitulo) subtitulo.textContent = emp.razonSocial || emp.nombre || '';
+
+        // Foto local (localStorage, nunca va al servidor)
+        const fotoGuardada = emp.id ? localStorage.getItem(`empresa_foto_${emp.id}`) : null;
+        const imgFoto = document.getElementById('empFotoPropia');
+        if (imgFoto && fotoGuardada) imgFoto.src = fotoGuardada;
+    }
+
+    function cambiarFotoEmpresa(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const dataUrl = e.target.result;
+            const imgFoto = document.getElementById('empFotoPropia');
+            if (imgFoto) imgFoto.src = dataUrl;
+            if (empresaPropia?.id) localStorage.setItem(`empresa_foto_${empresaPropia.id}`, dataUrl);
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
     }
 
     let _rubrosCache = [];
@@ -806,6 +887,8 @@ const ModuloEmpresas = (() => {
 
     async function abrirCreacion() {
         modoEdicion = false; idEdicion = null;
+        _editandoSoloContacto = false;
+        _aplicarModoContactoModal(false);
         document.getElementById('tituloModalEmpresa').textContent = 'Nueva empresa';
         document.getElementById('formularioEmpresa').reset();
         ocultarAlertaModal('alertaModalEmpresa');
@@ -837,7 +920,9 @@ const ModuloEmpresas = (() => {
 
     function editarEmpresaPropia() {
         if (!empresaPropia) return;
-        modoEdicion = true; idEdicion = empresaPropia.id;
+        modoEdicion = true;
+        idEdicion = empresaPropia.id;
+        _editandoSoloContacto = false;
         document.getElementById('tituloModalEmpresa').textContent = 'Editar datos de empresa';
         document.getElementById('campoNombreEmpresa').value = empresaPropia.nombre;
         document.getElementById('campoRazonSocialEmpresa').value = empresaPropia.razonSocial || '';
@@ -846,14 +931,39 @@ const ModuloEmpresas = (() => {
         document.getElementById('campoActividadEconomicaEmpresa').value = empresaPropia.actividadEconomica || '';
         document.getElementById('campoCorreoEmpresa').value = empresaPropia.correoElectronico;
         document.getElementById('campoTelefonoEmpresa').value = empresaPropia.telefono || '';
+        document.getElementById('campoReferenteEmpresa').value = empresaPropia.referente || '';
+        document.getElementById('campoIngresosBrutosEmpresa').value = empresaPropia.ingresosBrutos || '';
+        document.getElementById('campoCantidadEmpleadosEmpresa').value = empresaPropia.cantidadEmpleados ?? '';
+        _aplicarModoContactoModal(false);
         ocultarAlertaModal('alertaModalEmpresa');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa')).show();
+    }
+
+    function _aplicarModoContactoModal(soloContacto) {
+        const camposGenerales = ['campoNombreEmpresa', 'campoRazonSocialEmpresa', 'campoCuitEmpresa',
+                                  'campoDireccionEmpresa', 'campoActividadEconomicaEmpresa',
+                                  'campoReferenteEmpresa', 'campoIngresosBrutosEmpresa'];
+        camposGenerales.forEach(id => {
+            document.getElementById(id)?.closest('.mb-3, .row')?.classList.toggle('d-none', soloContacto);
+        });
+        let alerta = document.getElementById('alertaEdicionLimitada');
+        if (!alerta) {
+            alerta = document.createElement('div');
+            alerta.id = 'alertaEdicionLimitada';
+            alerta.className = 'alert alert-info small mb-3 d-none';
+            alerta.innerHTML = '<i class="bi bi-info-circle me-1"></i>Su empresa tiene una radicación activa. Solo puede modificar los datos de contacto.';
+            const form = document.getElementById('formularioEmpresa');
+            if (form) form.insertBefore(alerta, form.firstChild);
+        }
+        alerta.classList.toggle('d-none', !soloContacto);
     }
 
     function abrirEdicion(id) {
         const empresa = empresas.find(e => e.id === id);
         if (!empresa) return;
         modoEdicion = true; idEdicion = id;
+        _editandoSoloContacto = false;
+        _aplicarModoContactoModal(false);
         document.getElementById('tituloModalEmpresa').textContent = 'Editar empresa';
         document.getElementById('campoNombreEmpresa').value = empresa.nombre;
         document.getElementById('campoRazonSocialEmpresa').value = empresa.razonSocial || '';
@@ -862,11 +972,44 @@ const ModuloEmpresas = (() => {
         document.getElementById('campoActividadEconomicaEmpresa').value = empresa.actividadEconomica || '';
         document.getElementById('campoCorreoEmpresa').value = empresa.correoElectronico;
         document.getElementById('campoTelefonoEmpresa').value = empresa.telefono || '';
+        document.getElementById('campoReferenteEmpresa').value = empresa.referente || '';
+        document.getElementById('campoIngresosBrutosEmpresa').value = empresa.ingresosBrutos || '';
+        document.getElementById('campoCantidadEmpleadosEmpresa').value = empresa.cantidadEmpleados ?? '';
         ocultarAlertaModal('alertaModalEmpresa');
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa')).show();
     }
 
+    function editarDesdeDetalleAdmin() {
+        if (!empresaEnDetalle) return;
+        modoEdicion = true;
+        idEdicion = empresaEnDetalle.id;
+        _editandoSoloContacto = false;
+        _aplicarModoContactoModal(false);
+        document.getElementById('tituloModalEmpresa').textContent = 'Editar empresa';
+        document.getElementById('campoNombreEmpresa').value = empresaEnDetalle.nombre || '';
+        document.getElementById('campoRazonSocialEmpresa').value = empresaEnDetalle.razonSocial || '';
+        document.getElementById('campoCuitEmpresa').value = empresaEnDetalle.cuit || '';
+        document.getElementById('campoDireccionEmpresa').value = empresaEnDetalle.direccion || '';
+        document.getElementById('campoActividadEconomicaEmpresa').value = empresaEnDetalle.actividadEconomica || '';
+        document.getElementById('campoCorreoEmpresa').value = empresaEnDetalle.correoElectronico || '';
+        document.getElementById('campoTelefonoEmpresa').value = empresaEnDetalle.telefono || '';
+        document.getElementById('campoReferenteEmpresa').value = empresaEnDetalle.referente || '';
+        document.getElementById('campoIngresosBrutosEmpresa').value = empresaEnDetalle.ingresosBrutos || '';
+        document.getElementById('campoCantidadEmpleadosEmpresa').value = empresaEnDetalle.cantidadEmpleados ?? '';
+        ocultarAlertaModal('alertaModalEmpresa');
+        const elDetalle    = document.getElementById('modalDetalleEmpresaAdmin');
+        const modalDetalle = bootstrap.Modal.getInstance(elDetalle);
+        const modalEditar  = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEmpresa'));
+        if (modalDetalle) {
+            elDetalle.addEventListener('hidden.bs.modal', () => modalEditar.show(), { once: true });
+            modalDetalle.hide();
+        } else {
+            modalEditar.show();
+        }
+    }
+
     async function guardar() {
+        const cantEmpStr = document.getElementById('campoCantidadEmpleadosEmpresa')?.value?.trim();
         const datos = {
             nombre:             document.getElementById('campoNombreEmpresa').value.trim(),
             razonSocial:        document.getElementById('campoRazonSocialEmpresa').value.trim(),
@@ -874,18 +1017,42 @@ const ModuloEmpresas = (() => {
             direccion:          document.getElementById('campoDireccionEmpresa').value.trim(),
             actividadEconomica: document.getElementById('campoActividadEconomicaEmpresa').value.trim(),
             correoElectronico:  document.getElementById('campoCorreoEmpresa').value.trim(),
-            telefono:           document.getElementById('campoTelefonoEmpresa').value.trim()
+            telefono:           document.getElementById('campoTelefonoEmpresa').value.trim(),
+            referente:          document.getElementById('campoReferenteEmpresa')?.value.trim() || null,
+            ingresosBrutos:     document.getElementById('campoIngresosBrutosEmpresa')?.value.trim() || null,
+            cantidadEmpleados:  cantEmpStr !== '' && cantEmpStr != null ? parseInt(cantEmpStr, 10) : null
         };
-        if (!datos.nombre || !datos.razonSocial || !datos.cuit || !datos.direccion || !datos.actividadEconomica || !datos.correoElectronico) {
+        if (_editandoSoloContacto) {
+            if (!datos.correoElectronico) {
+                mostrarAlertaModal('alertaModalEmpresa', 'El correo electrónico es obligatorio.');
+                return;
+            }
+        } else if (!datos.nombre || !datos.razonSocial || !datos.cuit || !datos.direccion || !datos.actividadEconomica || !datos.correoElectronico) {
             mostrarAlertaModal('alertaModalEmpresa', 'Todos los campos son obligatorios.');
             return;
         }
-        const respuesta = modoEdicion
-            ? await ApiCliente.actualizar(`/api/empresas/${idEdicion}`, datos)
-            : await ApiCliente.crear('/api/empresas', datos);
+        const respuesta = _editandoSoloContacto
+            ? await ApiCliente.parche(`/api/empresas/${idEdicion}/contacto`, {
+                correoElectronico: datos.correoElectronico,
+                telefono: datos.telefono
+            })
+            : modoEdicion
+                ? await ApiCliente.actualizar(`/api/empresas/${idEdicion}`, datos)
+                : await ApiCliente.crear('/api/empresas', datos);
         if (respuesta?.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('modalEmpresa'))?.hide();
+            const idGuardado = idEdicion;
+            const vieneDeDetalle = modoEdicion && empresaEnDetalle?.id === idGuardado;
+            const elEditar = document.getElementById('modalEmpresa');
+            const modalEditar = bootstrap.Modal.getInstance(elEditar);
+            if (modalEditar) {
+                const cerrado = new Promise(res => elEditar.addEventListener('hidden.bs.modal', res, { once: true }));
+                modalEditar.hide();
+                await cerrado;
+            }
             await cargar();
+            if (vieneDeDetalle && idGuardado) {
+                await verDetalleAdmin(idGuardado);
+            }
             mostrarAlerta(modoEdicion ? 'Empresa actualizada correctamente.' : 'Empresa creada correctamente.');
         } else {
             const error = await respuesta?.json().catch(() => ({}));
@@ -1056,7 +1223,7 @@ const ModuloEmpresas = (() => {
 
     return {
         cargar, irPagina,
-        abrirCreacion, abrirEdicion, editarEmpresaPropia, guardar,
+        abrirCreacion, abrirEdicion, editarEmpresaPropia, editarDesdeDetalleAdmin, guardar,
         confirmarEliminacion, eliminar,
         verDetalleAdmin,
         cargarServiciosPostRadicacion, guardarServiciosPostRadicacion,
@@ -1064,6 +1231,7 @@ const ModuloEmpresas = (() => {
         abrirListadoVehiculos, mostrarFormularioVehiculo, ocultarFormularioVehiculo,
         guardarVehiculo, quitarVehiculo,
         abrirServiciosModal, guardarServiciosModal,
-        abrirSeleccionRubroInicial, confirmarRubroInicial
+        abrirSeleccionRubroInicial, confirmarRubroInicial,
+        cambiarFotoEmpresa
     };
 })();

@@ -60,6 +60,7 @@ const ModuloEstadisticas = (() => {
             { clave: 'RECHAZADA',                    etiqueta: 'Rechazada',                color: 'danger'  },
             { clave: 'REQUIERE_INFORMACION_ADICIONAL', etiqueta: 'Requiere información adicional', color: 'secondary' },
             { clave: 'CANCELADA',                    etiqueta: 'Cancelada',                color: 'dark'    },
+            { clave: 'DESADJUDICACION',              etiqueta: 'Desadjudicación',           color: 'danger'  },
         ];
         tbody.innerHTML = estados.map(e => {
             const cantidad = mapa[e.clave] ?? 0;

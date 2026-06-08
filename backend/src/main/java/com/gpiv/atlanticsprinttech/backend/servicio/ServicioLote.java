@@ -33,5 +33,7 @@ public interface ServicioLote {
     );
 
     void eliminar(Long id, String identificadorIngreso);
+
+    Lote actualizarColor(Long id, String color, String identificadorIngreso);
 }
 

@@ -15,4 +15,7 @@ public interface RepositorioEmpresa extends JpaRepository<Empresa, Long> {
 
 	@Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.rubro WHERE e.id = :id")
 	Optional<Empresa> findByIdWithRubro(Long id);
+
+	@Query("SELECT e.id, e.nombre FROM Empresa e ORDER BY e.nombre ASC")
+	List<Object[]> findAllIdNombre();
 }

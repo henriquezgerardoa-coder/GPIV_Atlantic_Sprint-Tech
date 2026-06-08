@@ -8,10 +8,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 
 @Entity
@@ -49,6 +52,28 @@ public class Lote {
 
     @Column(name = "zona", length = 20)
     private String zona;
+
+    // Nuevos campos para geometría y relaciones espaciales
+    // insertable/updatable=false: JPA no puede bindear geometry como varchar; actualizaciones via query nativa
+    @Column(name = "geom", columnDefinition = "geometry(Polygon,4326)", insertable = false, updatable = false)
+    private String geom;
+
+    @Column(name = "external_id", length = 100)
+    private String externalId;
+
+    // insertable/updatable=false: JPA no puede bindear jsonb como varchar; actualizaciones via query nativa
+    @Column(name = "properties", columnDefinition = "jsonb", insertable = false, updatable = false)
+    private String properties;
+
+    @Column(name = "color_personalizado", length = 20)
+    private String colorPersonalizado;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "parent_lote_id")
+    private Lote parentLote;
+
+    @OneToMany(mappedBy = "parentLote", fetch = FetchType.LAZY)
+    private Set<Lote> subLotes = new HashSet<>();
 
     protected Lote() {
     }
@@ -113,6 +138,22 @@ public class Lote {
         return empresa != null ? empresa.getCuit() : null;
     }
 
+    public String getRubroEmpresa() {
+        return empresa != null && empresa.getRubro() != null ? empresa.getRubro().getNombre() : null;
+    }
+
+    public String getReferenteEmpresa() {
+        return empresa != null ? empresa.getReferente() : null;
+    }
+
+    public String getCorreoElectronicoEmpresa() {
+        return empresa != null ? empresa.getCorreoElectronico() : null;
+    }
+
+    public String getTelefonoEmpresa() {
+        return empresa != null ? empresa.getTelefono() : null;
+    }
+
     public String getFechaAsignacionTexto() {
         return fechaAsignacion != null
             ? fechaAsignacion.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE) : null;
@@ -175,5 +216,57 @@ public class Lote {
         this.estadoAsignacion = estadoAsignacion;
         this.numeroExpedienteReferencia = numeroExpedienteReferencia;
     }
-}
 
+    // Nuevos getters/setters para geometría y relaciones
+    public String getGeom() {
+        return geom;
+    }
+
+    public void setGeom(String geom) {
+        this.geom = geom;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public String getProperties() {
+        return properties;
+    }
+
+    public void setProperties(String properties) {
+        this.properties = properties;
+    }
+
+    public Lote getParentLote() {
+        return parentLote;
+    }
+
+    public void setParentLote(Lote parentLote) {
+        this.parentLote = parentLote;
+    }
+
+    public Set<Lote> getSubLotes() {
+        return subLotes;
+    }
+
+    public void setSubLotes(Set<Lote> subLotes) {
+        this.subLotes = subLotes;
+    }
+
+    public boolean esSubdividido() {
+        return !subLotes.isEmpty();
+    }
+
+    public String getColorPersonalizado() {
+        return colorPersonalizado;
+    }
+
+    public void asignarColor(String color) {
+        this.colorPersonalizado = (color == null || color.isBlank()) ? null : color.trim();
+    }
+}

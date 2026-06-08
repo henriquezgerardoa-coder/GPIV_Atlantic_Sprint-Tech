@@ -19,6 +19,10 @@
 }
 
 /* Reset general básico */
+html {
+    scroll-behavior: smooth;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -472,12 +476,33 @@ body {
     margin: 0 auto;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     padding-top: 25px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .footer-inferior p {
     font-size: 0.85rem;
     color: #64748b;
+    margin: 0;
+}
+
+.footer-dev {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 0.80rem;
+    white-space: nowrap;
+}
+
+.footer-dev img {
+    height: 18px;
+    width: auto;
+    opacity: 0.75;
+    filter: brightness(0) invert(0.45);
 }
 
 /* =========================================================
@@ -1373,6 +1398,7 @@ body:has(.contenido-principal) #listaConversacionesMensajeria .list-group-item {
 body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
     color: #1a5c37 !important;
 }
+
 /* ── Impresión / PDF de informes ──────────────────────────────────────────── */
 @media print {
     body {
@@ -1417,4 +1443,3 @@ body:has(.contenido-principal) #seccion-mensajeria .encabezado-seccion i {
         display: none !important;
     }
 }
-

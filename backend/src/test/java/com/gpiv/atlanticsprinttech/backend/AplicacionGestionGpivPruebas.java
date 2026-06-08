@@ -1093,7 +1093,9 @@ class AplicacionGestionGpivPruebas {
             "Actividad " + nombre,
             correoElectronico,
             0,
-            "2990000000"
+            "2990000000",
+            null,
+            null
         );
     }
 

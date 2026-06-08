@@ -9,8 +9,10 @@ import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -77,5 +79,10 @@ public class ControladorLote {
     public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication autenticacion) {
         servicioLote.eliminar(id, autenticacion.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/color")
+    public RespuestaLote actualizarColor(@PathVariable Long id, @RequestBody Map<String, String> body, Authentication autenticacion) {
+        return mapeador.aRespuesta(servicioLote.actualizarColor(id, body.get("color"), autenticacion.getName()));
     }
 }

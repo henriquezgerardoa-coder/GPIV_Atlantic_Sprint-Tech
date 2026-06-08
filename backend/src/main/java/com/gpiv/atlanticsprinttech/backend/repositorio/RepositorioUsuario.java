@@ -16,9 +16,26 @@ public interface RepositorioUsuario extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByNombreUsuarioConEmpresa(@Param("nombreUsuario") String nombreUsuario);
     Optional<Usuario> findByCorreoElectronicoIgnoreCase(String correoElectronico);
     Optional<Usuario> findByTokenVerificacionEmail(String tokenVerificacionEmail);
-    List<Usuario> findByEmpresa_IdOrderByIdAsc(Long empresaId);
-    @Query("SELECT DISTINCT u FROM Usuario u JOIN u.roles r WHERE u.activo = true AND r IN :roles ORDER BY u.nombreCompleto ASC")
+    @Query("""
+        SELECT DISTINCT u FROM Usuario u
+        LEFT JOIN FETCH u.roles
+        WHERE u.empresa.id = :empresaId
+        ORDER BY u.id ASC
+        """)
+    List<Usuario> findByEmpresaIdConRolesOrderByIdAsc(@Param("empresaId") Long empresaId);
+
+    @Query("""
+        SELECT DISTINCT u FROM Usuario u
+        LEFT JOIN FETCH u.roles
+        WHERE u.activo = true
+          AND u.id IN (SELECT u2.id FROM Usuario u2 JOIN u2.roles r WHERE r IN :roles)
+        ORDER BY u.nombreCompleto ASC
+        """)
     List<Usuario> findActivosConRolesGestion(@Param("roles") Set<RolUsuario> roles);
+
+    @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.roles ORDER BY u.nombreCompleto ASC")
+    List<Usuario> findAllConRolesOrderByNombreCompletoAsc();
+
     List<Usuario> findByActivoTrueOrderByNombreCompletoAsc();
     boolean existsByNombreUsuario(String nombreUsuario);
     boolean existsByCorreoElectronicoIgnoreCase(String correoElectronico);

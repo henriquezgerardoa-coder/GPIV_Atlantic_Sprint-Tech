@@ -164,11 +164,6 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
             return;
         }
 
-        String cuitDigitos = relevamiento.cuit().replace("-", "").trim();
-        if (!cuitDigitos.matches("\\d{11}")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El CUIT debe contener 11 digitos");
-        }
-
         if (!OPCIONES_TIEMPO_RADICACION.contains(relevamiento.tiempoRadicacionMeses())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tiempo de radicacion debe ser 6, 12, 24 o 36 meses");
         }
@@ -180,11 +175,6 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         if ("EXISTENTE".equalsIgnoreCase(relevamiento.tipoEmpresa())
             && (relevamiento.objetoProyecto() == null || relevamiento.objetoProyecto().isBlank())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar el objeto del proyecto para empresa existente");
-        }
-
-        if ("Otros".equalsIgnoreCase(relevamiento.rubro())
-            && (relevamiento.rubroOtro() == null || relevamiento.rubroOtro().isBlank())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe detallar el rubro cuando se selecciona Otros");
         }
     }
 
@@ -229,8 +219,21 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         if (tiempoEstimadoObraMeses != null || fechaPlazo != null) {
             radicacion.establecerDatosPlazo(tiempoEstimadoObraMeses, fechaPlazo);
         }
+        if (estado == EstadoRadicacion.RADICADA) {
+            repositorioProyecto.findBySolicitudOrigenId(radicacion.getId()).ifPresent(p -> {
+                if (p.getEstado() != com.gpiv.atlanticsprinttech.entities.dominio.EstadoProyecto.COMPLETADO) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El proyecto productivo asociado debe estar en estado COMPLETADO para radicar el expediente");
+                }
+            });
+            if (!repositorioProyecto.existsBySolicitudOrigenId(radicacion.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No existe proyecto productivo asociado al expediente");
+            }
+        }
         if (estado == EstadoRadicacion.APROBADA || estado == EstadoRadicacion.RADICADA
-                || estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA) {
+                || estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA
+                || estado == EstadoRadicacion.DESADJUDICACION) {
             radicacion.establecerResolucion(numeroResolucion, identificadorIngreso);
         }
         Lote lote = radicacion.getLote();
@@ -248,25 +251,56 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         if (estado == EstadoRadicacion.APROBADA && !repositorioProyecto.existsBySolicitudOrigenId(actualizada.getId())) {
             crearProyectoDesdeRadicacion(actualizada, usuario);
         }
-        if (estado == EstadoRadicacion.RECHAZADA || estado == EstadoRadicacion.CANCELADA) {
-            notificarEmpresaCambioEstado(identificadorIngreso, actualizada, estado, comentario);
-        }
+        notificarCambioEstado(identificadorIngreso, actualizada, estadoAnterior, estado, comentario);
         return actualizada;
     }
 
-    private void notificarEmpresaCambioEstado(String remitente, RadicacionSolicitud radicacion, EstadoRadicacion estado, String comentario) {
-        List<Usuario> usuariosEmpresa = repositorioUsuario.findByEmpresa_IdOrderByIdAsc(radicacion.getEmpresa().getId());
-        if (usuariosEmpresa.isEmpty()) return;
-        Usuario destinatario = usuariosEmpresa.get(0);
-        String accion = estado == EstadoRadicacion.RECHAZADA ? "rechazado" : "cancelado";
-        String asunto = "Expediente " + radicacion.getNumeroRadicado() + " — " + (estado == EstadoRadicacion.RECHAZADA ? "Rechazado" : "Cancelado");
-        String mensaje = "Su expediente " + radicacion.getNumeroRadicado() + " ha sido " + accion + ".\n\nMotivo: "
-            + (comentario != null && !comentario.isBlank() ? comentario : "Sin especificar.");
-        try {
-            servicioMensajeria.crear(remitente, destinatario.getId(), asunto, mensaje);
-        } catch (Exception e) {
-            // Notificación no crítica; no interrumpir el cambio de estado
+    private void notificarCambioEstado(String remitenteIngreso, RadicacionSolicitud radicacion,
+            EstadoRadicacion estadoAnterior, EstadoRadicacion estadoNuevo, String comentario) {
+        String asunto = "Expediente " + radicacion.getNumeroRadicado()
+            + " — cambio de estado: " + etiquetaEstado(estadoAnterior) + " → " + etiquetaEstado(estadoNuevo);
+        String cuerpo = "El expediente " + radicacion.getNumeroRadicado()
+            + " ha pasado al estado «" + etiquetaEstado(estadoNuevo) + "».";
+        if (comentario != null && !comentario.isBlank()) {
+            cuerpo += "\n\nObservación: " + comentario;
         }
+        // Siempre notificar a la empresa que realizó la solicitud
+        List<Usuario> usuariosEmpresa = repositorioUsuario.findByEmpresaIdConRolesOrderByIdAsc(radicacion.getEmpresa().getId());
+        for (Usuario dest : usuariosEmpresa) {
+            if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
+                enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);
+            }
+        }
+        // Al radicar se inicia el proyecto productivo: notificar también a los técnicos
+        if (estadoNuevo == EstadoRadicacion.RADICADA) {
+            List<Usuario> tecnicos = repositorioUsuario.findActivosConRolesGestion(Set.of(RolUsuario.TECNICO));
+            for (Usuario dest : tecnicos) {
+                if (!dest.getNombreUsuario().equals(remitenteIngreso)) {
+                    enviarMensaje(remitenteIngreso, dest.getId(), asunto, cuerpo);
+                }
+            }
+        }
+    }
+
+    private void enviarMensaje(String remitente, Long destinatarioId, String asunto, String cuerpo) {
+        try {
+            servicioMensajeria.crear(remitente, destinatarioId, asunto, cuerpo);
+        } catch (Exception e) {
+            // Notificación no crítica
+        }
+    }
+
+    private static String etiquetaEstado(EstadoRadicacion estado) {
+        return switch (estado) {
+            case PENDIENTE -> "Pendiente";
+            case EN_REVISION -> "En revisión";
+            case APROBADA -> "Aprobada";
+            case RADICADA -> "Radicada";
+            case RECHAZADA -> "Rechazada";
+            case REQUIERE_INFORMACION_ADICIONAL -> "Requiere información adicional";
+            case CANCELADA -> "Cancelada";
+            case DESADJUDICACION -> "Desadjudicación";
+        };
     }
 
 

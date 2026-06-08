@@ -10,20 +10,22 @@ public enum EstadoRadicacion {
 	RADICADA,
 	RECHAZADA,
 	REQUIERE_INFORMACION_ADICIONAL,
-	CANCELADA;
+	CANCELADA,
+	DESADJUDICACION;
 
 	private static final Map<EstadoRadicacion, Set<EstadoRadicacion>> TRANSICIONES_VALIDAS = Map.of(
 		PENDIENTE, Set.of(EN_REVISION, RECHAZADA, CANCELADA),
 		EN_REVISION, Set.of(APROBADA, RECHAZADA, REQUIERE_INFORMACION_ADICIONAL, CANCELADA),
-		REQUIERE_INFORMACION_ADICIONAL, Set.of(EN_REVISION, RECHAZADA, CANCELADA),
-		APROBADA, Set.of(RADICADA),
+		REQUIERE_INFORMACION_ADICIONAL, Set.of(PENDIENTE, RECHAZADA, CANCELADA),
+		APROBADA, Set.of(RADICADA, DESADJUDICACION, CANCELADA),
 		RADICADA, Set.of(),
 		RECHAZADA, Set.of(),
-		CANCELADA, Set.of()
+		CANCELADA, Set.of(),
+		DESADJUDICACION, Set.of()
 	);
 
 	public boolean esFinal() {
-		return this == RADICADA || this == RECHAZADA || this == CANCELADA;
+		return this == RADICADA || this == RECHAZADA || this == CANCELADA || this == DESADJUDICACION;
 	}
 
 	public boolean puedeTransicionarA(EstadoRadicacion siguiente) {
@@ -31,11 +33,11 @@ public enum EstadoRadicacion {
 	}
 
 	public boolean requiereComentario() {
-		return this == RECHAZADA || this == CANCELADA;
+		return this == RECHAZADA || this == CANCELADA || this == DESADJUDICACION;
 	}
 
 	public boolean permiteAsignarLote() {
-		return this != RECHAZADA && this != CANCELADA;
+		return this != RECHAZADA && this != CANCELADA && this != DESADJUDICACION;
 	}
 
 	public boolean permiteActaRubrica() {
@@ -45,7 +47,7 @@ public enum EstadoRadicacion {
 	public int etapa() {
 		return switch (this) {
 			case PENDIENTE, EN_REVISION, REQUIERE_INFORMACION_ADICIONAL -> 2;
-			case APROBADA, RADICADA, RECHAZADA, CANCELADA -> 3;
+			case APROBADA, RADICADA, RECHAZADA, CANCELADA, DESADJUDICACION -> 3;
 		};
 	}
 }

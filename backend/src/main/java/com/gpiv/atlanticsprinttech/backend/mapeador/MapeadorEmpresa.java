@@ -17,7 +17,10 @@ public class MapeadorEmpresa {
             solicitud.direccion(),
             solicitud.actividadEconomica(),
             solicitud.correoElectronico(),
-            solicitud.telefono()
+            solicitud.telefono(),
+            solicitud.cantidadEmpleados(),
+            solicitud.referente(),
+            solicitud.ingresosBrutos()
         );
     }
 
@@ -35,7 +38,11 @@ public class MapeadorEmpresa {
             empresa.getCantidadEmpleados(),
             permiteServiciosPostRadicacion,
             rubro != null ? rubro.getId() : null,
-            rubro != null ? rubro.getNombre() : null
+            rubro != null ? rubro.getNombre() : null,
+            empresa.getFechaRegistro(),
+            empresa.getStatus(),
+            empresa.getReferente(),
+            empresa.getIngresosBrutos()
         );
     }
 }

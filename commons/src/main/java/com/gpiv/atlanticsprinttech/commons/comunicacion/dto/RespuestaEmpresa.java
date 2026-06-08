@@ -1,5 +1,7 @@
 package com.gpiv.atlanticsprinttech.commons.comunicacion.dto;
 
+import java.time.LocalDateTime;
+
 public record RespuestaEmpresa(
 	Long id,
 	String nombre,
@@ -12,7 +14,11 @@ public record RespuestaEmpresa(
 	Integer cantidadEmpleados,
 	boolean permiteServiciosPostRadicacion,
 	Long rubroId,
-	String rubroNombre
+	String rubroNombre,
+	LocalDateTime fechaRegistro,
+	String statusEmpresa,
+	String referente,
+	String ingresosBrutos
 ) {
 }
 

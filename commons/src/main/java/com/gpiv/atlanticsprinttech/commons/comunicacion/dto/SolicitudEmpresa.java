@@ -26,7 +26,11 @@ public record SolicitudEmpresa(
 	String correoElectronico,
 	Integer cantidadEmpleados,
 	@Size(max = 40, message = "El telefono no puede superar 40 caracteres")
-	String telefono
+	String telefono,
+	@Size(max = 120, message = "El referente no puede superar 120 caracteres")
+	String referente,
+	@Size(max = 30, message = "El numero de ingresos brutos no puede superar 30 caracteres")
+	String ingresosBrutos
 ) {
 }
 

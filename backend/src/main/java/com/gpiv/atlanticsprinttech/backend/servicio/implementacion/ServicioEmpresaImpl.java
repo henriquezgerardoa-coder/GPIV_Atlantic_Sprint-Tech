@@ -29,7 +29,6 @@ import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -130,12 +129,6 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			if (!empresaId.equals(id)) {
 				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
 			}
-			if (repositorioRadicacionSolicitud.existsByEmpresaIdAndEstado(id, EstadoRadicacion.RADICADA)) {
-				throw new ResponseStatusException(
-					HttpStatus.CONFLICT,
-					"Los datos generales de la empresa no son editables luego de la radicacion"
-				);
-			}
 		}
 		Empresa empresaActual = obtenerPorIdInterno(id);
 		validarCuitDisponible(empresa.getCuit(), empresaActual.getCuit());
@@ -147,7 +140,10 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			empresa.getDireccion(),
 			empresa.getActividadEconomica(),
 			empresa.getCorreoElectronico(),
-			empresa.getTelefono()
+			empresa.getTelefono(),
+			empresa.getReferente(),
+			empresa.getIngresosBrutos(),
+			empresa.getCantidadEmpleados()
 		);
 		Empresa guardada = repositorioEmpresa.save(empresaActual);
 		servicioAuditLog.registrarEvento(
@@ -159,6 +155,27 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 		);
 		return guardada;
 	}
+	@Override
+	public Empresa actualizarContacto(Long id, String correoElectronico, String telefono, String identificadorIngreso) {
+		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
+		if (servicioContextoUsuario.esRolEmpresa(usuario)) {
+			Long empresaId = servicioContextoUsuario.obtenerEmpresaIdRequerido(usuario);
+			if (!empresaId.equals(id)) {
+				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar otra empresa");
+			}
+		}
+		Empresa empresa = obtenerPorIdInterno(id);
+		empresa.actualizarDatosContacto(correoElectronico, telefono);
+		Empresa guardada = repositorioEmpresa.save(empresa);
+		servicioAuditLog.registrarEvento(
+			identificadorIngreso, "ACTUALIZACION_CONTACTO_EMPRESA", "Empresa",
+			guardada.getCuit(), null,
+			"correo=" + correoElectronico + " | telefono=" + telefono,
+			UtilRed.obtenerIpActual()
+		);
+		return guardada;
+	}
+
 	@Override
 	public void asignarRubroInicial(Long empresaId, Long rubroId, String identificadorIngreso) {
 		Usuario usuario = servicioContextoUsuario.obtenerUsuarioPorIngreso(identificadorIngreso);
@@ -207,8 +224,8 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	@Override
 	public List<RespuestaEmpresaListadoAdmin> listarVistaAdmin(String identificadorIngreso) {
 		validarAccesoAdmin(identificadorIngreso);
-		return repositorioEmpresa.findAll(Sort.by(Sort.Direction.ASC, "nombre")).stream()
-			.map(empresa -> new RespuestaEmpresaListadoAdmin(empresa.getId(), empresa.getNombre()))
+		return repositorioEmpresa.findAllIdNombre().stream()
+			.map(row -> new RespuestaEmpresaListadoAdmin((Long) row[0], (String) row[1]))
 			.toList();
 	}
 
@@ -237,6 +254,18 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			.toList();
 
 		Rubro rubro = empresa.getRubro();
+		RespuestaEmpresaDetalleAdmin.ServiciosResumen serviciosResumen = null;
+		if (tieneHabilitacionServiciosPostRadicacion(empresaId)) {
+			DatosServiciosPostRadicacion datos = leerDatosServiciosPostRadicacion(empresa);
+			serviciosResumen = new RespuestaEmpresaDetalleAdmin.ServiciosResumen(
+				datos.solicitaAguaCruda(),
+				datos.consumoAguaCrudaM3(),
+				datos.consumoLuzKwh(),
+				datos.consumoGasM3(),
+				datos.consumoInternetMbps(),
+				datos.consumosAdicionales()
+			);
+		}
 		return new RespuestaEmpresaDetalleAdmin(
 			empresa.getId(),
 			empresa.getNombre(),
@@ -253,9 +282,13 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 			estadoExpediente,
 			Optional.ofNullable(rubro).map(Rubro::getId).orElse(null),
 			Optional.ofNullable(rubro).map(Rubro::getNombre).orElse(null),
+			empresa.getReferente(),
+			empresa.getIngresosBrutos(),
+			empresa.getCantidadEmpleados(),
 			usuariosAsociados,
 			vehiculos,
-			lotes
+			lotes,
+			serviciosResumen
 		);
 	}
 
@@ -416,7 +449,7 @@ public class ServicioEmpresaImpl implements ServicioEmpresa {
 	}
 
 	private List<RespuestaUsuarioEmpresaAdmin> construirUsuariosAsociados(Long empresaId) {
-		return repositorioUsuario.findByEmpresa_IdOrderByIdAsc(empresaId).stream()
+		return repositorioUsuario.findByEmpresaIdConRolesOrderByIdAsc(empresaId).stream()
 			.filter(usuario -> usuario.tieneRol(RolUsuario.EMPRESA))
 			.map(usuario -> new RespuestaUsuarioEmpresaAdmin(
 				usuario.getNombreUsuario(),

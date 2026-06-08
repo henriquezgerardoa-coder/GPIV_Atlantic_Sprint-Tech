@@ -6,6 +6,7 @@ import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaDetalleAdmin;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaListadoAdmin;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaServiciosPostRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudContactoEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudEmpresa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudServiciosPostRadicacion;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
@@ -69,6 +70,12 @@ public class ControladorEmpresa {
     @PutMapping("/{id}")
     public RespuestaEmpresa actualizar(@PathVariable Long id, @Valid @RequestBody SolicitudEmpresa solicitud, Authentication autenticacion) {
         Empresa actualizada = servicioEmpresa.actualizar(id, mapeador.desdeSolicitud(solicitud), autenticacion.getName());
+        return mapeador.toRespuesta(actualizada, servicioEmpresa.permiteServiciosPostRadicacion(id, autenticacion.getName()));
+    }
+
+    @PatchMapping("/{id}/contacto")
+    public RespuestaEmpresa actualizarContacto(@PathVariable Long id, @Valid @RequestBody SolicitudContactoEmpresa solicitud, Authentication autenticacion) {
+        Empresa actualizada = servicioEmpresa.actualizarContacto(id, solicitud.correoElectronico(), solicitud.telefono(), autenticacion.getName());
         return mapeador.toRespuesta(actualizada, servicioEmpresa.permiteServiciosPostRadicacion(id, autenticacion.getName()));
     }
     @DeleteMapping("/{id}")
