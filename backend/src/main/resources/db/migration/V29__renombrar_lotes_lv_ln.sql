@@ -1,0 +1,62 @@
+-- V29: Renombrar lotes Parque Viejo (PV-XX → LV0XX) y Parque Nuevo (PN-XX → LN0XX)
+-- Actualiza superficies reales LN, marca LN005 como Lote Fiscal, inserta LN062-LN065.
+-- LN021 no existe en el plano; PN-21..PN-60 se desplazan a LN022..LN061.
+
+-- ── Parque Viejo: PV-01..PV-60 → LV001..LV060 ──────────────────────────────
+UPDATE lotes
+SET codigo = 'LV' || LPAD(TRIM(LEADING '0' FROM REPLACE(codigo, 'PV-', ''))::INTEGER::TEXT, 3, '0'),
+    zona   = 'PARQUE_VIEJO'
+WHERE codigo LIKE 'PV-%'
+  AND REPLACE(codigo, 'PV-', '')::INTEGER BETWEEN 1 AND 60;
+
+-- ── Parque Nuevo: PN-01..PN-20 → LN001..LN020 ───────────────────────────────
+UPDATE lotes
+SET codigo = 'LN' || LPAD(REPLACE(codigo, 'PN-', '')::INTEGER::TEXT, 3, '0'),
+    zona   = 'PARQUE_NUEVO'
+WHERE codigo LIKE 'PN-%'
+  AND REPLACE(codigo, 'PN-', '')::INTEGER BETWEEN 1 AND 20;
+
+-- ── Parque Nuevo: PN-21..PN-60 → LN022..LN061 (salta LN021) ─────────────────
+UPDATE lotes
+SET codigo = 'LN' || LPAD((REPLACE(codigo, 'PN-', '')::INTEGER + 1)::TEXT, 3, '0'),
+    zona   = 'PARQUE_NUEVO'
+WHERE codigo LIKE 'PN-%'
+  AND REPLACE(codigo, 'PN-', '')::INTEGER BETWEEN 21 AND 60;
+
+-- ── Superficie real por lote (Parque Nuevo) ──────────────────────────────────
+UPDATE lotes SET superficie_m2 = CASE codigo
+    WHEN 'LN001' THEN 1355.24  WHEN 'LN002' THEN 1346.54  WHEN 'LN003' THEN 1337.61
+    WHEN 'LN004' THEN 1339.86  WHEN 'LN005' THEN 5151.15  WHEN 'LN006' THEN 2575.58
+    WHEN 'LN007' THEN 2575.58  WHEN 'LN008' THEN 2575.58  WHEN 'LN009' THEN 2493.75
+    WHEN 'LN010' THEN 2507.11  WHEN 'LN011' THEN 2495.07  WHEN 'LN012' THEN 2575.58
+    WHEN 'LN013' THEN 2575.58  WHEN 'LN014' THEN 2575.58  WHEN 'LN015' THEN 5002.93
+    WHEN 'LN016' THEN 5011.01  WHEN 'LN017' THEN 5974.99  WHEN 'LN018' THEN 5968.95
+    WHEN 'LN019' THEN 5000.34  WHEN 'LN020' THEN 5002.67  WHEN 'LN022' THEN 7292.39
+    WHEN 'LN023' THEN 7255.56  WHEN 'LN024' THEN 1245.21  WHEN 'LN025' THEN 1250.83
+    WHEN 'LN026' THEN 1250.36  WHEN 'LN027' THEN 1250.23  WHEN 'LN028' THEN 1267.09
+    WHEN 'LN029' THEN 1815.00  WHEN 'LN030' THEN 1815.00  WHEN 'LN031' THEN 1815.00
+    WHEN 'LN032' THEN 1815.00  WHEN 'LN033' THEN 1815.00  WHEN 'LN034' THEN 1815.00
+    WHEN 'LN035' THEN 1815.00  WHEN 'LN036' THEN 1713.60  WHEN 'LN037' THEN 1705.60
+    WHEN 'LN038' THEN 1800.00  WHEN 'LN039' THEN 1800.00  WHEN 'LN040' THEN 1705.60
+    WHEN 'LN041' THEN 1713.60  WHEN 'LN042' THEN 1815.00  WHEN 'LN043' THEN 1815.00
+    WHEN 'LN044' THEN 1815.00  WHEN 'LN045' THEN 1815.00  WHEN 'LN046' THEN 1815.00
+    WHEN 'LN047' THEN 1815.00  WHEN 'LN048' THEN 1815.00  WHEN 'LN049' THEN 2496.70
+    WHEN 'LN050' THEN 2504.70  WHEN 'LN051' THEN 2504.70  WHEN 'LN052' THEN 2504.70
+    WHEN 'LN053' THEN 3339.62  WHEN 'LN054' THEN 3339.62  WHEN 'LN055' THEN 2496.70
+    WHEN 'LN056' THEN 2504.70  WHEN 'LN057' THEN 2504.70  WHEN 'LN058' THEN 2496.70
+    WHEN 'LN059' THEN 3339.62  WHEN 'LN060' THEN 3339.62  WHEN 'LN061' THEN 2927.25
+    ELSE superficie_m2
+END
+WHERE codigo LIKE 'LN%';
+
+-- ── LN005: Lote Fiscal (ocupado=true, sin empresa) ───────────────────────────
+UPDATE lotes SET ocupado = true WHERE codigo = 'LN005' AND empresa_id IS NULL;
+
+-- ── Nuevos lotes LN062..LN065 (no existían en el parque anterior) ─────────────
+INSERT INTO lotes (codigo, superficie_m2, ocupado, zona)
+VALUES
+    ('LN062', 2927.46, false, 'PARQUE_NUEVO'),
+    ('LN063', 2919.67, false, 'PARQUE_NUEVO'),
+    ('LN064', 2911.88, false, 'PARQUE_NUEVO'),
+    ('LN065', 2921.15, false, 'PARQUE_NUEVO')
+ON CONFLICT DO NOTHING;
