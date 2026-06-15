@@ -720,6 +720,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } else {
         navegarA("panel");
     }
+
 });
 
 function ocultarAccesosEmpresaRestringidos() {

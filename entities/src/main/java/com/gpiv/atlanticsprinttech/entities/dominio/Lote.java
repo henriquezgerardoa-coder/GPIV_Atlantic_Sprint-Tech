@@ -251,6 +251,17 @@ public class Lote {
         this.numeroExpedienteReferencia = null;
     }
 
+    /** Libera la asignación y vuelve el lote a DISPONIBLE (usar al cancelar/rechazar una radicación aprobada). */
+    public void liberarYDisponibilizar() {
+        this.ocupado = false;
+        this.empresa = null;
+        this.fechaAsignacion = null;
+        this.numeroExpedienteReferencia = null;
+        this.etapa = EtapaCicloLote.DISPONIBLE;
+        this.fechaInicioEtapaActual = null;
+        this.fechaLimiteEtapaActual = null;
+    }
+
     // Nuevos getters/setters para geometría y relaciones
     public String getGeom() {
         return geom;

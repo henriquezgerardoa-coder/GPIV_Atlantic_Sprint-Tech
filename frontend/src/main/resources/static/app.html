@@ -1309,125 +1309,157 @@
 
             <!-- ── SECCIÓN: MENSAJERÍA ───────────────────────── -->
             <section id="seccion-mensajeria" class="seccion-contenido d-none">
-                <div
-                    class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2"
-                >
+
+                <style>
+                    .msj-sidebar { background: #f6f8fa; }
+                    .msj-folder-btn {
+                        display: flex; align-items: center; width: 100%;
+                        background: transparent; border: none; border-radius: 8px;
+                        padding: 8px 12px; font-size: 0.875rem; color: #495057;
+                        cursor: pointer; transition: background 0.15s;
+                    }
+                    .msj-folder-btn:hover { background: rgba(0,0,0,0.06); }
+                    .msj-folder-btn.msj-tab-activo {
+                        background: rgba(13,110,253,0.1); color: #0d6efd; font-weight: 600;
+                    }
+                    .msj-conv-item {
+                        display: flex; align-items: flex-start; width: 100%;
+                        background: transparent; border: none; border-bottom: 1px solid #e9ecef;
+                        padding: 10px 14px; gap: 10px; cursor: pointer;
+                        transition: background 0.12s; text-align: left; position: relative;
+                    }
+                    .msj-conv-item:hover { background: #fff; }
+                    .msj-conv-item.msj-activo { background: #fff; box-shadow: inset 3px 0 0 #0d6efd; }
+                    .msj-conv-item.msj-no-leida { background: #f0f4ff; }
+                    .msj-conv-item.msj-no-leida .msj-asunto { font-weight: 700; }
+                    .msj-avatar {
+                        width: 36px; height: 36px; border-radius: 50%;
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 0.72rem; font-weight: 700; color: #fff;
+                        flex-shrink: 0;
+                    }
+                    .msj-avatar-sm {
+                        width: 28px; height: 28px; border-radius: 50%;
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 0.62rem; font-weight: 700; color: #fff;
+                        flex-shrink: 0;
+                    }
+                    .msj-burbuja-salida {
+                        background: #0d6efd; color: #fff;
+                        border-radius: 18px 18px 4px 18px;
+                        padding: 8px 14px; word-break: break-word; line-height: 1.45;
+                    }
+                    .msj-burbuja-entrada {
+                        background: #fff; border: 1px solid #dee2e6;
+                        border-radius: 18px 18px 18px 4px;
+                        padding: 8px 14px; word-break: break-word; line-height: 1.45;
+                    }
+                    .msj-burbuja-externo {
+                        background: #fff8e1; border: 1px solid #ffc107;
+                        border-radius: 18px 18px 18px 4px;
+                        padding: 8px 14px; word-break: break-word; line-height: 1.45;
+                    }
+                    #contenedorMensajesMensajeria { background: #f6f8fa; }
+                </style>
+
+                <div class="encabezado-seccion d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <h4 class="fw-bold mb-1">
-                            <i class="bi bi-chat-dots text-primary me-2"></i
-                            >Mensajería
+                            <i class="bi bi-envelope text-primary me-2"></i>Mensajería
                         </h4>
-                        <p class="text-muted small mb-0">
-                            Comunicación interna entre usuarios registrados
-                            ENREPAVI
-                        </p>
+                        <p class="text-muted small mb-0">Comunicación interna entre usuarios registrados ENREPAVI</p>
                     </div>
-                    <button
-                        class="btn btn-primary d-none"
-                        id="btnNuevaConversacionMensajeria"
-                        onclick="ModuloMensajeria.abrirNuevaConversacion()"
-                    >
-                        <i class="bi bi-plus-lg me-1"></i>Nueva conversación
-                    </button>
                 </div>
 
                 <div id="alertaMensajeria" class="d-none mb-3"></div>
 
-                <div class="row g-3">
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div
-                                class="card-header bg-white d-flex justify-content-between align-items-center"
-                            >
-                                <span class="fw-semibold">Conversaciones</span>
-                                <span
-                                    class="badge bg-primary"
-                                    id="badgeTotalConversacionesMensajeria"
-                                    >0</span
-                                >
+                <!-- Cliente de correo -->
+                <div class="card border-0 shadow-sm overflow-hidden" style="height: 660px; min-height: 480px;">
+                    <div class="row g-0 h-100">
+
+                        <!-- ── SIDEBAR ── -->
+                        <div class="col-xl-3 col-lg-4 border-end h-100 d-flex flex-column msj-sidebar">
+
+                            <!-- Redactar -->
+                            <div class="p-3 border-bottom">
+                                <button class="btn btn-primary w-100 fw-semibold d-none"
+                                    id="btnNuevaConversacionMensajeria"
+                                    onclick="ModuloMensajeria.abrirNuevaConversacion()">
+                                    <i class="bi bi-pencil-square me-2"></i>Redactar
+                                </button>
                             </div>
-                            <div
-                                class="list-group list-group-flush"
-                                id="listaConversacionesMensajeria"
-                            >
-                                <div class="list-group-item text-muted small">
-                                    Sin conversaciones
-                                </div>
+
+                            <!-- Carpetas -->
+                            <div class="p-2" id="tabsMensajeria">
+                                <button id="tabMsjEntrada" class="msj-folder-btn msj-tab-activo mb-1"
+                                    onclick="ModuloMensajeria.seleccionarTab('ENTRADA')">
+                                    <i class="bi bi-inbox me-2"></i>
+                                    <span class="flex-grow-1">Entrada</span>
+                                    <span class="badge rounded-pill bg-primary" id="badgeMensajeriaEntrada">0</span>
+                                </button>
+                                <button id="tabMsjSalida" class="msj-folder-btn mb-1"
+                                    onclick="ModuloMensajeria.seleccionarTab('SALIDA')">
+                                    <i class="bi bi-send me-2"></i>
+                                    <span class="flex-grow-1">Enviados</span>
+                                    <span class="badge rounded-pill bg-secondary" id="badgeMensajeriaSalida">0</span>
+                                </button>
+                                <button id="tabMsjBorradores" class="msj-folder-btn"
+                                    onclick="ModuloMensajeria.seleccionarTab('BORRADORES')">
+                                    <i class="bi bi-file-earmark-text me-2"></i>
+                                    <span class="flex-grow-1">Borradores</span>
+                                    <span class="badge rounded-pill bg-secondary" id="badgeMensajeriaBorradores">0</span>
+                                </button>
                             </div>
+
+                            <hr class="mx-3 my-1">
+
+                            <!-- Lista de conversaciones -->
+                            <div class="flex-grow-1 overflow-y-auto" id="listaConversacionesMensajeria" style="min-height: 0;">
+                                <div class="px-3 py-4 text-center text-muted small">Sin conversaciones</div>
+                            </div>
+                            <!-- Lista de borradores -->
+                            <div class="flex-grow-1 overflow-y-auto d-none" id="listaBorradoresMensajeria" style="min-height: 0;"></div>
                         </div>
-                    </div>
 
-                    <div class="col-lg-8">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body d-flex flex-column">
-                                <div
-                                    id="panelSinConversacionMensajeria"
-                                    class="text-center text-muted py-5"
-                                >
-                                    <i
-                                        class="bi bi-chat-left-text fs-1 d-block mb-2"
-                                    ></i>
-                                    Seleccione una conversación para ver los
-                                    mensajes.
+                        <!-- ── PANEL DERECHO ── -->
+                        <div class="col-xl-9 col-lg-8 h-100 d-flex flex-column">
+
+                            <!-- Estado vacío -->
+                            <div id="panelSinConversacionMensajeria"
+                                class="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-muted">
+                                <i class="bi bi-envelope-open fs-1 mb-3 opacity-25"></i>
+                                <p class="fw-semibold mb-1">Ninguna conversación seleccionada</p>
+                                <p class="small mb-0">Elegí una de la lista para leerla</p>
+                            </div>
+
+                            <!-- Detalle de conversación -->
+                            <div id="detalleConversacionMensajeria" class="d-none flex-grow-1 d-flex flex-column" style="min-height:0;overflow:hidden;">
+
+                                <!-- Cabecera -->
+                                <div class="px-4 py-3 border-bottom bg-white flex-shrink-0">
+                                    <h6 class="fw-bold mb-1 text-dark" id="tituloConversacionMensajeria">-</h6>
+                                    <div class="small text-muted" id="subtituloConversacionMensajeria">-</div>
                                 </div>
 
-                                <div
-                                    id="detalleConversacionMensajeria"
-                                    class="d-none d-flex flex-column flex-grow-1"
-                                >
-                                    <div class="border-bottom pb-2 mb-3">
-                                        <h5
-                                            class="mb-1"
-                                            id="tituloConversacionMensajeria"
-                                        >
-                                            -
-                                        </h5>
-                                        <div
-                                            class="text-muted small"
-                                            id="subtituloConversacionMensajeria"
-                                        >
-                                            -
-                                        </div>
-                                    </div>
+                                <!-- Hilo de mensajes -->
+                                <div id="contenedorMensajesMensajeria"
+                                    class="flex-grow-1 overflow-y-auto px-4 py-3"
+                                    style="min-height: 0;">
+                                </div>
 
-                                    <div
-                                        id="contenedorMensajesMensajeria"
-                                        class="flex-grow-1 border rounded bg-light p-3 mb-3"
-                                        style="
-                                            min-height: 280px;
-                                            max-height: 420px;
-                                            overflow-y: auto;
-                                        "
-                                    ></div>
-
-                                    <form id="formRespuestaMensajeria">
-                                        <div
-                                            id="alertaRespuestaMensajeria"
-                                            class="alert alert-danger alerta-modal d-none mb-2"
-                                        ></div>
-                                        <div class="mb-2">
-                                            <label
-                                                for="campoRespuestaMensajeria"
-                                                class="form-label small fw-semibold"
-                                                >Responder</label
-                                            >
-                                            <textarea
-                                                id="campoRespuestaMensajeria"
-                                                class="form-control"
-                                                rows="3"
-                                                maxlength="4000"
-                                                placeholder="Escriba su respuesta..."
-                                            ></textarea>
-                                        </div>
-                                        <div class="text-end">
-                                            <button
-                                                type="submit"
-                                                class="btn btn-primary"
-                                            >
-                                                <i class="bi bi-send me-1"></i
-                                                >Enviar respuesta
-                                            </button>
-                                        </div>
+                                <!-- Área de respuesta -->
+                                <div class="border-top bg-white px-4 py-3 flex-shrink-0">
+                                    <div id="alertaRespuestaMensajeria"
+                                        class="alert alert-danger alerta-modal d-none mb-2 py-2 small"></div>
+                                    <form id="formRespuestaMensajeria" class="d-flex align-items-end gap-2">
+                                        <textarea id="campoRespuestaMensajeria"
+                                            class="form-control border rounded-3 bg-light"
+                                            rows="2" maxlength="4000"
+                                            placeholder="Escribir una respuesta…"
+                                            style="resize: none; font-size: 0.9rem;"></textarea>
+                                        <button type="submit" class="btn btn-primary rounded-3 px-3 py-2" title="Enviar respuesta">
+                                            <i class="bi bi-send-fill"></i>
+                                        </button>
                                     </form>
                                 </div>
                             </div>
@@ -4801,6 +4833,7 @@
                                     <tr>
                                         <th class="ps-3">Proyecto</th>
                                         <th>Empresa</th>
+                                        <th>Lote</th>
                                         <th>Estado</th>
                                         <th style="min-width: 130px">Avance</th>
                                         <th>Fin estimado</th>
@@ -4811,7 +4844,7 @@
                                 <tbody id="cuerpoTablaProyectos">
                                     <tr>
                                         <td
-                                            colspan="7"
+                                            colspan="8"
                                             class="text-muted text-center py-3"
                                         >
                                             Cargando...
@@ -5783,6 +5816,7 @@
                                                 >
                                             </div>
                                         </div>
+                                        <div id="bannerLoteCompartido" class="mt-2"></div>
                                     </div>
 
                                     <!-- Sin lote asignado -->
@@ -7989,6 +8023,13 @@ No</textarea
                                     <span id="detLoteExpediente">-</span>
                                 </div>
                             </div>
+
+                            <div id="seccionReservasLote" class="d-none">
+                                <h6 class="text-muted">
+                                    <i class="bi bi-bookmark-check me-1"></i>Solicitudes vinculadas
+                                </h6>
+                                <div id="tablaReservasLote"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -8780,6 +8821,7 @@ No</textarea
                             class="alert alert-danger alerta-modal d-none mb-3"
                         ></div>
                         <form id="formNuevaConversacionMensajeria" novalidate>
+                            <input type="hidden" id="campoIdBorradorActivo" value="">
                             <div class="mb-3">
                                 <label
                                     for="selectorDestinatarioMensajeria"
@@ -8838,10 +8880,15 @@ No</textarea
                         </button>
                         <button
                             type="button"
+                            class="btn btn-outline-secondary"
+                            onclick="ModuloMensajeria.guardarComoBorrador()"
+                        >
+                            <i class="bi bi-file-earmark-text me-1"></i>Guardar borrador
+                        </button>
+                        <button
+                            type="button"
                             class="btn btn-primary"
-                            onclick="
-                                ModuloMensajeria.guardarNuevaConversacion()
-                            "
+                            onclick="ModuloMensajeria.guardarNuevaConversacion()"
                         >
                             <i class="bi bi-send me-1"></i>Enviar
                         </button>

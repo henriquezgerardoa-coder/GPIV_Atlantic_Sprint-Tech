@@ -27,15 +27,21 @@ const ModuloProyectos = (() => {
         const resp = await ApiCliente.obtener('/api/proyectos');
         const tbody = document.getElementById('cuerpoTablaProyectos');
         if (!tbody) return;
-        if (!resp?.ok) { tbody.innerHTML = '<tr><td colspan="7" class="text-danger text-center py-3">Error al cargar proyectos</td></tr>'; return; }
+        if (!resp?.ok) { tbody.innerHTML = '<tr><td colspan="8" class="text-danger text-center py-3">Error al cargar proyectos</td></tr>'; return; }
         const datos = await resp.json();
-        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-3">Sin proyectos registrados</td></tr>'; return; }
+        if (!datos.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-muted text-center py-3">Sin proyectos registrados</td></tr>'; return; }
         _proyectos = datos;
         _renderizarHitosProximos(datos);
         tbody.innerHTML = datos.map(p => {
             const estadoBadge = _badgeEstado(p.estado);
             const avance = p.avanceFisico ?? 0;
             const colorBarra = avance >= 100 ? 'bg-success' : avance >= 50 ? 'bg-primary' : 'bg-warning';
+            const loteHtml = p.loteId
+                ? `<button class="btn btn-link btn-sm p-0 font-monospace fw-semibold text-decoration-none"
+                       title="Ver detalle del lote" onclick="ModuloLotes.verDetalle(${p.loteId})">
+                       <i class="bi bi-map me-1 text-primary"></i>${_esc(p.codigoLote)}
+                   </button>`
+                : '<span class="text-muted small">—</span>';
             return `
             <tr>
                 <td class="ps-3">
@@ -43,6 +49,7 @@ const ModuloProyectos = (() => {
                     ${p.descripcion ? `<small class="text-muted">${_esc(p.descripcion.substring(0, 60))}${p.descripcion.length > 60 ? '…' : ''}</small>` : ''}
                 </td>
                 <td>${_esc(p.nombreEmpresa) || '-'}</td>
+                <td>${loteHtml}</td>
                 <td>${estadoBadge}</td>
                 <td>
                     <div class="progress" style="height:8px">

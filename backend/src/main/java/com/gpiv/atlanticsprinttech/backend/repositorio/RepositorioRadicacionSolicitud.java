@@ -30,10 +30,10 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
         @Param("hasta") LocalDate hasta
     );
 
-    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa LEFT JOIN FETCH r.lote WHERE r.id = :id")
+    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa LEFT JOIN FETCH r.lote l LEFT JOIN FETCH l.empresa le LEFT JOIN FETCH le.rubro WHERE r.id = :id")
     Optional<RadicacionSolicitud> findByIdConEmpresa(@Param("id") Long id);
 
-    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa LEFT JOIN FETCH r.lote WHERE r.id = :id AND r.empresa.id = :empresaId")
+    @Query("SELECT r FROM RadicacionSolicitud r JOIN FETCH r.empresa LEFT JOIN FETCH r.lote l LEFT JOIN FETCH l.empresa le LEFT JOIN FETCH le.rubro WHERE r.id = :id AND r.empresa.id = :empresaId")
     Optional<RadicacionSolicitud> findByIdAndEmpresaIdConEmpresa(@Param("id") Long id, @Param("empresaId") Long empresaId);
 
     boolean existsByEmpresaIdAndEstado(Long empresaId, EstadoRadicacion estado);
@@ -57,4 +57,20 @@ public interface RepositorioRadicacionSolicitud extends JpaRepository<Radicacion
 
     @Query("SELECT COUNT(r) FROM RadicacionSolicitud r WHERE r.estado NOT IN :estados")
     long countActivas(@Param("estados") List<EstadoRadicacion> estados);
+
+    @Query("""
+        SELECT r FROM RadicacionSolicitud r
+        JOIN FETCH r.empresa
+        WHERE r.lote.id = :loteId AND r.id <> :excludeId
+        ORDER BY r.fechaRadicacion ASC
+        """)
+    List<RadicacionSolicitud> findByLoteIdExcluyendo(@Param("loteId") Long loteId, @Param("excludeId") Long excludeId);
+
+    @Query("""
+        SELECT r FROM RadicacionSolicitud r
+        JOIN FETCH r.empresa
+        WHERE r.lote.id = :loteId
+        ORDER BY r.fechaRadicacion ASC
+        """)
+    List<RadicacionSolicitud> findByLoteIdConEmpresa(@Param("loteId") Long loteId);
 }

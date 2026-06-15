@@ -1,7 +1,9 @@
 const ModuloMensajeria = (() => {
     let conversaciones = [];
     let destinatarios = [];
+    let borradores = [];
     let conversacionSeleccionadaId = null;
+    let tabActiva = 'ENTRADA';
     let formularioInicializado = false;
     const CLAVE_MENSAJERIA_LEIDA = 'gpiv.mensajeria.leidas.v1';
 
@@ -11,6 +13,33 @@ const ModuloMensajeria = (() => {
 
     function formatearFecha(valor) {
         return valor ? String(valor).replace('T', ' ').slice(0, 16) : '-';
+    }
+
+    function formatearFechaRelativa(valor) {
+        if (!valor) return '-';
+        const fecha = new Date(String(valor).replace(' ', 'T'));
+        if (isNaN(fecha)) return String(valor).slice(0, 16);
+        const hoy = new Date();
+        const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+        if (fecha.toDateString() === hoy.toDateString())
+            return fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        if (fecha.toDateString() === ayer.toDateString()) return 'Ayer';
+        return fecha.toLocaleDateString('es-AR', {
+            day: '2-digit', month: '2-digit',
+            ...(fecha.getFullYear() !== hoy.getFullYear() ? { year: '2-digit' } : {})
+        });
+    }
+
+    function generarIniciales(nombre) {
+        if (!nombre) return '?';
+        return nombre.trim().split(/\s+/).slice(0, 2).map(p => (p[0] || '').toUpperCase()).join('');
+    }
+
+    function colorAvatar(seed) {
+        const paleta = ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#6f42c1','#20c997','#fd7e14'];
+        let h = 0;
+        for (let i = 0; i < (seed || '').length; i++) h = (h * 31 + (seed || '').charCodeAt(i)) % paleta.length;
+        return paleta[h];
     }
 
     function escaparHtml(valor) {
@@ -95,11 +124,44 @@ const ModuloMensajeria = (() => {
         });
     }
 
+    function actualizarBadgesTabs() {
+        const entrada = conversaciones.filter(c => c.bandeja !== 'SALIDA').length;
+        const salida = conversaciones.filter(c => c.bandeja === 'SALIDA').length;
+        const badgeE = document.getElementById('badgeMensajeriaEntrada');
+        const badgeS = document.getElementById('badgeMensajeriaSalida');
+        const badgeB = document.getElementById('badgeMensajeriaBorradores');
+        if (badgeE) badgeE.textContent = `${entrada}`;
+        if (badgeS) badgeS.textContent = `${salida}`;
+        if (badgeB) badgeB.textContent = `${borradores.length}`;
+    }
+
+    function seleccionarTab(tab) {
+        tabActiva = tab;
+        [['tabMsjEntrada','ENTRADA'], ['tabMsjSalida','SALIDA'], ['tabMsjBorradores','BORRADORES']].forEach(([id, t]) => {
+            document.getElementById(id)?.classList.toggle('msj-tab-activo', t === tab);
+        });
+        const listaConv = document.getElementById('listaConversacionesMensajeria');
+        const listaBorr = document.getElementById('listaBorradoresMensajeria');
+        if (tab === 'BORRADORES') {
+            listaConv?.classList.add('d-none');
+            listaBorr?.classList.remove('d-none');
+            limpiarDetalle();
+            renderizarBorradores();
+        } else {
+            listaConv?.classList.remove('d-none');
+            listaBorr?.classList.add('d-none');
+            renderizarLista();
+            const primera = conversaciones.find(c => tab === 'SALIDA' ? c.bandeja === 'SALIDA' : c.bandeja !== 'SALIDA');
+            if (primera) verConversacion(primera.id, true); else limpiarDetalle();
+        }
+    }
+
     async function actualizarIndicadorNav() {
         const respuesta = await ApiCliente.obtener('/api/mensajeria/conversaciones');
         if (!respuesta?.ok) return;
         conversaciones = await respuesta.json();
         actualizarBadgeNavNoLeidos();
+        actualizarBadgesTabs();
     }
 
     function inicializarFormularioRespuesta() {
@@ -128,14 +190,22 @@ const ModuloMensajeria = (() => {
                 return;
             }
             conversaciones = await respuesta.json();
+            const respBorr = await ApiCliente.obtener('/api/mensajeria/borradores');
+            if (respBorr?.ok) borradores = await respBorr.json();
+            actualizarBadgesTabs();
             renderizarLista();
             actualizarBadgeNavNoLeidos();
+            if (tabActiva === 'BORRADORES') {
+                renderizarBorradores();
+                return;
+            }
             if (conversacionSeleccionadaId && conversaciones.some(c => c.id === conversacionSeleccionadaId)) {
                 await verConversacion(conversacionSeleccionadaId, true);
                 return;
             }
-            if (conversaciones.length > 0) {
-                await verConversacion(conversaciones[0].id, true);
+            const primera = conversaciones.find(c => tabActiva === 'SALIDA' ? c.bandeja === 'SALIDA' : c.bandeja !== 'SALIDA');
+            if (primera) {
+                await verConversacion(primera.id, true);
                 return;
             }
             limpiarDetalle();
@@ -146,43 +216,47 @@ const ModuloMensajeria = (() => {
 
     function renderizarLista() {
         const lista = document.getElementById('listaConversacionesMensajeria');
-        const badge = document.getElementById('badgeTotalConversacionesMensajeria');
-        if (!lista || !badge) return;
-        badge.textContent = `${conversaciones.length}`;
-        if (conversaciones.length === 0) {
-            lista.innerHTML = '<div class="list-group-item text-muted small">Sin conversaciones</div>';
+        if (!lista) return;
+        const filtradas = tabActiva === 'SALIDA'
+            ? conversaciones.filter(c => c.bandeja === 'SALIDA')
+            : conversaciones.filter(c => c.bandeja !== 'SALIDA');
+        if (filtradas.length === 0) {
+            lista.innerHTML = '<div class="px-3 py-4 text-center text-muted small">Sin conversaciones</div>';
             actualizarBadgeNavNoLeidos();
             return;
         }
-        const sesionMsj = Autenticacion.obtenerSesion();
-        const miNombre = sesionMsj?.nombreUsuario;
-        lista.innerHTML = conversaciones.map(conv => {
-            const activo = conv.id === conversacionSeleccionadaId ? ' active' : '';
-            const nueva = conv.id !== conversacionSeleccionadaId && esNuevaConv(conv);
+        const sesion = Autenticacion.obtenerSesion();
+        const miNombre = sesion?.nombreUsuario;
+        lista.innerHTML = filtradas.map(conv => {
+            const activo = conv.id === conversacionSeleccionadaId;
+            const nueva = !activo && esNuevaConv(conv);
             const soySolicitante = conv.usuarioIniciadorNombre === miNombre
                 || (esEmpresaExclusivo() && conv.empresaNombre && !conv.usuarioIniciadorId);
-            const destinatario = conv.consultaPublica
-                ? `Consulta pública: ${escaparHtml(conv.contactoNombreEmpresa || 'Sin nombre')}`
+            const otroNombre = conv.consultaPublica
+                ? (conv.contactoNombreEmpresa || 'Consulta externa')
                 : soySolicitante
-                    ? `Para: ${escaparHtml(conv.usuarioResponsableNombreCompleto || conv.usuarioResponsableNombre || '-')}`
-                    : `De: ${escaparHtml(conv.usuarioIniciadorNombreCompleto || conv.usuarioIniciadorNombre || conv.empresaNombre || '-')}`;
-            const ultimoMensaje = conv.ultimoMensaje
-                ? escaparHtml(conv.ultimoMensaje.length > 95 ? conv.ultimoMensaje.slice(0, 95) + '…' : conv.ultimoMensaje)
-                : 'Sin mensajes';
+                    ? (conv.usuarioResponsableNombreCompleto || conv.usuarioResponsableNombre || '-')
+                    : (conv.usuarioIniciadorNombreCompleto || conv.usuarioIniciadorNombre || conv.empresaNombre || '-');
+            const etiqueta = conv.consultaPublica
+                ? `<span class="badge bg-warning text-dark" style="font-size:.65rem;">Consulta pública</span>`
+                : `<span style="font-size:.75rem;">${soySolicitante ? 'Para' : 'De'}: ${escaparHtml(otroNombre)}</span>`;
+            const ultimoMsg = conv.ultimoMensaje
+                ? escaparHtml(conv.ultimoMensaje.length > 55 ? conv.ultimoMensaje.slice(0, 55) + '…' : conv.ultimoMensaje)
+                : '<em>Sin mensajes</em>';
+            const color = colorAvatar(otroNombre);
+            const clases = ['msj-conv-item', activo ? 'msj-activo' : '', nueva ? 'msj-no-leida' : ''].filter(Boolean).join(' ');
             return `
-                <button type="button" class="list-group-item list-group-item-action position-relative${activo}${nueva ? ' border-start border-4 border-primary bg-primary bg-opacity-10' : ''}" onclick="ModuloMensajeria.seleccionarConversacion(${conv.id})">
-                    ${nueva ? '<span class="badge bg-primary position-absolute top-0 end-0 mt-2 me-2">Nuevo</span>' : ''}
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div class="flex-grow-1 text-start">
-                            <div class="fw-semibold">${escaparHtml(conv.asunto || 'Sin asunto')}</div>
-                            <div class="small text-muted">${destinatario}</div>
-                            <div class="small text-muted mt-1">${ultimoMensaje}</div>
+                <button type="button" class="${clases}" onclick="ModuloMensajeria.seleccionarConversacion(${conv.id})">
+                    <div class="msj-avatar" style="background:${color};">${escaparHtml(generarIniciales(otroNombre))}</div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-baseline gap-1">
+                            <span class="msj-asunto text-truncate" style="font-size:.85rem;">${escaparHtml(conv.asunto || 'Sin asunto')}</span>
+                            <span class="text-muted flex-shrink-0" style="font-size:.68rem;">${formatearFechaRelativa(conv.fechaUltimaActualizacion)}</span>
                         </div>
-                        <div class="text-end flex-shrink-0 small text-muted">
-                            <div>${formatearFecha(conv.fechaUltimaActualizacion)}</div>
-                            <div class="badge bg-light text-dark mt-1">${conv.totalMensajes ?? 0}</div>
-                        </div>
+                        <div class="text-muted text-truncate mt-1">${etiqueta}</div>
+                        <div class="text-muted text-truncate" style="font-size:.75rem;">${ultimoMsg}</div>
                     </div>
+                    ${nueva ? '<span class="position-absolute top-0 end-0 mt-2 me-2 badge rounded-pill bg-primary" style="font-size:.6rem;">Nuevo</span>' : ''}
                 </button>`;
         }).join('');
         actualizarBadgeNavNoLeidos();
@@ -211,44 +285,74 @@ const ModuloMensajeria = (() => {
         if (!panelVacio || !panelDetalle) return;
 
         panelVacio.classList.add('d-none');
+        panelVacio.classList.remove('flex-grow-1');
         panelDetalle.classList.remove('d-none');
 
-        document.getElementById('tituloConversacionMensajeria').textContent = conversacion?.asunto || '-';
-        const sesionDet = Autenticacion.obtenerSesion();
-        const miNombreDet = sesionDet?.nombreUsuario;
-        const soySolicitanteDet = conversacion?.usuarioIniciadorNombre === miNombreDet
+        const sesion = Autenticacion.obtenerSesion();
+        const miNombre = sesion?.nombreUsuario;
+        const soySolicitante = conversacion?.usuarioIniciadorNombre === miNombre
             || (esEmpresaExclusivo() && conversacion?.empresaNombre && !conversacion?.usuarioIniciadorId);
-        const otroParticipante = soySolicitanteDet
-            ? (conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-')
-            : (conversacion?.usuarioIniciadorNombreCompleto || conversacion?.usuarioIniciadorNombre || conversacion?.empresaNombre || '-');
-        document.getElementById('subtituloConversacionMensajeria').textContent = conversacion?.consultaPublica
-            ? `Consulta pública de: ${conversacion?.contactoNombreEmpresa || '-'} | Correo: ${conversacion?.contactoCorreoElectronico || '-'} | Teléfono: ${conversacion?.contactoTelefono || '-'} | Responsable: ${conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-'} | Última actualización: ${formatearFecha(conversacion?.fechaUltimaActualizacion)}`
-            : `Con: ${otroParticipante} | Última actualización: ${formatearFecha(conversacion?.fechaUltimaActualizacion)}`;
+        const otroParticipante = conversacion?.consultaPublica
+            ? (conversacion?.contactoNombreEmpresa || 'Consulta externa')
+            : soySolicitante
+                ? (conversacion?.usuarioResponsableNombreCompleto || conversacion?.usuarioResponsableNombre || '-')
+                : (conversacion?.usuarioIniciadorNombreCompleto || conversacion?.usuarioIniciadorNombre || conversacion?.empresaNombre || '-');
+
+        document.getElementById('tituloConversacionMensajeria').textContent = conversacion?.asunto || '-';
+
+        const subtitulo = document.getElementById('subtituloConversacionMensajeria');
+        if (conversacion?.consultaPublica) {
+            subtitulo.innerHTML = `
+                <span class="badge bg-warning text-dark me-2">Consulta pública</span>
+                <span>${escaparHtml(conversacion.contactoNombreEmpresa || '-')}</span>
+                ${conversacion.contactoCorreoElectronico ? `<span class="ms-2"><i class="bi bi-envelope me-1"></i>${escaparHtml(conversacion.contactoCorreoElectronico)}</span>` : ''}
+                ${conversacion.contactoTelefono ? `<span class="ms-2"><i class="bi bi-telephone me-1"></i>${escaparHtml(conversacion.contactoTelefono)}</span>` : ''}
+                <span class="ms-2 text-muted">Responsable: ${escaparHtml(conversacion.usuarioResponsableNombreCompleto || conversacion.usuarioResponsableNombre || '-')}</span>`;
+        } else {
+            const colorOtro = colorAvatar(otroParticipante);
+            subtitulo.innerHTML = `
+                <span class="d-inline-flex align-items-center gap-2">
+                    <span class="msj-avatar-sm" style="background:${colorOtro};">${escaparHtml(generarIniciales(otroParticipante))}</span>
+                    <span>${soySolicitante ? 'Para' : 'De'}: <strong>${escaparHtml(otroParticipante)}</strong></span>
+                    <span class="text-muted ms-2" style="font-size:.75rem;">${formatearFechaRelativa(conversacion?.fechaUltimaActualizacion)}</span>
+                </span>`;
+        }
 
         const contenedor = document.getElementById('contenedorMensajesMensajeria');
         const mensajes = conversacion?.mensajes || [];
-        const sesion = Autenticacion.obtenerSesion();
         if (!mensajes.length) {
-            contenedor.innerHTML = '<div class="text-muted small text-center py-4">Sin mensajes aún.</div>';
+            contenedor.innerHTML = '<div class="text-muted small text-center py-5">Sin mensajes aún.</div>';
         } else {
             contenedor.innerHTML = mensajes.map(msg => {
-                const esMio = !msg.emisorExterno && sesion?.nombreUsuario && msg.usuarioEmisorNombre === sesion.nombreUsuario;
-                const alineacion = esMio ? 'justify-content-end' : 'justify-content-start';
-                const color = esMio ? 'bg-primary text-white' : msg.emisorExterno ? 'bg-warning-subtle border border-warning' : 'bg-white border';
-                const nombre = esMio
-                    ? 'Yo'
-                    : msg.emisorExterno
-                        ? `${escaparHtml(msg.emisorExternoNombre || 'Consulta externa')}`
-                        : `${escaparHtml(msg.usuarioEmisorNombreCompleto || msg.usuarioEmisorNombre || '-')}`;
-                const contenido = escaparHtml(msg.contenido || '').replace(/\n/g, '<br>');
-                return `
-                    <div class="d-flex ${alineacion} mb-2">
-                        <div class="rounded p-2 ${color}" style="max-width: 85%; min-width: 180px;">
-                            <div class="small fw-semibold mb-1">${nombre}</div>
-                            <div>${contenido}</div>
-                            <div class="small mt-1 ${esMio ? 'text-white-50' : 'text-muted'}">${formatearFecha(msg.fechaEnvio)}</div>
-                        </div>
-                    </div>`;
+                const esMio = !msg.emisorExterno && miNombre && msg.usuarioEmisorNombre === miNombre;
+                const nombreMsg = esMio ? 'Yo'
+                    : msg.emisorExterno ? (msg.emisorExternoNombre || 'Externo')
+                    : (msg.usuarioEmisorNombreCompleto || msg.usuarioEmisorNombre || '-');
+                const iniciales = generarIniciales(esMio ? (sesion?.nombreCompleto || miNombre || 'Yo') : nombreMsg);
+                const colorMsg = esMio ? '#0d6efd' : colorAvatar(nombreMsg);
+                const contenidoHtml = escaparHtml(msg.contenido || '').replace(/\n/g, '<br>');
+                const horaMsg = `<span style="font-size:.68rem;" class="text-muted">${formatearFechaRelativa(msg.fechaEnvio)}</span>`;
+                if (esMio) {
+                    return `
+                        <div class="d-flex justify-content-end align-items-end gap-2 mb-3">
+                            <div style="max-width:68%;">
+                                <div class="msj-burbuja-salida">${contenidoHtml}</div>
+                                <div class="text-end mt-1">${horaMsg}</div>
+                            </div>
+                            <div class="msj-avatar-sm" style="background:${colorMsg};">${escaparHtml(iniciales)}</div>
+                        </div>`;
+                } else {
+                    const clsBurbuja = msg.emisorExterno ? 'msj-burbuja-externo' : 'msj-burbuja-entrada';
+                    return `
+                        <div class="d-flex justify-content-start align-items-end gap-2 mb-3">
+                            <div class="msj-avatar-sm" style="background:${colorMsg};">${escaparHtml(iniciales)}</div>
+                            <div style="max-width:68%;">
+                                <div class="mb-1" style="font-size:.72rem;color:#6c757d;font-weight:600;">${escaparHtml(nombreMsg)}</div>
+                                <div class="${clsBurbuja}">${contenidoHtml}</div>
+                                <div class="mt-1">${horaMsg}</div>
+                            </div>
+                        </div>`;
+                }
             }).join('');
         }
         contenedor.scrollTop = contenedor.scrollHeight;
@@ -259,12 +363,15 @@ const ModuloMensajeria = (() => {
     }
 
     function limpiarDetalle() {
+        conversacionSeleccionadaId = null;
         const panelVacio = document.getElementById('panelSinConversacionMensajeria');
         const panelDetalle = document.getElementById('detalleConversacionMensajeria');
         panelDetalle?.classList.add('d-none');
-        panelVacio?.classList.remove('d-none');
-        document.getElementById('tituloConversacionMensajeria').textContent = '-';
-        document.getElementById('subtituloConversacionMensajeria').textContent = '-';
+        if (panelVacio) { panelVacio.classList.remove('d-none'); panelVacio.classList.add('flex-grow-1'); }
+        const titulo = document.getElementById('tituloConversacionMensajeria');
+        const subtitulo = document.getElementById('subtituloConversacionMensajeria');
+        if (titulo) titulo.textContent = '-';
+        if (subtitulo) subtitulo.innerHTML = '';
         const contenedor = document.getElementById('contenedorMensajesMensajeria');
         if (contenedor) contenedor.innerHTML = '';
     }
@@ -293,6 +400,8 @@ const ModuloMensajeria = (() => {
         ocultarAlertaModalMensajeria();
         const formulario = document.getElementById('formNuevaConversacionMensajeria');
         formulario?.reset();
+        const campoId = document.getElementById('campoIdBorradorActivo');
+        if (campoId) campoId.value = '';
         await cargarDestinatarios();
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevaConversacionMensajeria')).show();
     }
@@ -311,9 +420,11 @@ const ModuloMensajeria = (() => {
             mostrarAlertaModalMensajeria('Complete asunto y mensaje.');
             return;
         }
+        const borradorActivoId = document.getElementById('campoIdBorradorActivo')?.value
+            ? parseInt(document.getElementById('campoIdBorradorActivo').value) : null;
         try {
             const respuesta = await ApiCliente.crear('/api/mensajeria/conversaciones', {
-                usuarioResponsableId: usuarioResponsableId ? parseInt(usuarioResponsableId) : null,
+                usuarioResponsableId: destinatarioId,
                 asunto,
                 mensaje
             });
@@ -322,13 +433,128 @@ const ModuloMensajeria = (() => {
                 mostrarAlertaModalMensajeria(error?.mensaje || error?.message || `No se pudo crear la conversación (HTTP ${respuesta?.status || 'N/A'}).`);
                 return;
             }
+            if (borradorActivoId) {
+                await ApiCliente.eliminar(`/api/mensajeria/borradores/${borradorActivoId}`);
+            }
             const creada = await respuesta.json();
             bootstrap.Modal.getInstance(document.getElementById('modalNuevaConversacionMensajeria'))?.hide();
+            tabActiva = 'SALIDA';
             conversacionSeleccionadaId = creada.id;
             await cargar();
         } catch (error) {
             mostrarAlertaModalMensajeria(`Error de conexión al crear la conversación: ${error?.message || 'desconocido'}`);
         }
+    }
+
+    async function guardarComoBorrador() {
+        ocultarAlertaModalMensajeria();
+        const usuarioResponsableId = document.getElementById('selectorDestinatarioMensajeria')?.value;
+        const asunto = document.getElementById('campoAsuntoMensajeria')?.value.trim();
+        const contenido = document.getElementById('campoMensajeInicialMensajeria')?.value.trim();
+        const borradorActivoId = document.getElementById('campoIdBorradorActivo')?.value
+            ? parseInt(document.getElementById('campoIdBorradorActivo').value) : null;
+        const url = borradorActivoId
+            ? `/api/mensajeria/borradores/${borradorActivoId}`
+            : '/api/mensajeria/borradores';
+        const metodo = borradorActivoId ? ApiCliente.actualizar : ApiCliente.crear;
+        try {
+            const respuesta = await metodo(url, {
+                destinatarioId: usuarioResponsableId ? parseInt(usuarioResponsableId) : null,
+                asunto: asunto || null,
+                contenido: contenido || null
+            });
+            if (!respuesta?.ok) {
+                const error = await respuesta?.json().catch(() => ({}));
+                mostrarAlertaModalMensajeria(error?.mensaje || error?.message || 'No se pudo guardar el borrador.');
+                return;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('modalNuevaConversacionMensajeria'))?.hide();
+            tabActiva = 'BORRADORES';
+            await cargar();
+        } catch (error) {
+            mostrarAlertaModalMensajeria(`Error al guardar borrador: ${error?.message || 'desconocido'}`);
+        }
+    }
+
+    function renderizarBorradores() {
+        const lista = document.getElementById('listaBorradoresMensajeria');
+        if (!lista) return;
+        if (borradores.length === 0) {
+            lista.innerHTML = '<div class="px-3 py-4 text-center text-muted small">Sin borradores guardados</div>';
+            return;
+        }
+        lista.innerHTML = borradores.map(b => {
+            const color = colorAvatar(b.destinatarioNombre || '?');
+            const iniciales = generarIniciales(b.destinatarioNombre || '?');
+            return `
+                <div class="msj-conv-item" style="cursor:default;">
+                    <div class="msj-avatar" style="background:${color};opacity:.55;">${escaparHtml(iniciales)}</div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-baseline gap-1">
+                            <span class="msj-asunto text-truncate text-muted" style="font-size:.85rem;">${escaparHtml(b.asunto || '(Sin asunto)')}</span>
+                            <span class="text-muted flex-shrink-0" style="font-size:.68rem;">${formatearFechaRelativa(b.fechaUltimaModificacion)}</span>
+                        </div>
+                        <div class="text-muted text-truncate" style="font-size:.75rem;">
+                            Para: ${b.destinatarioNombre ? escaparHtml(b.destinatarioNombre) : '<em>sin destinatario</em>'}
+                        </div>
+                        <div class="text-muted text-truncate" style="font-size:.73rem;">${escaparHtml((b.contenido || '').slice(0, 55))}${(b.contenido || '').length > 55 ? '…' : ''}</div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:.75rem;"
+                                onclick="ModuloMensajeria.editarBorrador(${b.id})">
+                                <i class="bi bi-pencil me-1"></i>Editar
+                            </button>
+                            <button class="btn btn-sm btn-primary py-0 px-2" style="font-size:.75rem;"
+                                onclick="ModuloMensajeria.enviarBorrador(${b.id})">
+                                <i class="bi bi-send me-1"></i>Enviar
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger py-0 px-2 ms-auto" style="font-size:.75rem;"
+                                onclick="ModuloMensajeria.eliminarBorrador(${b.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    async function editarBorrador(id) {
+        const borrador = borradores.find(b => b.id === id);
+        if (!borrador) return;
+        await cargarDestinatarios();
+        const selector = document.getElementById('selectorDestinatarioMensajeria');
+        const asuntoEl = document.getElementById('campoAsuntoMensajeria');
+        const mensajeEl = document.getElementById('campoMensajeInicialMensajeria');
+        if (selector && borrador.destinatarioId) selector.value = borrador.destinatarioId;
+        if (asuntoEl) asuntoEl.value = borrador.asunto || '';
+        if (mensajeEl) mensajeEl.value = borrador.contenido || '';
+        document.getElementById('campoIdBorradorActivo')?.setAttribute('value', id);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevaConversacionMensajeria')).show();
+    }
+
+    async function enviarBorrador(id) {
+        if (!confirm('¿Enviar este borrador como nueva conversación?')) return;
+        const respuesta = await ApiCliente.crear(`/api/mensajeria/borradores/${id}/enviar`, {});
+        if (!respuesta?.ok) {
+            const err = await respuesta?.json().catch(() => ({}));
+            mostrarAlertaSeccion(err?.mensaje || err?.message || 'No se pudo enviar el borrador.');
+            return;
+        }
+        const conv = await respuesta.json();
+        tabActiva = 'SALIDA';
+        conversacionSeleccionadaId = conv.id;
+        await cargar();
+    }
+
+    async function eliminarBorrador(id) {
+        if (!confirm('¿Eliminar este borrador?')) return;
+        const respuesta = await ApiCliente.eliminar(`/api/mensajeria/borradores/${id}`);
+        if (!respuesta?.ok) {
+            mostrarAlertaSeccion('No se pudo eliminar el borrador.');
+            return;
+        }
+        borradores = borradores.filter(b => b.id !== id);
+        actualizarBadgesTabs();
+        renderizarBorradores();
     }
 
     async function enviarRespuesta() {
@@ -360,7 +586,12 @@ const ModuloMensajeria = (() => {
         cargar,
         abrirNuevaConversacion,
         guardarNuevaConversacion,
+        guardarComoBorrador,
         seleccionarConversacion,
+        seleccionarTab,
+        editarBorrador,
+        enviarBorrador,
+        eliminarBorrador,
         actualizarIndicadorNav
     };
 })();

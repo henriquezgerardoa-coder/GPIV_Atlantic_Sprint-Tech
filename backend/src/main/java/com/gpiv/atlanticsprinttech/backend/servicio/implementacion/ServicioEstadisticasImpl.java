@@ -266,6 +266,7 @@ public class ServicioEstadisticasImpl implements ServicioEstadisticas {
                     l.getEmpresa().getId(),
                     l.getEmpresa().getNombre(),
                     l.getEmpresa().getCuit(),
+                    l.getId(),
                     l.getCodigo(),
                     _consumoTexto(l, clave, jsonPorEmpresa)
                 ))

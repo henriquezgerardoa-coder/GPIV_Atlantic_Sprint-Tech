@@ -2,12 +2,15 @@ package com.gpiv.atlanticsprinttech.backend.servicio.implementacion;
 
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioEmpresa;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioLote;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioAuditLog;
 import com.gpiv.atlanticsprinttech.backend.servicio.ServicioLote;
 import com.gpiv.atlanticsprinttech.backend.servicio.seguridad.ServicioContextoUsuario;
 import com.gpiv.atlanticsprinttech.backend.util.UtilRed;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaReservaLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Empresa;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
+import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
 import java.util.List;
 import org.springframework.cache.annotation.CacheEvict;
@@ -22,17 +25,20 @@ public class ServicioLoteImpl implements ServicioLote {
 
     private final RepositorioLote repositorioLote;
     private final RepositorioEmpresa repositorioEmpresa;
+    private final RepositorioRadicacionSolicitud repositorioRadicacion;
     private final ServicioContextoUsuario servicioContextoUsuario;
     private final ServicioAuditLog servicioAuditLog;
 
     public ServicioLoteImpl(
         RepositorioLote repositorioLote,
         RepositorioEmpresa repositorioEmpresa,
+        RepositorioRadicacionSolicitud repositorioRadicacion,
         ServicioContextoUsuario servicioContextoUsuario,
         ServicioAuditLog servicioAuditLog
     ) {
         this.repositorioLote = repositorioLote;
         this.repositorioEmpresa = repositorioEmpresa;
+        this.repositorioRadicacion = repositorioRadicacion;
         this.servicioContextoUsuario = servicioContextoUsuario;
         this.servicioAuditLog = servicioAuditLog;
     }
@@ -154,6 +160,21 @@ public class ServicioLoteImpl implements ServicioLote {
         Lote lote = obtenerPorId(id, identificadorIngreso);
         lote.asignarColor(color);
         return repositorioLote.findByIdConEmpresa(repositorioLote.save(lote).getId()).orElse(lote);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RespuestaReservaLote> listarReservas(Long loteId) {
+        return repositorioRadicacion.findByLoteIdConEmpresa(loteId).stream()
+            .map(r -> new RespuestaReservaLote(
+                r.getId(),
+                r.getNumeroRadicado(),
+                r.getEmpresa().getId(),
+                r.getEmpresa().getNombre(),
+                r.getEstado().name(),
+                r.getFechaRadicacion() != null ? r.getFechaRadicacion().toString() : null
+            ))
+            .toList();
     }
 
     private Empresa obtenerEmpresa(Long empresaId) {

@@ -3,6 +3,7 @@ package com.gpiv.atlanticsprinttech.commons.comunicacion.dto;
 import com.gpiv.atlanticsprinttech.entities.dominio.EstadoRadicacion;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record RespuestaRadicacion(
     Long id,
@@ -33,6 +34,7 @@ public record RespuestaRadicacion(
     String numeroResolucion,
     String resueltoPor,
     Long proyectoId,
-    String proyectoEstado
+    String proyectoEstado,
+    List<RespuestaEmpresaEnLoteCompartido> otrasEmpresasEnLote
 ) {
 }

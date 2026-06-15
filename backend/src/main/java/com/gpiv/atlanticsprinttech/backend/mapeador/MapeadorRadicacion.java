@@ -3,7 +3,9 @@ package com.gpiv.atlanticsprinttech.backend.mapeador;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioProyectoProductivo;
+import com.gpiv.atlanticsprinttech.backend.repositorio.RepositorioRadicacionSolicitud;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaDocumentoRadicacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaEmpresaEnLoteCompartido;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaHistorialRadicacion;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaRadicacion;
@@ -23,29 +25,45 @@ public class MapeadorRadicacion {
 
     private final ObjectMapper objectMapper;
     private final RepositorioProyectoProductivo repositorioProyecto;
+    private final RepositorioRadicacionSolicitud repositorioRadicacion;
 
-    public MapeadorRadicacion(ObjectMapper objectMapper, RepositorioProyectoProductivo repositorioProyecto) {
+    public MapeadorRadicacion(ObjectMapper objectMapper, RepositorioProyectoProductivo repositorioProyecto,
+                              RepositorioRadicacionSolicitud repositorioRadicacion) {
         this.objectMapper = objectMapper;
         this.repositorioProyecto = repositorioProyecto;
+        this.repositorioRadicacion = repositorioRadicacion;
     }
 
-    /** Mapeo para una lista: resuelve todos los proyectos en una sola consulta (evita N+1). */
+    /** Mapeo para una lista: resuelve proyectos en una sola consulta; sin compartidos (evita N+1). */
     public List<RespuestaRadicacion> toRespuestas(List<RadicacionSolicitud> radicaciones) {
         List<Long> ids = radicaciones.stream().map(RadicacionSolicitud::getId).toList();
         Map<Long, ProyectoProductivo> proyectos = repositorioProyecto.findBySolicitudOrigenIdIn(ids).stream()
             .collect(Collectors.toMap(p -> p.getSolicitudOrigen().getId(), Function.identity()));
         return radicaciones.stream()
-            .map(r -> toRespuesta(r, proyectos.get(r.getId())))
+            .map(r -> toRespuesta(r, proyectos.get(r.getId()), List.of()))
             .toList();
     }
 
-    /** Mapeo para un único registro: consulta el proyecto individualmente. */
+    /** Mapeo para un único registro: consulta proyecto y coradicaciones del mismo lote. */
     public RespuestaRadicacion toRespuesta(RadicacionSolicitud radicacion) {
         ProyectoProductivo proyecto = repositorioProyecto.findBySolicitudOrigenId(radicacion.getId()).orElse(null);
-        return toRespuesta(radicacion, proyecto);
+        Long loteId = radicacion.obtenerIdLote();
+        List<RespuestaEmpresaEnLoteCompartido> compartidos = loteId != null
+            ? repositorioRadicacion.findByLoteIdExcluyendo(loteId, radicacion.getId()).stream()
+                .map(r -> new RespuestaEmpresaEnLoteCompartido(
+                    r.getId(),
+                    r.getNumeroRadicado(),
+                    r.getEmpresa().getId(),
+                    r.getEmpresa().getNombre(),
+                    r.getEstado().name()
+                ))
+                .toList()
+            : List.of();
+        return toRespuesta(radicacion, proyecto, compartidos);
     }
 
-    public RespuestaRadicacion toRespuesta(RadicacionSolicitud radicacion, ProyectoProductivo proyecto) {
+    public RespuestaRadicacion toRespuesta(RadicacionSolicitud radicacion, ProyectoProductivo proyecto,
+                                           List<RespuestaEmpresaEnLoteCompartido> otrasEmpresas) {
         String json = radicacion.getRelevamientoPedidoLotesJson();
         return new RespuestaRadicacion(
             radicacion.getId(),
@@ -76,7 +94,8 @@ public class MapeadorRadicacion {
             radicacion.getNumeroResolucion(),
             radicacion.getResueltoPor(),
             proyecto != null ? proyecto.getId() : null,
-            proyecto != null ? proyecto.getEstado().name() : null
+            proyecto != null ? proyecto.getEstado().name() : null,
+            otrasEmpresas
         );
     }
 

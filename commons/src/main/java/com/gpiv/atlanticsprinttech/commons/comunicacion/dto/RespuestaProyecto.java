@@ -13,6 +13,8 @@ public record RespuestaProyecto(
     BigDecimal montoInversion,
     String fechaCreacion,
     Long radicacionId,
+    Long loteId,
+    String codigoLote,
     String nombreEmpresa,
     String responsableSeguimiento,
     double avanceFisico,

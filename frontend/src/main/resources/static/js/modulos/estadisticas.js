@@ -131,7 +131,19 @@ const ModuloEstadisticas = (() => {
                 <td class="small fw-semibold ps-3">${e.nombreEmpresa || '-'}</td>
                 <td class="small text-muted">${e.cuitEmpresa || '-'}</td>
                 <td class="small">${e.codigoLote || '-'}</td>
-                <td class="small text-end pe-3">${e.consumo || '—'}</td>
+                <td class="small text-end">${e.consumo || '—'}</td>
+                <td class="text-center pe-2">
+                    <div class="d-flex gap-1 justify-content-center">
+                        <button class="btn btn-outline-primary btn-sm py-0 px-1" title="Ver empresa"
+                            onclick="ModuloEmpresas.verDetalleAdmin(${e.empresaId})">
+                            <i class="bi bi-building"></i>
+                        </button>
+                        ${e.loteId ? `<button class="btn btn-outline-secondary btn-sm py-0 px-1" title="Ver lote"
+                            onclick="ModuloLotes.verDetalle(${e.loteId})">
+                            <i class="bi bi-map"></i>
+                        </button>` : ''}
+                    </div>
+                </td>
             </tr>`).join('');
             const tablaHtml = total > 0
                 ? `<div class="table-responsive">
@@ -139,7 +151,8 @@ const ModuloEstadisticas = (() => {
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-3">Empresa</th><th>CUIT</th>
-                                <th>Lote</th><th class="text-end pe-3">Consumo estimado</th>
+                                <th>Lote</th><th class="text-end">Consumo estimado</th>
+                                <th class="text-center pe-2">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>${filas}</tbody>
