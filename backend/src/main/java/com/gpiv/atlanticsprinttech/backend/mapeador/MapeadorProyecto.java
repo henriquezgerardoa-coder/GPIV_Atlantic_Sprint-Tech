@@ -3,6 +3,7 @@ package com.gpiv.atlanticsprinttech.backend.mapeador;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaHitoObra;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaProyecto;
 import com.gpiv.atlanticsprinttech.entities.dominio.HitoObra;
+import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import com.gpiv.atlanticsprinttech.entities.dominio.ProyectoProductivo;
 import com.gpiv.atlanticsprinttech.entities.dominio.RadicacionSolicitud;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ public class MapeadorProyecto {
 
     public RespuestaProyecto aRespuesta(ProyectoProductivo proyecto) {
         RadicacionSolicitud solicitud = proyecto.getSolicitudOrigen();
+        Lote lote = solicitud != null ? solicitud.getLote() : null;
         return new RespuestaProyecto(
             proyecto.getId(),
             proyecto.getNombre(),
@@ -25,6 +27,8 @@ public class MapeadorProyecto {
             proyecto.getMontoInversion(),
             proyecto.getFechaCreacion() != null ? proyecto.getFechaCreacion().toString() : null,
             solicitud != null ? solicitud.getId() : null,
+            lote != null ? lote.getId() : null,
+            lote != null ? lote.getCodigo() : null,
             solicitud != null ? solicitud.getEmpresa().getNombre() : null,
             proyecto.getResponsableSeguimiento() != null
                 ? proyecto.getResponsableSeguimiento().getNombreCompleto()

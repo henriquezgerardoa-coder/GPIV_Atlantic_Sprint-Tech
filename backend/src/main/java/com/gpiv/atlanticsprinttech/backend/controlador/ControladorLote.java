@@ -6,6 +6,7 @@ import com.gpiv.atlanticsprinttech.backend.servicio.ServicioLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaAlertaVencimiento;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaHistorialEtapa;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaLote;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaReservaLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudLote;
 import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.SolicitudTransicionEtapa;
 import jakarta.validation.Valid;
@@ -55,6 +56,11 @@ public class ControladorLote {
     @GetMapping("/{id}")
     public RespuestaLote obtenerPorId(@PathVariable Long id, Authentication autenticacion) {
         return mapeador.aRespuesta(servicioLote.obtenerPorId(id, autenticacion.getName()));
+    }
+
+    @GetMapping("/{id}/radicaciones")
+    public List<RespuestaReservaLote> listarReservas(@PathVariable Long id) {
+        return servicioLote.listarReservas(id);
     }
 
     @PostMapping

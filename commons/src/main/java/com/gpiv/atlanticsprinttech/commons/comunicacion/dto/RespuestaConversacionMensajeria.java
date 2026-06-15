@@ -22,7 +22,8 @@ public record RespuestaConversacionMensajeria(
     String fechaUltimaActualizacion,
     String ultimoMensaje,
     Integer totalMensajes,
-    List<RespuestaMensajeMensajeria> mensajes
+    List<RespuestaMensajeMensajeria> mensajes,
+    String bandeja
 ) {
 }
 

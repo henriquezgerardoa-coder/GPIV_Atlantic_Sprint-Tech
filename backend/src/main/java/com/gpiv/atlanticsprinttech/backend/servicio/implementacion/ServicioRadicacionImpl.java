@@ -32,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -201,6 +202,7 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
     }
 
     @Override
+    @CacheEvict(value = "lotes", allEntries = true)
     public RadicacionSolicitud cambiarEstado(
         String identificadorIngreso,
         Long id,
@@ -233,7 +235,17 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         }
 
         Lote lote = radicacion.getLote();
-        if (lote != null) repositorioLote.save(lote);
+        if (lote != null) {
+            if (estado == EstadoRadicacion.APROBADA) {
+                lote.ocuparConEmpresa(radicacion.getEmpresa(), radicacion.getNumeroRadicado());
+            } else if ((estado == EstadoRadicacion.CANCELADA
+                    || estado == EstadoRadicacion.RECHAZADA
+                    || estado == EstadoRadicacion.DESADJUDICACION)
+                    && lote.isOcupado()) {
+                lote.liberarYDisponibilizar();
+            }
+            repositorioLote.save(lote);
+        }
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
 
         repositorioRadicacionHistorial.save(
@@ -354,9 +366,10 @@ public class ServicioRadicacionImpl implements ServicioRadicacion {
         radicacion.validarPermiteAsignarLote();
         Lote lote = repositorioLote.findByIdConEmpresa(loteId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lote no encontrado"));
+        if (lote.isOcupado()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El lote ya está adjudicado definitivamente y no puede asignarse");
+        }
         String codigoAnterior = radicacion.obtenerCodigoLote();
-        lote.ocuparConEmpresa(radicacion.getEmpresa(), radicacion.getNumeroRadicado());
-        repositorioLote.save(lote);
         radicacion.asignarLote(lote);
         RadicacionSolicitud actualizada = repositorioRadicacionSolicitud.save(radicacion);
         repositorioRadicacionHistorial.save(RadicacionHistorial.crear(

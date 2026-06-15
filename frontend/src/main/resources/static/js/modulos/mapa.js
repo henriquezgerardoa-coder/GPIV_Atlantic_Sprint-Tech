@@ -9,7 +9,7 @@ const ModuloMapa = (() => {
     async function cargar() {
         _soloDisponibles = Autenticacion.tieneAcceso(['EMPRESA'])
             && !Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
-        const puedeEditar = !_soloDisponibles && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'SECRETARIO']);
+        const puedeEditar = !_soloDisponibles && Autenticacion.tieneAcceso(['ADMINISTRADOR', 'DIRECTIVO', 'SECRETARIO']);
 
         if (_mapa) {
             _mapa.invalidateSize();
@@ -231,6 +231,10 @@ const ModuloMapa = (() => {
                 </button>`;
             }
 
+            if (!_soloDisponibles) {
+                html += `<div id="reservasMapa_${lote.id}" class="mt-1"></div>`;
+            }
+
             html += `<button class="btn btn-sm btn-outline-secondary mt-1 w-100"
                              onclick="ModuloCicloLote.abrirTimeline(${lote.id})">
                 <i class="bi bi-clock-history me-1"></i>Línea de tiempo
@@ -260,7 +264,49 @@ const ModuloMapa = (() => {
             html += `<small class="text-muted d-block mt-1">Sin datos en el sistema</small>`;
         }
 
-        layer.bindPopup(html, { maxWidth: 280 });
+        const popup = L.popup({ maxWidth: 300 }).setContent(html);
+        layer.bindPopup(popup);
+        if (lote && !_soloDisponibles) {
+            layer.on('popupopen', () => _cargarReservasPopup(lote.id));
+        }
+    }
+
+    const _BADGE_ESTADO_RAD = {
+        PENDIENTE: '#6c757d', EN_REVISION: '#0dcaf0', APROBADA: '#198754',
+        RADICADA: '#0d6efd', RECHAZADA: '#dc3545',
+        REQUIERE_INFORMACION_ADICIONAL: '#ffc107', CANCELADA: '#6c757d', DESADJUDICACION: '#212529'
+    };
+    const _ETIQUETA_ESTADO_RAD = {
+        PENDIENTE: 'Pendiente', EN_REVISION: 'En revisión', APROBADA: 'Aprobada',
+        RADICADA: 'Radicada', RECHAZADA: 'Rechazada',
+        REQUIERE_INFORMACION_ADICIONAL: 'Req. info', CANCELADA: 'Cancelada', DESADJUDICACION: 'Desadjudicación'
+    };
+
+    async function _cargarReservasPopup(loteId) {
+        const contenedor = document.getElementById(`reservasMapa_${loteId}`);
+        if (!contenedor) return;
+        try {
+            const resp = await ApiCliente.obtener(`/api/lotes/${loteId}/radicaciones`);
+            if (!resp?.ok) return;
+            const reservas = await resp.json();
+            if (!reservas.length) return;
+            const items = reservas.map(r => {
+                const color = _BADGE_ESTADO_RAD[r.estado] || '#6c757d';
+                const etiq = _ETIQUETA_ESTADO_RAD[r.estado] || r.estado;
+                return `<div style="font-size:11px;padding:3px 0;border-bottom:1px solid #f0f0f0">
+                    <span style="font-family:monospace;color:#555">${r.numeroRadicado || '-'}</span>
+                    <span style="float:right;padding:1px 5px;border-radius:3px;background:${color};color:#fff;font-size:10px">${etiq}</span>
+                    <div style="color:#333;margin-top:1px">${r.empresaNombre || '-'}</div>
+                </div>`;
+            }).join('');
+            contenedor.innerHTML = `<hr style="margin:6px 0">
+                <div style="font-size:11px;color:#6c757d;margin-bottom:4px">
+                    <i class="bi bi-bookmark-check me-1"></i>Solicitudes vinculadas
+                </div>
+                ${items}`;
+        } catch {
+            // silencioso — no bloquea el popup
+        }
     }
 
     async function guardarColor(loteId) {

@@ -792,6 +792,36 @@ const ModuloRadicaciones = (() => {
             setTexto('detRadLoteCodigo', loteAsignado.codigo || '-');
             setTexto('detRadLoteSuperficie', loteAsignado.superficieMetrosCuadrados
                 ? `${loteAsignado.superficieMetrosCuadrados.toLocaleString('es-AR')} m²` : '-');
+
+            const compartidos = radicacionDetalleAdmin?.otrasEmpresasEnLote ?? [];
+            const banner = document.getElementById('bannerLoteCompartido');
+            if (banner) {
+                if (compartidos.length > 0) {
+                    const filas = compartidos.map(e => `
+                        <tr>
+                            <td>${e.empresaNombre || '-'}</td>
+                            <td class="text-muted small">${e.numeroRadicado || '-'}</td>
+                            <td><span class="badge bg-secondary">${e.estadoRadicacion || '-'}</span></td>
+                        </tr>`).join('');
+                    banner.innerHTML = `
+                        <div class="alert alert-warning py-2 mb-0">
+                            <div class="fw-semibold mb-1">
+                                <i class="bi bi-people-fill me-1"></i>
+                                Este lote también está asignado a otra${compartidos.length > 1 ? 's' : ''} solicitud${compartidos.length > 1 ? 'es' : ''}:
+                            </div>
+                            <table class="table table-sm table-borderless mb-0">
+                                <thead><tr>
+                                    <th class="small">Empresa</th>
+                                    <th class="small">N° Radicado</th>
+                                    <th class="small">Estado</th>
+                                </tr></thead>
+                                <tbody>${filas}</tbody>
+                            </table>
+                        </div>`;
+                } else {
+                    banner.innerHTML = '';
+                }
+            }
         } else {
             elLoteAsignado?.classList.add('d-none');
             elSinLote?.classList.remove('d-none');

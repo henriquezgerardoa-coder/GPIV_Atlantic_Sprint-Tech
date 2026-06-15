@@ -194,10 +194,14 @@ const ModuloLotes = (() => {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
 
         try {
-            const respuesta = await ApiCliente.obtener(`/api/lotes/${id}`);
-            if (!respuesta?.ok) throw new Error('No se pudo cargar el detalle del lote.');
-            const detalle = await respuesta.json();
-            renderizarDetalle(detalle);
+            const [respDetalle, respReservas] = await Promise.all([
+                ApiCliente.obtener(`/api/lotes/${id}`),
+                ApiCliente.obtener(`/api/lotes/${id}/radicaciones`)
+            ]);
+            if (!respDetalle?.ok) throw new Error('No se pudo cargar el detalle del lote.');
+            const detalle = await respDetalle.json();
+            const reservas = (respReservas?.ok) ? await respReservas.json().catch(() => []) : [];
+            renderizarDetalle(detalle, reservas);
             if (contenido) contenido.classList.remove('d-none');
         } catch (e) {
             if (error) {
@@ -209,7 +213,29 @@ const ModuloLotes = (() => {
         }
     }
 
-    function renderizarDetalle(detalle) {
+    const ETIQUETA_ESTADO_RADICACION = {
+        PENDIENTE: 'Pendiente',
+        EN_REVISION: 'En revisión',
+        APROBADA: 'Aprobada',
+        RADICADA: 'Radicada',
+        RECHAZADA: 'Rechazada',
+        REQUIERE_INFORMACION_ADICIONAL: 'Requiere info adicional',
+        CANCELADA: 'Cancelada',
+        DESADJUDICACION: 'Desadjudicación'
+    };
+
+    const BADGE_ESTADO_RADICACION = {
+        PENDIENTE: 'bg-secondary',
+        EN_REVISION: 'bg-info text-dark',
+        APROBADA: 'bg-success',
+        RADICADA: 'bg-primary',
+        RECHAZADA: 'bg-danger',
+        REQUIERE_INFORMACION_ADICIONAL: 'bg-warning text-dark',
+        CANCELADA: 'bg-secondary',
+        DESADJUDICACION: 'bg-dark'
+    };
+
+    function renderizarDetalle(detalle, reservas = []) {
         const estado = detalle?.estadoAsignacion || '';
         const textoEstado = ETIQUETA_ESTADO_ASIGNACION[estado] || 'Sin estado';
 
@@ -225,6 +251,32 @@ const ModuloLotes = (() => {
         document.getElementById('detLoteFechaAsignacion').textContent  = detalle?.fechaAsignacion || '-';
         document.getElementById('detLoteEstadoAsignacion').textContent = textoEstado;
         document.getElementById('detLoteExpediente').textContent       = detalle?.numeroExpedienteReferencia || '-';
+
+        const seccion = document.getElementById('seccionReservasLote');
+        const tabla = document.getElementById('tablaReservasLote');
+        if (!seccion || !tabla) return;
+        if (!reservas.length) { seccion.classList.add('d-none'); return; }
+        seccion.classList.remove('d-none');
+        tabla.innerHTML = `
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>N° Radicado</th>
+                        <th>Empresa</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reservas.map(r => `
+                        <tr>
+                            <td class="font-monospace small">${r.numeroRadicado || '-'}</td>
+                            <td class="small">${r.empresaNombre || '-'}</td>
+                            <td><span class="badge ${BADGE_ESTADO_RADICACION[r.estado] || 'bg-secondary'}">${ETIQUETA_ESTADO_RADICACION[r.estado] || r.estado}</span></td>
+                            <td class="small text-muted">${r.fechaRadicacion || '-'}</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>`;
     }
 
     async function guardar() {

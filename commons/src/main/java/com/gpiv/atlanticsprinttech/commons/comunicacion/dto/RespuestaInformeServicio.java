@@ -13,6 +13,7 @@ public record RespuestaInformeServicio(
         Long empresaId,
         String nombreEmpresa,
         String cuitEmpresa,
+        Long loteId,
         String codigoLote,
         String consumo
     ) {}

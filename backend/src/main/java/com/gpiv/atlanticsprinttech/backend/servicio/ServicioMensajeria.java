@@ -1,6 +1,7 @@
 package com.gpiv.atlanticsprinttech.backend.servicio;
 
 import com.gpiv.atlanticsprinttech.backend.mapeador.ParConversacion;
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaBorradorMensajeria;
 import com.gpiv.atlanticsprinttech.entities.dominio.ConversacionMensajeria;
 import com.gpiv.atlanticsprinttech.entities.dominio.MensajeMensajeria;
 import com.gpiv.atlanticsprinttech.entities.dominio.Usuario;
@@ -31,5 +32,13 @@ public interface ServicioMensajeria {
     );
 
     ConversacionMensajeria notificarEmpresa(Long empresaId, String asunto, String mensaje);
+
+    List<RespuestaBorradorMensajeria> listarBorradores(String identificadorIngreso);
+
+    RespuestaBorradorMensajeria guardarBorrador(String identificadorIngreso, Long borradorId, Long destinatarioId, String asunto, String contenido);
+
+    ConversacionMensajeria enviarBorrador(String identificadorIngreso, Long borradorId);
+
+    void eliminarBorrador(String identificadorIngreso, Long borradorId);
 }
 

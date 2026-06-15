@@ -1,5 +1,6 @@
 package com.gpiv.atlanticsprinttech.backend.servicio;
 
+import com.gpiv.atlanticsprinttech.commons.comunicacion.dto.RespuestaReservaLote;
 import com.gpiv.atlanticsprinttech.entities.dominio.Lote;
 import java.util.List;
 
@@ -37,5 +38,7 @@ public interface ServicioLote {
     void eliminar(Long id, String identificadorIngreso);
 
     Lote actualizarColor(Long id, String color, String identificadorIngreso);
+
+    List<RespuestaReservaLote> listarReservas(Long loteId);
 }
 

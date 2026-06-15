@@ -14,7 +14,8 @@ public class MapeadorMensajeria {
 
     public RespuestaConversacionMensajeria toRespuesta(
         ConversacionMensajeria conversacion,
-        List<MensajeMensajeria> mensajes
+        List<MensajeMensajeria> mensajes,
+        String bandeja
     ) {
         List<RespuestaMensajeMensajeria> mensajesDto = mensajes.stream()
             .map(this::toMensajeRespuesta)
@@ -43,7 +44,8 @@ public class MapeadorMensajeria {
             conversacion.getFechaUltimaActualizacion() != null ? conversacion.getFechaUltimaActualizacion().toString() : null,
             ultimoMensaje,
             mensajesDto.size(),
-            mensajesDto
+            mensajesDto,
+            bandeja
         );
     }
 

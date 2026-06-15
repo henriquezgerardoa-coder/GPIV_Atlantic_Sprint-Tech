@@ -17,6 +17,7 @@ public interface RepositorioProyectoProductivo extends JpaRepository<ProyectoPro
         LEFT JOIN FETCH p.responsableSeguimiento
         LEFT JOIN FETCH p.solicitudOrigen s
         LEFT JOIN FETCH s.empresa
+        LEFT JOIN FETCH s.lote
         ORDER BY p.fechaCreacion DESC
         """)
     List<ProyectoProductivo> findAllConDetalle();
@@ -27,6 +28,7 @@ public interface RepositorioProyectoProductivo extends JpaRepository<ProyectoPro
         LEFT JOIN FETCH p.responsableSeguimiento
         LEFT JOIN FETCH p.solicitudOrigen s
         LEFT JOIN FETCH s.empresa
+        LEFT JOIN FETCH s.lote
         WHERE s.empresa.id = :empresaId
         ORDER BY p.fechaCreacion DESC
         """)
@@ -38,6 +40,7 @@ public interface RepositorioProyectoProductivo extends JpaRepository<ProyectoPro
         LEFT JOIN FETCH p.responsableSeguimiento
         LEFT JOIN FETCH p.solicitudOrigen s
         LEFT JOIN FETCH s.empresa
+        LEFT JOIN FETCH s.lote
         WHERE p.id = :id
         """)
     Optional<ProyectoProductivo> findByIdConDetalle(@Param("id") Long id);
